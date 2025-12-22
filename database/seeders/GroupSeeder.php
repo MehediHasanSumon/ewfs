@@ -22,6 +22,7 @@ class GroupSeeder extends Seeder
             [9, '100010001', 'Land', '10001', true],
             [10, '40001', 'Current Liabilities', '4', true],
             [11, '400010001', 'Account Payable', '40001', true],
+            [12, '400010002', 'Bank Loan', '40001', true],
             [13, '100020002', 'Cash in hand', '10002', true],
             [14, '100020003', 'Mobile Bank', '10002', true],
             [15, '100020004', 'Bank Account', '10002', true],
