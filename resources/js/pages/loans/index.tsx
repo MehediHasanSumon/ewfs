@@ -28,9 +28,9 @@ import { useState, useEffect } from 'react';
 interface Loan {
     id: number;
     lender_name: string;
-    amount: number;
-    due_amount: number;
-    paid_amount: number;
+    total_loan: number;
+    total_payment: number;
+    total: number;
     account_number: string;
     status: string;
 }
@@ -311,7 +311,7 @@ export default function Loans({ loans, filters }: LoansProps) {
                                             onClick={() => handleSort('due_amount')}
                                         >
                                             <div className="flex items-center gap-1">
-                                                Total
+                                                Total Payable
                                                 {sortBy === 'due_amount' &&
                                                     (sortOrder === 'asc' ? (
                                                         <ChevronUp className="h-4 w-4" />
@@ -342,13 +342,13 @@ export default function Loans({ loans, filters }: LoansProps) {
                                                     {loan.account_number}
                                                 </td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">
-                                                    {loan.amount.toLocaleString()}
+                                                    {loan.total_loan?.toLocaleString() || '0'}
                                                 </td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">
-                                                    {loan.paid_amount.toLocaleString()}
+                                                    {loan.total_payment?.toLocaleString() || '0'}
                                                 </td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">
-                                                    {loan.due_amount.toLocaleString()}
+                                                    {loan.total?.toLocaleString() || '0'}
                                                 </td>
                                                 <td className="p-4">
                                                     <Button
