@@ -351,6 +351,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     
     // Loan routes
     Route::get('loans', [LoanController::class, 'index'])->name('loans.index');
+    Route::get('loans/{account}', [LoanController::class, 'show'])->name('loans.show');
+    Route::get('loans/{account}/statement', [LoanController::class, 'statement'])->name('loans.statement');
+    Route::get('loans/{account}/statement-pdf', [LoanController::class, 'downloadStatementPdf'])->name('loans.statement.pdf');
 });
 
 require __DIR__.'/settings.php';

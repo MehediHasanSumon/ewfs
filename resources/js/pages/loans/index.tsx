@@ -355,6 +355,7 @@ export default function Loans({ loans, filters }: LoansProps) {
                                                         variant="ghost"
                                                         size="sm"
                                                         className="text-indigo-600 hover:text-indigo-800"
+                                                        onClick={() => router.get(`/loans/${loan.id}`)}
                                                     >
                                                         <Eye className="h-4 w-4" />
                                                     </Button>
