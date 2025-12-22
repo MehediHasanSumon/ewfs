@@ -19,6 +19,7 @@ import {
     DollarSign,
     FileText,
     Fuel,
+    HandCoins,
     LayoutGrid,
     Package,
     Settings,
@@ -187,6 +188,13 @@ const mainNavItems = [
                 href: '/office-payments',
                 icon: CreditCard,
             },
+        ],
+    },
+    {
+        title: 'Loans Payable',
+        icon: HandCoins,
+        children: [
+            { title: 'Loan List', href: '/loans', icon: HandCoins },
         ],
     },
     {

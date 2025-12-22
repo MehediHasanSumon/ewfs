@@ -42,6 +42,7 @@ use App\Http\Controllers\PaymentSubTypeController;
 use App\Http\Controllers\GeneralLedgerController;
 use App\Http\Controllers\CashBookLedgerController;
 use App\Http\Controllers\BankBookLedgerController;
+use App\Http\Controllers\LoanController;
 
 Route::get('/', function () {
     return Inertia::render('welcome', [
@@ -347,6 +348,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('payment-sub-types/{paymentSubType}', [PaymentSubTypeController::class, 'destroy'])->name('payment-sub-types.destroy');
     Route::delete('payment-sub-types/bulk/delete', [PaymentSubTypeController::class, 'bulkDelete'])->name('payment-sub-types.bulk.delete');
     Route::get('payment-sub-types/download-pdf', [PaymentSubTypeController::class, 'downloadPdf'])->name('payment-sub-types.download.pdf');
+    
+    // Loan routes
+    Route::get('loans', [LoanController::class, 'index'])->name('loans.index');
 });
 
 require __DIR__.'/settings.php';
