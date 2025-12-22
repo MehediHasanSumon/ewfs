@@ -15,6 +15,7 @@ class PaymentSubTypeSeeder extends Seeder
         $customerCategory = VoucherCategory::where('name', 'Customer')->first();
         $officeCategory = VoucherCategory::where('name', 'Office')->first();
         $generalCategory = VoucherCategory::where('name', 'General')->first();
+        $liabilityCategory = VoucherCategory::where('name', 'Liability')->first();
 
         $paymentSubTypes = [
             // Employee Sub-types
@@ -98,7 +99,13 @@ class PaymentSubTypeSeeder extends Seeder
             // General Sub-types
             ['code' => '1071', 'name' => 'Account Transfer', 'voucher_category_id' => $generalCategory->id, 'type' => 'both'],
             ['code' => '1072', 'name' => 'Opening Balance', 'voucher_category_id' => $generalCategory->id, 'type' => 'both'],
-            ['code' => '1073', 'name' => 'Adjustment', 'voucher_category_id' => $generalCategory->id, 'type' => 'both']
+            ['code' => '1073', 'name' => 'Adjustment', 'voucher_category_id' => $generalCategory->id, 'type' => 'both'],
+
+            // Liability Sub-types
+            ['code' => '1074', 'name' => 'Loan Payment', 'voucher_category_id' => $liabilityCategory->id, 'type' => 'payment'],
+            ['code' => '1075', 'name' => 'Interest Payment', 'voucher_category_id' => $liabilityCategory->id, 'type' => 'payment'],
+            ['code' => '1076', 'name' => 'Loan Received', 'voucher_category_id' => $liabilityCategory->id, 'type' => 'receipt'],
+            ['code' => '1077', 'name' => 'Liability Settlement', 'voucher_category_id' => $liabilityCategory->id, 'type' => 'payment']
         ];
 
         foreach ($paymentSubTypes as $subType) {

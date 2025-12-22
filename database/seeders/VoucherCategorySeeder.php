@@ -34,6 +34,11 @@ class VoucherCategorySeeder extends Seeder
                 'name' => 'General',
                 'description' => 'General account transfers',
                 'status' => true
+            ],
+            [
+                'name' => 'Liability',
+                'description' => 'Liability related payments and receipts',
+                'status' => true
             ]
         ];
 
