@@ -116,15 +116,40 @@ class ReceivedVoucherController extends Controller
         DB::transaction(function () use ($request) {
             $fromAccount = Account::find($request->from_account_id);
             $toAccount = Account::find($request->to_account_id);
+            
+            // Update account balances
             $fromAccount->increment('total_amount', $request->amount);
             $toAccount->decrement('total_amount', $request->amount);
             
-            $transaction = Transaction::create([
-                'transaction_id' => TransactionHelper::generateTransactionId(),
+            $transactionId = TransactionHelper::generateTransactionId();
+            
+            // Create Credit transaction (From Account - Money received)
+            Transaction::create([
+                'transaction_id' => $transactionId,
                 'ac_number' => $fromAccount->ac_number,
                 'transaction_type' => 'Cr',
                 'amount' => $request->amount,
                 'description' => $request->description ?? 'Payment received from ' . $toAccount->name,
+                'payment_type' => strtolower($request->payment_method),
+                'bank_name' => $request->bank_name,
+                'branch_name' => $request->branch_name,
+                'account_number' => $request->account_no,
+                'cheque_type' => $request->bank_type,
+                'cheque_no' => $request->cheque_no,
+                'cheque_date' => $request->cheque_date,
+                'mobile_bank_name' => $request->mobile_bank,
+                'mobile_number' => $request->mobile_number,
+                'transaction_date' => $request->date,
+                'transaction_time' => now()->format('H:i:s'),
+            ]);
+            
+            // Create Debit transaction (To Account - Money paid)
+            $debitTransaction = Transaction::create([
+                'transaction_id' => $transactionId,
+                'ac_number' => $toAccount->ac_number,
+                'transaction_type' => 'Dr',
+                'amount' => $request->amount,
+                'description' => $request->description ?? 'Payment made to ' . $fromAccount->name,
                 'payment_type' => strtolower($request->payment_method),
                 'bank_name' => $request->bank_name,
                 'branch_name' => $request->branch_name,
@@ -147,7 +172,7 @@ class ReceivedVoucherController extends Controller
                 'shift_id' => $request->shift_id,
                 'from_account_id' => $request->from_account_id,
                 'to_account_id' => $request->to_account_id,
-                'transaction_id' => $transaction->id,
+                'transaction_id' => $debitTransaction->id,
                 'description' => $request->description,
                 'remarks' => $request->remarks,
             ]);
@@ -171,17 +196,67 @@ class ReceivedVoucherController extends Controller
         ]);
 
         DB::transaction(function () use ($request, $voucher) {
+            // Reverse old transactions
             $oldFromAccount = Account::find($voucher->from_account_id);
             $oldToAccount = Account::find($voucher->to_account_id);
             $oldAmount = $voucher->transaction->amount;
+            $oldTransactionId = $voucher->transaction->transaction_id;
+            
+            // Reverse old account balances
             $oldFromAccount->decrement('total_amount', $oldAmount);
             $oldToAccount->increment('total_amount', $oldAmount);
             
+            // Create new transactions first
             $newFromAccount = Account::find($request->from_account_id);
             $newToAccount = Account::find($request->to_account_id);
+            
+            // Update new account balances
             $newFromAccount->increment('total_amount', $request->amount);
             $newToAccount->decrement('total_amount', $request->amount);
             
+            $newTransactionId = TransactionHelper::generateTransactionId();
+            
+            // Create Credit transaction (From Account - Money received)
+            Transaction::create([
+                'transaction_id' => $newTransactionId,
+                'ac_number' => $newFromAccount->ac_number,
+                'transaction_type' => 'Cr',
+                'amount' => $request->amount,
+                'description' => $request->description ?? 'Payment received from ' . $newToAccount->name,
+                'payment_type' => strtolower($request->payment_method),
+                'bank_name' => $request->bank_name,
+                'branch_name' => $request->branch_name,
+                'account_number' => $request->account_no,
+                'cheque_type' => $request->bank_type,
+                'cheque_no' => $request->cheque_no,
+                'cheque_date' => $request->cheque_date,
+                'mobile_bank_name' => $request->mobile_bank,
+                'mobile_number' => $request->mobile_number,
+                'transaction_date' => $request->date,
+                'transaction_time' => now()->format('H:i:s'),
+            ]);
+            
+            // Create Debit transaction (To Account - Money paid)
+            $newDebitTransaction = Transaction::create([
+                'transaction_id' => $newTransactionId,
+                'ac_number' => $newToAccount->ac_number,
+                'transaction_type' => 'Dr',
+                'amount' => $request->amount,
+                'description' => $request->description ?? 'Payment made to ' . $newFromAccount->name,
+                'payment_type' => strtolower($request->payment_method),
+                'bank_name' => $request->bank_name,
+                'branch_name' => $request->branch_name,
+                'account_number' => $request->account_no,
+                'cheque_type' => $request->bank_type,
+                'cheque_no' => $request->cheque_no,
+                'cheque_date' => $request->cheque_date,
+                'mobile_bank_name' => $request->mobile_bank,
+                'mobile_number' => $request->mobile_number,
+                'transaction_date' => $request->date,
+                'transaction_time' => now()->format('H:i:s'),
+            ]);
+            
+            // Update voucher with new transaction_id
             $voucher->update([
                 'voucher_category_id' => $request->voucher_category_id,
                 'payment_sub_type_id' => $request->payment_sub_type_id,
@@ -189,17 +264,13 @@ class ReceivedVoucherController extends Controller
                 'shift_id' => $request->shift_id,
                 'from_account_id' => $request->from_account_id,
                 'to_account_id' => $request->to_account_id,
+                'transaction_id' => $newDebitTransaction->id,
                 'description' => $request->description,
                 'remarks' => $request->remarks,
             ]);
             
-            $voucher->transaction->update([
-                'ac_number' => $newFromAccount->ac_number,
-                'amount' => $request->amount,
-                'description' => $request->description ?? 'Payment received from ' . $newToAccount->name,
-                'payment_type' => strtolower($request->payment_method),
-                'transaction_date' => $request->date,
-            ]);
+            // Now delete old transaction entries
+            Transaction::where('transaction_id', $oldTransactionId)->delete();
         });
 
         return redirect()->back()->with('success', 'Received voucher updated successfully.');

@@ -108,12 +108,33 @@ class PaymentVoucherController extends Controller
             $fromAccount->decrement('total_amount', $request->amount);
             $toAccount->increment('total_amount', $request->amount);
 
-            $transaction = Transaction::create([
-                'transaction_id' => TransactionHelper::generateTransactionId(),
-                'ac_number' => $fromAccount->ac_number,
+            $transactionId = TransactionHelper::generateTransactionId();
+            
+            $drTransaction = Transaction::create([
+                'transaction_id' => $transactionId,
+                'ac_number' => $toAccount->ac_number,
                 'transaction_type' => 'Dr',
                 'amount' => $request->amount,
                 'description' => $request->description ?? 'Payment to ' . $toAccount->name,
+                'payment_type' => strtolower($request->payment_method),
+                'bank_name' => $request->bank_name,
+                'branch_name' => $request->branch_name,
+                'account_number' => $request->account_no,
+                'cheque_type' => $request->bank_type,
+                'cheque_no' => $request->cheque_no,
+                'cheque_date' => $request->cheque_date,
+                'mobile_bank_name' => $request->mobile_bank,
+                'mobile_number' => $request->mobile_number,
+                'transaction_date' => $request->date,
+                'transaction_time' => now()->format('H:i:s'),
+            ]);
+
+            Transaction::create([
+                'transaction_id' => $transactionId,
+                'ac_number' => $fromAccount->ac_number,
+                'transaction_type' => 'Cr',
+                'amount' => $request->amount,
+                'description' => $request->description ?? 'Payment from ' . $fromAccount->name,
                 'payment_type' => strtolower($request->payment_method),
                 'bank_name' => $request->bank_name,
                 'branch_name' => $request->branch_name,
@@ -136,7 +157,7 @@ class PaymentVoucherController extends Controller
                 'shift_id' => $request->shift_id,
                 'from_account_id' => $request->from_account_id,
                 'to_account_id' => $request->to_account_id,
-                'transaction_id' => $transaction->id,
+                'transaction_id' => $drTransaction->id,
                 'description' => $request->description,
                 'remarks' => $request->remarks,
             ]);
@@ -171,6 +192,46 @@ class PaymentVoucherController extends Controller
             $newFromAccount->decrement('total_amount', $request->amount);
             $newToAccount->increment('total_amount', $request->amount);
 
+            $transactionId = TransactionHelper::generateTransactionId();
+            
+            $drTransaction = Transaction::create([
+                'transaction_id' => $transactionId,
+                'ac_number' => $newToAccount->ac_number,
+                'transaction_type' => 'Dr',
+                'amount' => $request->amount,
+                'description' => $request->description ?? 'Payment to ' . $newToAccount->name,
+                'payment_type' => strtolower($request->payment_method),
+                'bank_name' => $request->bank_name,
+                'branch_name' => $request->branch_name,
+                'account_number' => $request->account_no,
+                'cheque_type' => $request->bank_type,
+                'cheque_no' => $request->cheque_no,
+                'cheque_date' => $request->cheque_date,
+                'mobile_bank_name' => $request->mobile_bank,
+                'mobile_number' => $request->mobile_number,
+                'transaction_date' => $request->date,
+                'transaction_time' => now()->format('H:i:s'),
+            ]);
+
+            Transaction::create([
+                'transaction_id' => $transactionId,
+                'ac_number' => $newFromAccount->ac_number,
+                'transaction_type' => 'Cr',
+                'amount' => $request->amount,
+                'description' => $request->description ?? 'Payment from ' . $newFromAccount->name,
+                'payment_type' => strtolower($request->payment_method),
+                'bank_name' => $request->bank_name,
+                'branch_name' => $request->branch_name,
+                'account_number' => $request->account_no,
+                'cheque_type' => $request->bank_type,
+                'cheque_no' => $request->cheque_no,
+                'cheque_date' => $request->cheque_date,
+                'mobile_bank_name' => $request->mobile_bank,
+                'mobile_number' => $request->mobile_number,
+                'transaction_date' => $request->date,
+                'transaction_time' => now()->format('H:i:s'),
+            ]);
+
             $voucher->update([
                 'voucher_category_id' => $request->voucher_category_id,
                 'payment_sub_type_id' => $request->payment_sub_type_id,
@@ -178,19 +239,12 @@ class PaymentVoucherController extends Controller
                 'shift_id' => $request->shift_id,
                 'from_account_id' => $request->from_account_id,
                 'to_account_id' => $request->to_account_id,
-                'amount' => $request->amount,
-                'payment_method' => $request->payment_method,
+                'transaction_id' => $drTransaction->id,
                 'description' => $request->description,
                 'remarks' => $request->remarks,
             ]);
 
-            $voucher->transaction->update([
-                'ac_number' => $newFromAccount->ac_number,
-                'amount' => $request->amount,
-                'description' => $request->description ?? 'Payment to ' . $newToAccount->name,
-                'payment_type' => strtolower($request->payment_method),
-                'transaction_date' => $request->date,
-            ]);
+            Transaction::where('transaction_id', $voucher->transaction->transaction_id)->delete();
         });
 
         return redirect()->back()->with('success', 'Payment voucher updated successfully.');
@@ -204,7 +258,7 @@ class PaymentVoucherController extends Controller
             $amount = $voucher->transaction->amount;
             $fromAccount->increment('total_amount', $amount);
             $toAccount->decrement('total_amount', $amount);
-            $voucher->transaction?->delete();
+            Transaction::where('transaction_id', $voucher->transaction->transaction_id)->delete();
             $voucher->delete();
         });
 
@@ -226,7 +280,7 @@ class PaymentVoucherController extends Controller
                 $amount = $voucher->transaction->amount;
                 $fromAccount->increment('total_amount', $amount);
                 $toAccount->decrement('total_amount', $amount);
-                $voucher->transaction?->delete();
+                Transaction::where('transaction_id', $voucher->transaction->transaction_id)->delete();
                 $voucher->delete();
             }
         });

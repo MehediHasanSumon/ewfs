@@ -342,13 +342,13 @@ export default function Loans({ loans, filters }: LoansProps) {
                                                     {loan.account_number}
                                                 </td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">
-                                                    ৳{loan.amount.toLocaleString()}
+                                                    {loan.amount.toLocaleString()}
                                                 </td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">
-                                                    ৳{loan.paid_amount.toLocaleString()}
+                                                    {loan.paid_amount.toLocaleString()}
                                                 </td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">
-                                                    ৳{loan.due_amount.toLocaleString()}
+                                                    {loan.due_amount.toLocaleString()}
                                                 </td>
                                                 <td className="p-4">
                                                     <Button
