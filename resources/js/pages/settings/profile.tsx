@@ -70,6 +70,23 @@ export default function Profile({
                                 </div>
 
                                 <div className="grid gap-2">
+                                    <Label htmlFor="avatar">Avatar</Label>
+
+                                    <Input
+                                        id="avatar"
+                                        type="file"
+                                        className="mt-1 block w-full"
+                                        name="avatar"
+                                        accept="image/*"
+                                    />
+
+                                    <InputError
+                                        className="mt-2"
+                                        message={errors.avatar}
+                                    />
+                                </div>
+
+                                <div className="grid gap-2">
                                     <Label htmlFor="email">Email address</Label>
 
                                     <Input

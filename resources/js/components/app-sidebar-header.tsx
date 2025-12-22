@@ -1,11 +1,9 @@
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { Button } from '@/components/ui/button';
-
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { type BreadcrumbItem } from '@/types';
 import { useState, useRef, useEffect } from 'react';
-import { usePage, router } from '@inertiajs/react';
-
+import { usePage, router, Link } from '@inertiajs/react';
 
 interface AppSidebarHeaderProps {
     breadcrumbs?: BreadcrumbItem[];
@@ -14,7 +12,8 @@ interface AppSidebarHeaderProps {
 export function AppSidebarHeader({ breadcrumbs = [] }: AppSidebarHeaderProps) {
     const [showProfile, setShowProfile] = useState(false);
     const profileRef = useRef<HTMLDivElement>(null);
-
+    const { props } = usePage();
+    const user = (props.auth as { user: { name: string; avatar?: string } })?.user;
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
@@ -34,7 +33,6 @@ export function AppSidebarHeader({ breadcrumbs = [] }: AppSidebarHeaderProps) {
             </div>
             
             <div className="flex items-center gap-4">
-                
                 <div className="relative" ref={profileRef}>
                     <Button
                         variant="ghost"
@@ -42,7 +40,7 @@ export function AppSidebarHeader({ breadcrumbs = [] }: AppSidebarHeaderProps) {
                         className="flex items-center gap-2 px-2"
                     >
                         <img
-                            src="https://picsum.photos/seed/user/32/32"
+                            src={user?.avatar ? `/storage/${user.avatar}` : "https://picsum.photos/seed/user/32/32"}
                             alt="User"
                             className="w-8 h-8 rounded-full"
                         />
@@ -54,14 +52,18 @@ export function AppSidebarHeader({ breadcrumbs = [] }: AppSidebarHeaderProps) {
                     {showProfile && (
                         <div className="absolute right-0 mt-2 w-48 bg-background border rounded-lg shadow-lg py-2 z-50">
                             <div className="px-4 py-2 border-b">
-                                <p className="font-medium">{(usePage().props.auth as any)?.user?.name || 'User'}</p>
+                                <p className="font-medium">{user?.name || 'User'}</p>
                             </div>
-                            <Button variant="ghost" className="w-full justify-start px-4 py-2">
-                                Profile
-                            </Button>
-                            <Button variant="ghost" className="w-full justify-start px-4 py-2">
-                                Settings
-                            </Button>
+                            <Link href="/settings/profile">
+                                <Button variant="ghost" className="w-full justify-start px-4 py-2">
+                                    Profile
+                                </Button>
+                            </Link>
+                            <Link href="/settings">
+                                <Button variant="ghost" className="w-full justify-start px-4 py-2">
+                                    Settings
+                                </Button>
+                            </Link>
                             <div className="border-t mt-2 pt-2">
                                 <Button 
                                     variant="ghost" 
