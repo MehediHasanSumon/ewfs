@@ -43,6 +43,7 @@ use App\Http\Controllers\GeneralLedgerController;
 use App\Http\Controllers\CashBookLedgerController;
 use App\Http\Controllers\BankBookLedgerController;
 use App\Http\Controllers\LoanController;
+use App\Http\Controllers\LiabilityAssetsController;
 
 Route::get('/', function () {
     return Inertia::render('welcome', [
@@ -356,6 +357,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('loans/{account}/statement-pdf', [LoanController::class, 'downloadStatementPdf'])->name('loans.statement.pdf');
     Route::get('loans/{account}/loans-pdf', [LoanController::class, 'downloadLoansPdf'])->name('loans.loans.pdf');
     Route::get('loans/{account}/payments-pdf', [LoanController::class, 'downloadPaymentsPdf'])->name('loans.payments.pdf');
+    
+    // Liability and Assets routes
+    Route::get('liability-assets', [LiabilityAssetsController::class, 'index'])->name('liability-assets.index');
+    Route::get('liability-assets/download-pdf', [LiabilityAssetsController::class, 'downloadPdf'])->name('liability-assets.download.pdf');
 });
 
 require __DIR__.'/settings.php';

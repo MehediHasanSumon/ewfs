@@ -23,16 +23,16 @@ class PurchaseController extends Controller
         $query = Purchase::with(['supplier', 'product', 'fromAccount', 'transaction']);
 
         if ($request->search) {
-            $query->where(function($q) use ($request) {
+            $query->where(function ($q) use ($request) {
                 $q->where('invoice_no', 'like', '%' . $request->search . '%')
-                  ->orWhereHas('supplier', function($q) use ($request) {
-                      $q->where('name', 'like', '%' . $request->search . '%');
-                  });
+                    ->orWhereHas('supplier', function ($q) use ($request) {
+                        $q->where('name', 'like', '%' . $request->search . '%');
+                    });
             });
         }
 
         if ($request->supplier && $request->supplier !== 'all') {
-            $query->whereHas('supplier', function($q) use ($request) {
+            $query->whereHas('supplier', function ($q) use ($request) {
                 $q->where('name', $request->supplier);
             });
         }
@@ -79,7 +79,7 @@ class PurchaseController extends Controller
             'suppliers' => Supplier::select('id', 'name')->get(),
             'accounts' => $accounts,
             'groupedAccounts' => $groupedAccounts,
-            'products' => Product::with(['stock', 'activeRate'])->select('id', 'product_name')->get()->map(function($product) {
+            'products' => Product::with(['stock', 'activeRate'])->select('id', 'product_name')->get()->map(function ($product) {
                 return [
                     'id' => $product->id,
                     'product_name' => $product->product_name,
@@ -98,7 +98,7 @@ class PurchaseController extends Controller
     {
         $request->validate([
             'purchase_date' => 'required|date',
-            'memo_no' => 'nullable|string|max:255',
+            'memo_no' => 'required|string|max:255',
             'remarks' => 'nullable|string',
             'products' => 'required|array|min:1',
             'products.*.product_id' => 'required|exists:products,id',
@@ -129,7 +129,7 @@ class PurchaseController extends Controller
                     'ac_number' => $fromAccount->ac_number,
                     'transaction_type' => 'Dr',
                     'amount' => $productData['paid_amount'],
-                    'description' => 'Purchase ' . $product->product_name . ' from ' . $supplier->name . ' - Invoice: ' . $request->supplier_invoice_no,
+                    'description' => 'Purchase ' . $product->product_name . ' from ' . $supplier->name . ' - Invoice: ' . InvoiceHelper::generateInvoiceId(),
                     'payment_type' => strtolower($productData['payment_type']),
                     'bank_name' => $productData['bank_name'] ?? null,
                     'branch_name' => $productData['branch_name'] ?? null,
@@ -149,7 +149,7 @@ class PurchaseController extends Controller
                         'ac_number' => $supplier->account->ac_number,
                         'transaction_type' => 'Cr',
                         'amount' => $productData['paid_amount'],
-                        'description' => 'Payment received for ' . $product->product_name . ' - Invoice: ' . $request->supplier_invoice_no,
+                        'description' => 'Payment received for ' . $product->product_name . ' - Invoice: ' . InvoiceHelper::generateInvoiceId(),
                         'payment_type' => strtolower($productData['payment_type']),
                         'transaction_date' => $request->purchase_date,
                         'transaction_time' => now()->format('H:i:s'),
@@ -164,7 +164,7 @@ class PurchaseController extends Controller
                             'ac_number' => $payableAccount->ac_number,
                             'transaction_type' => 'Cr',
                             'amount' => $productData['due_amount'],
-                            'description' => 'Due amount for ' . $product->product_name . ' - Invoice: ' . $request->supplier_invoice_no,
+                            'description' => 'Due amount for ' . $product->product_name . ' - Invoice: ' . InvoiceHelper::generateInvoiceId(),
                             'payment_type' => 'credit',
                             'transaction_date' => $request->purchase_date,
                             'transaction_time' => now()->format('H:i:s'),
@@ -182,7 +182,7 @@ class PurchaseController extends Controller
                 $netTotal = $productData['amount'] - ($productData['discount'] ?? 0);
                 $paidAmount = $productData['paid_amount'];
                 $dueAmount = $productData['due_amount'];
-                
+
                 // Calculate status
                 $status = 'due';
                 if ($dueAmount == 0) {
@@ -241,7 +241,7 @@ class PurchaseController extends Controller
             'purchase_date' => 'required|date',
             'supplier_id' => 'required|exists:suppliers,id',
             'product_id' => 'required|exists:products,id',
-            'memo_no' => 'nullable|string|max:255',
+            'memo_no' => 'required|string|max:255',
             'from_account_id' => 'required|exists:accounts,id',
             'payment_type' => 'required|in:Cash,Bank,Mobile Bank',
             'unit_price' => 'required|numeric|min:0',
@@ -274,11 +274,11 @@ class PurchaseController extends Controller
             $fromAccount = Account::find($request->from_account_id);
             $supplier = Supplier::with('account')->find($request->supplier_id);
             $product = Product::find($request->product_id);
-            
+
             $netTotal = ($request->unit_price * $request->quantity) - ($request->discount ?? 0);
             $paidAmount = $request->paid_amount;
             $dueAmount = $request->due_amount;
-            
+
             // Calculate status
             $status = 'due';
             if ($dueAmount == 0) {
@@ -430,7 +430,7 @@ class PurchaseController extends Controller
 
         DB::transaction(function () use ($request) {
             $purchases = Purchase::with(['fromAccount', 'supplier.account'])->whereIn('id', $request->ids)->get();
-            
+
             foreach ($purchases as $purchase) {
                 $purchase->fromAccount->increment('total_amount', $purchase->paid_amount);
                 if ($purchase->paid_amount > 0) {
@@ -451,9 +451,9 @@ class PurchaseController extends Controller
                 }
 
                 $transactionId = $purchase->transaction->transaction_id;
-                
+
                 $purchase->delete();
-                
+
                 if ($transactionId) {
                     Transaction::where('transaction_id', $transactionId)->delete();
                 }
@@ -468,16 +468,16 @@ class PurchaseController extends Controller
         $query = Purchase::with(['supplier', 'product', 'fromAccount', 'transaction']);
 
         if ($request->search) {
-            $query->where(function($q) use ($request) {
+            $query->where(function ($q) use ($request) {
                 $q->where('invoice_no', 'like', '%' . $request->search . '%')
-                  ->orWhereHas('supplier', function($q) use ($request) {
-                      $q->where('name', 'like', '%' . $request->search . '%');
-                  });
+                    ->orWhereHas('supplier', function ($q) use ($request) {
+                        $q->where('name', 'like', '%' . $request->search . '%');
+                    });
             });
         }
 
         if ($request->supplier && $request->supplier !== 'all') {
-            $query->whereHas('supplier', function($q) use ($request) {
+            $query->whereHas('supplier', function ($q) use ($request) {
                 $q->where('name', $request->supplier);
             });
         }

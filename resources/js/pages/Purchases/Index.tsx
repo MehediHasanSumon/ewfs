@@ -145,7 +145,7 @@ export default function Purchases({
                 amount: '',
                 payment_type: 'Cash',
                 from_account_id: '',
-                paid_amount: '',
+                paid_amount: '0',
                 due_amount: '',
                 bank_type: '',
                 bank_name: '',
@@ -181,7 +181,7 @@ export default function Purchases({
                     amount: '',
                     payment_type: 'Cash',
                     from_account_id: '',
-                    paid_amount: '',
+                    paid_amount: '0',
                     due_amount: '',
                     bank_type: '',
                     bank_name: '',
@@ -969,7 +969,7 @@ export default function Purchases({
                             </div>
                             <div>
                                 <Label className="text-sm font-medium dark:text-gray-200">
-                                    Memo No
+                                    Memo No <span className="text-red-500">*</span>
                                 </Label>
                                 <Input
                                     value={data.memo_no}
@@ -1008,7 +1008,7 @@ export default function Purchases({
                             </div>
                             <div>
                                 <Label className="text-sm font-medium dark:text-gray-200">
-                                    Product
+                                    Product <span className="text-red-500">*</span>
                                 </Label>
                                 <Select
                                     value={data.products[0]?.product_id || ''}
@@ -1070,7 +1070,7 @@ export default function Purchases({
                             </div>
                             <div>
                                 <Label className="text-sm font-medium dark:text-gray-200">
-                                    Unit Price
+                                    Unit Price <span className="text-red-500">*</span>
                                 </Label>
                                 <Input
                                     type="number"
@@ -1088,7 +1088,7 @@ export default function Purchases({
                             </div>
                             <div>
                                 <Label className="text-sm font-medium dark:text-gray-200">
-                                    Quantity
+                                    Quantity <span className="text-red-500">*</span>
                                 </Label>
                                 <Input
                                     type="number"
@@ -1133,7 +1133,7 @@ export default function Purchases({
                         >
                             <div>
                                 <Label className="text-sm font-medium dark:text-gray-200">
-                                    Payment Method
+                                    Payment Method <span className="text-red-500">*</span>
                                 </Label>
                                 <Select
                                     value={
@@ -1162,7 +1162,7 @@ export default function Purchases({
                             </div>
                             <div>
                                 <Label className="text-sm font-medium dark:text-gray-200">
-                                    From Account
+                                    From Account <span className="text-red-500">*</span>
                                 </Label>
                                 <Select
                                     value={
@@ -1342,7 +1342,7 @@ export default function Purchases({
                                 <Input
                                     type="number"
                                     step="0.01"
-                                    value={data.products[0]?.paid_amount || ''}
+                                    value={data.products[0]?.paid_amount || '0'}
                                     onChange={(e) => {
                                         const newProducts = [...data.products];
                                         const paid = parseFloat(e.target.value) || 0;
@@ -1355,18 +1355,6 @@ export default function Purchases({
                                             due_amount: due.toFixed(2),
                                         };
                                         setData('products', newProducts);
-                                    }}
-                                    onBlur={(e) => {
-                                        if (!e.target.value || e.target.value === '0') {
-                                            const newProducts = [...data.products];
-                                            const amount = parseFloat(newProducts[0]?.amount) || 0;
-                                            newProducts[0] = {
-                                                ...newProducts[0],
-                                                paid_amount: amount.toFixed(2),
-                                                due_amount: '0.00',
-                                            };
-                                            setData('products', newProducts);
-                                        }
                                     }}
                                     className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                 />
