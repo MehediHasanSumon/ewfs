@@ -258,8 +258,8 @@ class PaymentVoucherController extends Controller
             $amount = $voucher->transaction->amount;
             $fromAccount->increment('total_amount', $amount);
             $toAccount->decrement('total_amount', $amount);
-            Transaction::where('transaction_id', $voucher->transaction->transaction_id)->delete();
             $voucher->delete();
+            Transaction::where('transaction_id', $voucher->transaction->transaction_id)->delete();
         });
 
         return redirect()->back()->with('success', 'Payment voucher deleted successfully.');
@@ -280,8 +280,8 @@ class PaymentVoucherController extends Controller
                 $amount = $voucher->transaction->amount;
                 $fromAccount->increment('total_amount', $amount);
                 $toAccount->decrement('total_amount', $amount);
-                Transaction::where('transaction_id', $voucher->transaction->transaction_id)->delete();
                 $voucher->delete();
+                Transaction::where('transaction_id', $voucher->transaction->transaction_id)->delete();
             }
         });
 
