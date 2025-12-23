@@ -8,6 +8,8 @@ use App\Models\Account;
 use App\Models\CompanySetting;
 use App\Models\CreditSale;
 use App\Models\Customer;
+use App\Models\OfficePayment;
+use App\Models\Stock;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -90,6 +92,59 @@ class LiabilityAssetsController extends Controller
 
         $assets = collect([]);
 
+        // Calculate In Stock Product (current_stock * purchase_price)
+        $inStockValue = Stock::join('product_rates', 'stocks.product_id', '=', 'product_rates.product_id')
+            ->where('product_rates.status', true)
+            ->selectRaw('SUM(stocks.current_stock * product_rates.purchase_price) as total_value')
+            ->value('total_value') ?? 0;
+
+        // Calculate Customer Due (total credit sales - total customer payments)
+        $totalCreditSales = CreditSale::sum('total_amount');
+        $totalCustomerPayments = Voucher::join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+            ->join('customers', 'vouchers.from_account_id', '=', 'customers.account_id')
+            ->where('vouchers.voucher_type', 'Receipt')
+            ->sum('transactions.amount');
+        $customerDue = $totalCreditSales - $totalCustomerPayments;
+        $customerDue = $customerDue > 0 ? $customerDue : 0;
+
+        // Calculate Bank Deposit from office_payments with bank and mobile bank types
+        $bankDeposit = OfficePayment::join('transactions', 'office_payments.transaction_id', '=', 'transactions.id')
+            ->where('office_payments.type', 'bank')
+            ->orWhereIn('transactions.payment_type', ['bank', 'mobile bank'])
+            ->sum('transactions.amount');
+
+        // Calculate Office Cash from office_payments with cash type only
+        $officeCash = OfficePayment::join('transactions', 'office_payments.transaction_id', '=', 'transactions.id')
+            ->where('office_payments.type', 'cash')
+            ->sum('transactions.amount');
+
+        $assets = collect([
+            [
+                'name' => 'In Stock Product',
+                'group_name' => 'Current Assets',
+                'balance' => $inStockValue,
+                'type' => 'Asset'
+            ],
+            [
+                'name' => 'Customer Due',
+                'group_name' => 'Account Receivable',
+                'balance' => $customerDue,
+                'type' => 'Asset'
+            ],
+            [
+                'name' => 'Bank Deposit',
+                'group_name' => 'Current Assets',
+                'balance' => $bankDeposit,
+                'type' => 'Asset'
+            ],
+            [
+                'name' => 'Office Cash',
+                'group_name' => 'Current Assets',
+                'balance' => $officeCash,
+                'type' => 'Asset'
+            ]
+        ]);
+
         return Inertia::render('LiabilityAssets/Index', [
             'liabilities' => $liabilities,
             'assets' => $assets,
@@ -152,17 +207,51 @@ class LiabilityAssetsController extends Controller
         ]);
 
         // Get asset data
-        $assets = Account::whereIn('group_code', ['100010001', '100010002', '100010003'])
-            ->with('group')
-            ->get()
-            ->map(function ($account) {
-                return [
-                    'name' => $account->name,
-                    'ac_number' => $account->ac_number,
-                    'group_name' => $account->group->name ?? 'N/A',
-                    'balance' => $account->opening_balance ?? 0
-                ];
-            });
+        $inStockValue = \App\Models\Stock::join('product_rates', 'stocks.product_id', '=', 'product_rates.product_id')
+            ->where('product_rates.status', true)
+            ->selectRaw('SUM(stocks.current_stock * product_rates.purchase_price) as total_value')
+            ->value('total_value') ?? 0;
+
+        $totalCreditSales = \App\Models\CreditSale::sum('total_amount');
+        $totalCustomerPayments = Voucher::join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+            ->join('customers', 'vouchers.from_account_id', '=', 'customers.account_id')
+            ->where('vouchers.voucher_type', 'Receipt')
+            ->sum('transactions.amount');
+        $customerDue = $totalCreditSales - $totalCustomerPayments;
+        $customerDue = $customerDue > 0 ? $customerDue : 0;
+
+        $bankDeposit = \App\Models\OfficePayment::join('transactions', 'office_payments.transaction_id', '=', 'transactions.id')
+            ->where('office_payments.type', 'bank')
+            ->orWhereIn('transactions.payment_type', ['bank', 'mobile bank'])
+            ->sum('transactions.amount');
+
+        // Calculate Office Cash for PDF from office_payments with cash type only
+        $officeCash = \App\Models\OfficePayment::join('transactions', 'office_payments.transaction_id', '=', 'transactions.id')
+            ->where('office_payments.type', 'cash')
+            ->sum('transactions.amount');
+
+        $assets = collect([
+            [
+                'name' => 'In Stock Product',
+                'group_name' => 'Current Assets',
+                'balance' => $inStockValue
+            ],
+            [
+                'name' => 'Customer Due',
+                'group_name' => 'Account Receivable',
+                'balance' => $customerDue
+            ],
+            [
+                'name' => 'Bank Deposit',
+                'group_name' => 'Current Assets',
+                'balance' => $bankDeposit
+            ],
+            [
+                'name' => 'Office Cash',
+                'group_name' => 'Current Assets',
+                'balance' => $officeCash
+            ]
+        ]);
 
         $companySetting = CompanySetting::first();
         $totalLiabilities = $liabilities->sum('balance');
