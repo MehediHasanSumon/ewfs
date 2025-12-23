@@ -44,6 +44,7 @@ use App\Http\Controllers\CashBookLedgerController;
 use App\Http\Controllers\BankBookLedgerController;
 use App\Http\Controllers\LoanController;
 use App\Http\Controllers\LiabilityAssetsController;
+use App\Http\Controllers\BalanceSheetController;
 
 Route::get('/', function () {
     return Inertia::render('welcome', [
@@ -361,6 +362,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Liability and Assets routes
     Route::get('liability-assets', [LiabilityAssetsController::class, 'index'])->name('liability-assets.index');
     Route::get('liability-assets/download-pdf', [LiabilityAssetsController::class, 'downloadPdf'])->name('liability-assets.download.pdf');
+    
+    // Balance Sheet routes
+    Route::get('balance-sheet', [BalanceSheetController::class, 'index'])->name('balance-sheet.index');
+    Route::get('balance-sheet/download-pdf', [BalanceSheetController::class, 'downloadPdf'])->name('balance-sheet.download.pdf');
 });
 
 require __DIR__.'/settings.php';
