@@ -3,12 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\Purchase;
+use App\Models\Sale;
 use App\Models\Voucher;
 use App\Models\Account;
 use App\Models\CompanySetting;
 use App\Models\CreditSale;
 use App\Models\Customer;
 use App\Models\OfficePayment;
+use App\Models\Stock;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -17,141 +19,102 @@ class BalanceSheetController extends Controller
 {
     public function index(Request $request)
     {
-        // Calculate Purchase Due (total purchases - total supplier payments)
-        $totalPurchases = Purchase::sum('net_total_amount');
+        $date = $request->get('date', now()->format('Y-m-d'));
+        $startDate = $request->get('start_date', now()->startOfYear()->format('Y-m-d'));
+        $endDate = $request->get('end_date', now()->addDays(1)->format('Y-m-d'));
+        
+        // Calculate Purchase Data by Product with Date Ranges
+        $purchaseData = Purchase::join('products', 'purchases.product_id', '=', 'products.id')
+            ->whereDate('purchases.purchase_date', '>=', $startDate)
+            ->whereDate('purchases.purchase_date', '<=', $endDate)
+            ->selectRaw('
+                products.product_name as product_name,
+                purchases.unit_price as avg_price,
+                SUM(purchases.quantity) as total_quantity,
+                SUM(purchases.net_total_amount) as total_amount
+            ')
+            ->groupBy('products.product_name', 'purchases.unit_price')
+            ->get();
+
+        // Calculate Sales Data by Product with Date Ranges
+        $salesData = Sale::join('products', 'sales.product_id', '=', 'products.id')
+            ->join('product_rates', function($join) {
+                $join->on('sales.product_id', '=', 'product_rates.product_id')
+                     ->where('product_rates.status', true);
+            })
+            ->whereDate('sales.sale_date', '>=', $startDate)
+            ->whereDate('sales.sale_date', '<=', $endDate)
+            ->selectRaw('
+                products.product_name as product_name,
+                product_rates.purchase_price as purchase_price,
+                product_rates.sales_price as sale_price,
+                SUM(sales.quantity) as total_quantity,
+                SUM(sales.total_amount) as total_amount
+            ')
+            ->groupBy('products.product_name', 'product_rates.purchase_price', 'product_rates.sales_price')
+            ->get();
+
+        // Calculate Credit Sales Data
+        $creditSalesData = CreditSale::join('products', 'credit_sales.product_id', '=', 'products.id')
+            ->join('product_rates', function($join) {
+                $join->on('credit_sales.product_id', '=', 'product_rates.product_id')
+                     ->where('product_rates.status', true);
+            })
+            ->whereDate('credit_sales.sale_date', '>=', $startDate)
+            ->whereDate('credit_sales.sale_date', '<=', $endDate)
+            ->selectRaw('
+                products.product_name as product_name,
+                product_rates.purchase_price as purchase_price,
+                product_rates.sales_price as sale_price,
+                SUM(credit_sales.quantity) as total_quantity,
+                SUM(credit_sales.total_amount) as total_amount
+            ')
+            ->groupBy('products.product_name', 'product_rates.purchase_price', 'product_rates.sales_price')
+            ->get();
+
+        // Calculate Stock Value
+        $stockData = Stock::join('products', 'stocks.product_id', '=', 'products.id')
+            ->join('product_rates', 'stocks.product_id', '=', 'product_rates.product_id')
+            ->where('product_rates.status', true)
+            ->selectRaw('
+                products.product_name as product_name,
+                stocks.current_stock as quantity,
+                product_rates.purchase_price,
+                (stocks.current_stock * product_rates.purchase_price) as stock_value
+            ')
+            ->get();
+
+        // Calculate General Admin Expenses
+        $adminExpenses = Voucher::join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+            ->join('payment_sub_types', 'vouchers.payment_sub_type_id', '=', 'payment_sub_types.id')
+            ->whereDate('vouchers.date', '>=', $startDate)
+            ->whereDate('vouchers.date', '<=', $endDate)
+            ->where('vouchers.voucher_type', 'Payment')
+            ->whereIn('payment_sub_types.type', ['payment'])
+            ->selectRaw('
+                payment_sub_types.name as expense_type,
+                SUM(transactions.amount) as total_amount
+            ')
+            ->groupBy('payment_sub_types.id', 'payment_sub_types.name')
+            ->get();
+
+        // Calculate Purchase Due
+        $totalPurchases = Purchase::whereDate('purchase_date', '<=', $date)->sum('net_total_amount');
         $totalSupplierPayments = Voucher::join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
             ->join('suppliers', 'vouchers.to_account_id', '=', 'suppliers.account_id')
             ->where('vouchers.voucher_type', 'Payment')
+            ->whereDate('vouchers.date', '<=', $date)
             ->sum('transactions.amount');
-        $purchaseDue = $totalPurchases - $totalSupplierPayments;
-        $purchaseDue = $purchaseDue > 0 ? $purchaseDue : 0;
+        $purchaseDue = max(0, $totalPurchases - $totalSupplierPayments);
 
-        // Calculate Customer Advance (total customer payments - total credit sales)
-        $totalCreditSales = CreditSale::sum('total_amount');
+        // Calculate Customer Advance
+        $totalCreditSales = CreditSale::whereDate('sale_date', '<=', $date)->sum('total_amount');
         $totalCustomerPayments = Voucher::join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
             ->join('customers', 'vouchers.from_account_id', '=', 'customers.account_id')
             ->where('vouchers.voucher_type', 'Receipt')
+            ->whereDate('vouchers.date', '<=', $date)
             ->sum('transactions.amount');
-        $customerAdvance = $totalCustomerPayments - $totalCreditSales;
-        $customerAdvance = $customerAdvance > 0 ? $customerAdvance : 0;
-
-        // Calculate Customer Security
-        $customerSecurity = Customer::sum('security_deposit');
-
-        // Calculate Bank Loan (total loan received - total loan payments)
-        $bankLoanAccounts = Account::where('group_code', '400010002')->pluck('id');
-        $totalLoanReceived = Voucher::whereIn('to_account_id', $bankLoanAccounts)
-            ->where('voucher_type', 'Receipt')
-            ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
-            ->sum('transactions.amount');
-        $totalLoanReceived += Voucher::whereIn('from_account_id', $bankLoanAccounts)
-            ->where('voucher_type', 'Receipt')
-            ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
-            ->sum('transactions.amount');
-        $totalLoanPayments = Voucher::whereIn('from_account_id', $bankLoanAccounts)
-            ->where('voucher_type', 'Payment')
-            ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
-            ->sum('transactions.amount');
-        $totalLoanPayments += Voucher::whereIn('to_account_id', $bankLoanAccounts)
-            ->where('voucher_type', 'Payment')
-            ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
-            ->sum('transactions.amount');
-        $bankLoan = $totalLoanReceived - $totalLoanPayments;
-        $bankLoan = $bankLoan > 0 ? $bankLoan : 0;
-
-        $liabilities = collect([
-            [
-                'name' => 'Purchase Due',
-                'group_name' => 'Accounts Payable',
-                'balance' => $purchaseDue,
-                'type' => 'Liability'
-            ],
-            [
-                'name' => 'Customer Advance',
-                'group_name' => 'Current Liabilities',
-                'balance' => $customerAdvance,
-                'type' => 'Liability'
-            ],
-            [
-                'name' => 'Customer Security',
-                'group_name' => 'Current Liabilities',
-                'balance' => $customerSecurity,
-                'type' => 'Liability'
-            ],
-            [
-                'name' => 'Bank Loan',
-                'group_name' => 'Long Term Liabilities',
-                'balance' => $bankLoan,
-                'type' => 'Liability'
-            ]
-        ]);
-
-        // Calculate In Stock Product (current_stock * purchase_price)
-        $inStockValue = \App\Models\Stock::join('product_rates', 'stocks.product_id', '=', 'product_rates.product_id')
-            ->where('product_rates.status', true)
-            ->selectRaw('SUM(stocks.current_stock * product_rates.purchase_price) as total_value')
-            ->value('total_value') ?? 0;
-
-        // Calculate Customer Due (total credit sales - total customer payments)
-        $customerDue = $totalCreditSales - $totalCustomerPayments;
-        $customerDue = $customerDue > 0 ? $customerDue : 0;
-
-        // Calculate Bank Deposit from office_payments with bank and mobile bank types
-        $bankDeposit = \App\Models\OfficePayment::join('transactions', 'office_payments.transaction_id', '=', 'transactions.id')
-            ->where('office_payments.type', 'bank')
-            ->orWhereIn('transactions.payment_type', ['bank', 'mobile bank'])
-            ->sum('transactions.amount');
-
-        // Calculate Office Cash from office_payments with cash type only
-        $officeCash = \App\Models\OfficePayment::join('transactions', 'office_payments.transaction_id', '=', 'transactions.id')
-            ->where('office_payments.type', 'cash')
-            ->sum('transactions.amount');
-
-        $assets = collect([
-            [
-                'name' => 'In Stock Product',
-                'group_name' => 'Current Assets',
-                'balance' => $inStockValue,
-                'type' => 'Asset'
-            ],
-            [
-                'name' => 'Customer Due',
-                'group_name' => 'Account Receivable',
-                'balance' => $customerDue,
-                'type' => 'Asset'
-            ],
-            [
-                'name' => 'Bank Deposit',
-                'group_name' => 'Current Assets',
-                'balance' => $bankDeposit,
-                'type' => 'Asset'
-            ],
-            [
-                'name' => 'Office Cash',
-                'group_name' => 'Current Assets',
-                'balance' => $officeCash,
-                'type' => 'Asset'
-            ]
-        ]);
-
-        return Inertia::render('BalanceSheet/Index', [
-            'liabilities' => $liabilities,
-            'assets' => $assets,
-            'totalLiabilities' => $liabilities->sum('balance'),
-            'totalAssets' => $assets->sum('balance')
-        ]);
-    }
-
-    public function downloadPdf(Request $request)
-    {
-        // Calculate liability amounts from voucher transactions
-        $totalPurchases = Purchase::sum('net_total_amount');
-        $totalSupplierPayments = Voucher::join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
-            ->join('suppliers', 'vouchers.to_account_id', '=', 'suppliers.account_id')
-            ->where('vouchers.voucher_type', 'Payment')
-            ->sum('transactions.amount');
-        $purchaseDue = $totalPurchases - $totalSupplierPayments;
-        $purchaseDue = $purchaseDue > 0 ? $purchaseDue : 0;
+        $customerAdvance = max(0, $totalCustomerPayments - $totalCreditSales);
 
         // Calculate Customer Security
         $customerSecurity = Customer::sum('security_deposit');
@@ -160,93 +123,164 @@ class BalanceSheetController extends Controller
         $bankLoanAccounts = Account::where('group_code', '400010002')->pluck('id');
         $totalLoanReceived = Voucher::whereIn('to_account_id', $bankLoanAccounts)
             ->where('voucher_type', 'Receipt')
+            ->whereDate('date', '<=', $date)
             ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
             ->sum('transactions.amount');
         $totalLoanReceived += Voucher::whereIn('from_account_id', $bankLoanAccounts)
             ->where('voucher_type', 'Receipt')
+            ->whereDate('date', '<=', $date)
             ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
             ->sum('transactions.amount');
         $totalLoanPayments = Voucher::whereIn('from_account_id', $bankLoanAccounts)
             ->where('voucher_type', 'Payment')
+            ->whereDate('date', '<=', $date)
             ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
             ->sum('transactions.amount');
         $totalLoanPayments += Voucher::whereIn('to_account_id', $bankLoanAccounts)
             ->where('voucher_type', 'Payment')
+            ->whereDate('date', '<=', $date)
             ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
             ->sum('transactions.amount');
-        $bankLoan = $totalLoanReceived - $totalLoanPayments;
-        $bankLoan = $bankLoan > 0 ? $bankLoan : 0;
+        $bankLoan = max(0, $totalLoanReceived - $totalLoanPayments);
 
-        $liabilities = collect([
-            [
-                'name' => 'Purchase Due',
-                'group_name' => 'Accounts Payable',
-                'balance' => $purchaseDue
-            ],
-            [
-                'name' => 'Customer Security',
-                'group_name' => 'Current Liabilities',
-                'balance' => $customerSecurity
-            ],
-            [
-                'name' => 'Bank Loan',
-                'group_name' => 'Long Term Liabilities',
-                'balance' => $bankLoan
-            ]
-        ]);
+        // Calculate Office Cash
+        $officeCash = OfficePayment::join('transactions', 'office_payments.transaction_id', '=', 'transactions.id')
+            ->where('office_payments.type', 'cash')
+            ->whereDate('office_payments.date', '<=', $date)
+            ->sum('transactions.amount');
 
-        // Get asset data
-        $inStockValue = \App\Models\Stock::join('product_rates', 'stocks.product_id', '=', 'product_rates.product_id')
+        // Calculate Bank Deposit
+        $bankDeposit = OfficePayment::join('transactions', 'office_payments.transaction_id', '=', 'transactions.id')
+            ->where('office_payments.type', 'bank')
+            ->orWhereIn('transactions.payment_type', ['bank', 'mobile bank'])
+            ->whereDate('office_payments.date', '<=', $date)
+            ->sum('transactions.amount');
+
+        // Calculate Customer Due
+        $customerDue = max(0, $totalCreditSales - $totalCustomerPayments);
+
+        // Calculate Stock Value
+        $stockValue = Stock::join('product_rates', 'stocks.product_id', '=', 'product_rates.product_id')
             ->where('product_rates.status', true)
             ->selectRaw('SUM(stocks.current_stock * product_rates.purchase_price) as total_value')
             ->value('total_value') ?? 0;
 
-        $totalCreditSales = \App\Models\CreditSale::sum('total_amount');
+        // Calculate Profit
+        $totalSalesAmount = $salesData->sum('total_amount') + $creditSalesData->sum('total_amount');
+        $totalPurchaseAmount = $purchaseData->sum('total_amount');
+        $grossProfit = $totalSalesAmount - $totalPurchaseAmount;
+        $totalAdminExpenses = $adminExpenses->sum('total_amount');
+        $netProfit = $grossProfit - $totalAdminExpenses;
+
+        $data = [
+            'purchase_data' => $purchaseData,
+            'sales_data' => $salesData,
+            'credit_sales_data' => $creditSalesData,
+            'stock_data' => $stockData,
+            'admin_expenses' => $adminExpenses,
+            'totals' => [
+                'total_purchases' => $totalPurchaseAmount,
+                'total_sales' => $totalSalesAmount,
+                'total_stock_value' => $stockData->sum('stock_value'),
+                'total_admin_expenses' => $totalAdminExpenses,
+                'gross_profit' => $grossProfit,
+                'net_profit' => $netProfit,
+            ],
+        ];
+
+        return inertia('BalanceSheet/Index', [
+            'data' => $data,
+            'filters' => [
+                'date' => $date,
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+            ],
+        ]);
+    }
+
+    public function downloadPdf(Request $request)
+    {
+        $date = $request->get('date', now()->format('Y-m-d'));
+        
+        // Same calculation logic as index method with date filter
+        $totalPurchases = Purchase::whereDate('purchase_date', '<=', $date)->sum('net_total_amount');
+        $totalSupplierPayments = Voucher::join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+            ->join('suppliers', 'vouchers.to_account_id', '=', 'suppliers.account_id')
+            ->where('vouchers.voucher_type', 'Payment')
+            ->whereDate('vouchers.date', '<=', $date)
+            ->sum('transactions.amount');
+        $purchaseDue = max(0, $totalPurchases - $totalSupplierPayments);
+
+        $totalCreditSales = CreditSale::whereDate('sale_date', '<=', $date)->sum('total_amount');
         $totalCustomerPayments = Voucher::join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
             ->join('customers', 'vouchers.from_account_id', '=', 'customers.account_id')
             ->where('vouchers.voucher_type', 'Receipt')
+            ->whereDate('vouchers.date', '<=', $date)
             ->sum('transactions.amount');
-        $customerDue = $totalCreditSales - $totalCustomerPayments;
-        $customerDue = $customerDue > 0 ? $customerDue : 0;
+        $customerAdvance = max(0, $totalCustomerPayments - $totalCreditSales);
+        $customerSecurity = Customer::sum('security_deposit');
 
-        $bankDeposit = \App\Models\OfficePayment::join('transactions', 'office_payments.transaction_id', '=', 'transactions.id')
+        $bankLoanAccounts = Account::where('group_code', '400010002')->pluck('id');
+        $totalLoanReceived = Voucher::whereIn('to_account_id', $bankLoanAccounts)
+            ->where('voucher_type', 'Receipt')
+            ->whereDate('date', '<=', $date)
+            ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+            ->sum('transactions.amount');
+        $totalLoanReceived += Voucher::whereIn('from_account_id', $bankLoanAccounts)
+            ->where('voucher_type', 'Receipt')
+            ->whereDate('date', '<=', $date)
+            ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+            ->sum('transactions.amount');
+        $totalLoanPayments = Voucher::whereIn('from_account_id', $bankLoanAccounts)
+            ->where('voucher_type', 'Payment')
+            ->whereDate('date', '<=', $date)
+            ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+            ->sum('transactions.amount');
+        $totalLoanPayments += Voucher::whereIn('to_account_id', $bankLoanAccounts)
+            ->where('voucher_type', 'Payment')
+            ->whereDate('date', '<=', $date)
+            ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+            ->sum('transactions.amount');
+        $bankLoan = max(0, $totalLoanReceived - $totalLoanPayments);
+
+        $officeCash = OfficePayment::join('transactions', 'office_payments.transaction_id', '=', 'transactions.id')
+            ->where('office_payments.type', 'cash')
+            ->whereDate('office_payments.date', '<=', $date)
+            ->sum('transactions.amount');
+
+        $bankDeposit = OfficePayment::join('transactions', 'office_payments.transaction_id', '=', 'transactions.id')
             ->where('office_payments.type', 'bank')
             ->orWhereIn('transactions.payment_type', ['bank', 'mobile bank'])
+            ->whereDate('office_payments.date', '<=', $date)
             ->sum('transactions.amount');
 
-        // Calculate Office Cash for PDF from office_payments with cash type only
-        $officeCash = \App\Models\OfficePayment::join('transactions', 'office_payments.transaction_id', '=', 'transactions.id')
-            ->where('office_payments.type', 'cash')
-            ->sum('transactions.amount');
+        $customerDue = max(0, $totalCreditSales - $totalCustomerPayments);
+        $stockValue = Stock::join('product_rates', 'stocks.product_id', '=', 'product_rates.product_id')
+            ->where('product_rates.status', true)
+            ->selectRaw('SUM(stocks.current_stock * product_rates.purchase_price) as total_value')
+            ->value('total_value') ?? 0;
 
-        $assets = collect([
-            [
-                'name' => 'In Stock Product',
-                'group_name' => 'Current Assets',
-                'balance' => $inStockValue
+        $data = [
+            'assets' => [
+                'office_cash' => $officeCash,
+                'bank_deposit' => $bankDeposit,
+                'customer_due' => $customerDue,
+                'stock_value' => $stockValue,
+                'total_assets' => $officeCash + $bankDeposit + $customerDue + $stockValue,
             ],
-            [
-                'name' => 'Customer Due',
-                'group_name' => 'Account Receivable',
-                'balance' => $customerDue
+            'liabilities' => [
+                'purchase_due' => $purchaseDue,
+                'customer_advance' => $customerAdvance,
+                'customer_security' => $customerSecurity,
+                'bank_loan' => $bankLoan,
+                'total_liabilities' => $purchaseDue + $customerAdvance + $customerSecurity + $bankLoan,
             ],
-            [
-                'name' => 'Bank Deposit',
-                'group_name' => 'Current Assets',
-                'balance' => $bankDeposit
-            ],
-            [
-                'name' => 'Office Cash',
-                'group_name' => 'Current Assets',
-                'balance' => $officeCash
-            ]
-        ]);
+        ];
 
-        $companySetting = CompanySetting::first();
-        $totalLiabilities = $liabilities->sum('balance');
-        $totalAssets = $assets->sum('balance');
+        $data['net_worth'] = $data['assets']['total_assets'] - $data['liabilities']['total_liabilities'];
+        $data['date'] = $date;
 
-        $pdf = Pdf::loadView('pdf.balance-sheet', compact('liabilities', 'assets', 'totalLiabilities', 'totalAssets', 'companySetting'));
-        return $pdf->stream('balance-sheet.pdf');
+        $pdf = PDF::loadView('pdf.balance-sheet', compact('data'));
+        return $pdf->download('balance-sheet-' . $date . '.pdf');
     }
 }

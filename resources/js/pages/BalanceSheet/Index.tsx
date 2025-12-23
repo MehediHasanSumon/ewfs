@@ -1,216 +1,337 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link } from '@inertiajs/react';
-import { Download, FileText } from 'lucide-react';
+import { Head, router } from '@inertiajs/react';
+import { FileText, Filter, X } from 'lucide-react';
+import { useState } from 'react';
+
+interface BalanceSheetData {
+    assets: {
+        office_cash: number;
+        bank_deposit: number;
+        customer_due: number;
+        stock_value: number;
+        total_assets: number;
+    };
+    liabilities: {
+        purchase_due: number;
+        customer_advance: number;
+        customer_security: number;
+        bank_loan: number;
+        total_liabilities: number;
+    };
+    net_worth: number;
+    purchase_data: Array<{
+        product_name: string;
+        avg_price: number;
+        total_quantity: number;
+        total_amount: number;
+    }>;
+    sales_data: Array<{
+        product_name: string;
+        purchase_price: number;
+        sale_price: number;
+        total_quantity: number;
+        total_amount: number;
+    }>;
+    credit_sales_data: Array<{
+        product_name: string;
+        purchase_price: number;
+        sale_price: number;
+        total_quantity: number;
+        total_amount: number;
+    }>;
+    stock_data: Array<{
+        product_name: string;
+        quantity: number;
+        purchase_price: number;
+        stock_value: number;
+    }>;
+    admin_expenses: Array<{
+        expense_type: string;
+        total_amount: number;
+    }>;
+    totals: {
+        total_purchases: number;
+        total_sales: number;
+        total_stock_value: number;
+        total_admin_expenses: number;
+        gross_profit: number;
+        net_profit: number;
+    };
+}
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Dashboard', href: dashboard().url },
-    { title: 'Accounts', href: '#' },
     { title: 'Balance Sheet', href: '/balance-sheet' },
 ];
 
-interface BalanceSheetItem {
-    name: string;
-    group_name: string;
-    balance: number;
-    type: 'Asset' | 'Liability';
-}
-
 interface BalanceSheetProps {
-    liabilities: BalanceSheetItem[];
-    assets: BalanceSheetItem[];
-    totalLiabilities: number;
-    totalAssets: number;
+    data: BalanceSheetData;
+    filters: {
+        date?: string;
+        start_date?: string;
+        end_date?: string;
+    };
 }
 
-export default function BalanceSheet({
-    liabilities = [],
-    assets = [],
-    totalLiabilities = 0,
-    totalAssets = 0,
-}: BalanceSheetProps) {
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('en-US', {
-            style: 'decimal',
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-        }).format(amount);
+export default function BalanceSheet({ data, filters = {} }: BalanceSheetProps) {
+    const [date, setDate] = useState(filters.date || new Date().toISOString().split('T')[0]);
+    const [startDate, setStartDate] = useState(filters.start_date || new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0]);
+    const [endDate, setEndDate] = useState(filters.end_date || new Date(Date.now() + 24*60*60*1000).toISOString().split('T')[0]);
+
+    const applyFilters = () => {
+        const params: any = {
+            start_date: startDate,
+            end_date: endDate,
+        };
+        router.get('/balance-sheet', params, { preserveState: true });
     };
 
-    const groupedLiabilities = liabilities.reduce((acc, item) => {
-        if (!acc[item.group_name]) {
-            acc[item.group_name] = [];
-        }
-        acc[item.group_name].push(item);
-        return acc;
-    }, {} as Record<string, BalanceSheetItem[]>);
-
-    const groupedAssets = assets.reduce((acc, item) => {
-        if (!acc[item.group_name]) {
-            acc[item.group_name] = [];
-        }
-        acc[item.group_name].push(item);
-        return acc;
-    }, {} as Record<string, BalanceSheetItem[]>);
+    const clearFilters = () => {
+        const today = new Date().toISOString().split('T')[0];
+        setStartDate(today);
+        setEndDate(today);
+    };
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Balance Sheet" />
-            <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-                <div className="mb-8 flex items-center justify-between">
+
+            <div className="space-y-6 p-6">
+                <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                            Balance Sheet
-                        </h1>
-                        <p className="mt-2 text-gray-600 dark:text-gray-400">
-                            View company's financial position with assets and liabilities
-                        </p>
+                        <h1 className="text-3xl font-bold dark:text-white">Balance Sheet & Financial Notes</h1>
+                        <p className="text-gray-600 dark:text-gray-400">View company's financial position with detailed notes</p>
                     </div>
-                    <div className="flex gap-3">
-                        <Link
-                            href="/balance-sheet/download-pdf"
-                            className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-                        >
-                            <Download className="h-4 w-4" />
-                            Download PDF
-                        </Link>
-                    </div>
+                    <Button
+                        variant="success"
+                        onClick={() => {
+                            const params = new URLSearchParams();
+                            params.append('start_date', startDate);
+                            params.append('end_date', endDate);
+                            window.location.href = `/balance-sheet/download-pdf?${params.toString()}`;
+                        }}
+                    >
+                        <FileText className="mr-2 h-4 w-4" />Download
+                    </Button>
                 </div>
 
-                <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-                    {/* Liabilities Section */}
-                    <Card className="border border-gray-200 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-                        <CardHeader className="border-b border-gray-200 bg-red-50 dark:border-gray-700 dark:bg-red-900/20">
-                            <CardTitle className="flex items-center gap-2 text-red-700 dark:text-red-300">
-                                <FileText className="h-5 w-5" />
-                                Liabilities
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-6">
-                            <div className="space-y-6">
-                                {Object.entries(groupedLiabilities).map(([groupName, items]) => (
-                                    <div key={groupName}>
-                                        <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                            {groupName}
-                                        </h3>
-                                        <div className="space-y-2">
-                                            {items.map((item, index) => (
-                                                <div
-                                                    key={index}
-                                                    className="flex justify-between items-center py-2 px-3 rounded-lg bg-gray-50 dark:bg-gray-700"
-                                                >
-                                                    <span className="text-sm text-gray-700 dark:text-gray-300">
-                                                        {item.name}
-                                                    </span>
-                                                    <span className="text-sm font-medium text-red-600 dark:text-red-400">
-                                                        ৳{formatCurrency(item.balance)}
-                                                    </span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                ))}
-                                <div className="border-t border-gray-200 pt-4 dark:border-gray-600">
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-lg font-bold text-gray-900 dark:text-white">
-                                            Total Liabilities
-                                        </span>
-                                        <span className="text-lg font-bold text-red-600 dark:text-red-400">
-                                            ৳{formatCurrency(totalLiabilities)}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    {/* Assets Section */}
-                    <Card className="border border-gray-200 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-                        <CardHeader className="border-b border-gray-200 bg-green-50 dark:border-gray-700 dark:bg-green-900/20">
-                            <CardTitle className="flex items-center gap-2 text-green-700 dark:text-green-300">
-                                <FileText className="h-5 w-5" />
-                                Assets
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-6">
-                            <div className="space-y-6">
-                                {Object.entries(groupedAssets).map(([groupName, items]) => (
-                                    <div key={groupName}>
-                                        <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                            {groupName}
-                                        </h3>
-                                        <div className="space-y-2">
-                                            {items.map((item, index) => (
-                                                <div
-                                                    key={index}
-                                                    className="flex justify-between items-center py-2 px-3 rounded-lg bg-gray-50 dark:bg-gray-700"
-                                                >
-                                                    <span className="text-sm text-gray-700 dark:text-gray-300">
-                                                        {item.name}
-                                                    </span>
-                                                    <span className="text-sm font-medium text-green-600 dark:text-green-400">
-                                                        ৳{formatCurrency(item.balance)}
-                                                    </span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                ))}
-                                <div className="border-t border-gray-200 pt-4 dark:border-gray-600">
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-lg font-bold text-gray-900 dark:text-white">
-                                            Total Assets
-                                        </span>
-                                        <span className="text-lg font-bold text-green-600 dark:text-green-400">
-                                            ৳{formatCurrency(totalAssets)}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
-
-                {/* Summary Section */}
-                <Card className="mt-8 border border-gray-200 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-                    <CardHeader className="border-b border-gray-200 bg-blue-50 dark:border-gray-700 dark:bg-blue-900/20">
-                        <CardTitle className="text-blue-700 dark:text-blue-300">
-                            Balance Sheet Summary
+                <Card className="dark:border-gray-700 dark:bg-gray-800">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 dark:text-white">
+                            <Filter className="h-5 w-5" />
+                            Filters
                         </CardTitle>
                     </CardHeader>
-                    <CardContent className="p-6">
-                        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-                            <div className="text-center">
-                                <div className="text-2xl font-bold text-red-600 dark:text-red-400">
-                                    ৳{formatCurrency(totalLiabilities)}
-                                </div>
-                                <div className="text-sm text-gray-600 dark:text-gray-400">
-                                    Total Liabilities
-                                </div>
+                    <CardContent>
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+                            <div>
+                                <Label className="dark:text-gray-200">Start Date</Label>
+                                <Input
+                                    type="date"
+                                    value={startDate}
+                                    onChange={(e) => setStartDate(e.target.value)}
+                                    className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                />
                             </div>
-                            <div className="text-center">
-                                <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                                    ৳{formatCurrency(totalAssets)}
-                                </div>
-                                <div className="text-sm text-gray-600 dark:text-gray-400">
-                                    Total Assets
-                                </div>
+                            <div>
+                                <Label className="dark:text-gray-200">End Date</Label>
+                                <Input
+                                    type="date"
+                                    value={endDate}
+                                    onChange={(e) => setEndDate(e.target.value)}
+                                    className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                />
                             </div>
-                            <div className="text-center">
-                                <div className={`text-2xl font-bold ${
-                                    totalAssets - totalLiabilities >= 0 
-                                        ? 'text-green-600 dark:text-green-400' 
-                                        : 'text-red-600 dark:text-red-400'
-                                }`}>
-                                    ৳{formatCurrency(totalAssets - totalLiabilities)}
-                                </div>
-                                <div className="text-sm text-gray-600 dark:text-gray-400">
-                                    Net Worth
-                                </div>
+                            <div className="flex items-end gap-2 md:col-span-2">
+                                <Button onClick={applyFilters} className="px-4">Apply Filters</Button>
+                                <Button onClick={clearFilters} variant="secondary" className="px-4">
+                                    <X className="mr-2 h-4 w-4" />Clear
+                                </Button>
                             </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* Purchase Details */}
+                <Card className="dark:border-gray-700 dark:bg-gray-800">
+                    <CardHeader>
+                        <CardTitle className="text-[16px] font-bold dark:text-white mb-2">Total Purchase</CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                        <div className="overflow-x-auto">
+                            <table className="w-full">
+                                <thead>
+                                    <tr className="border-b dark:border-gray-700">
+                                        <th className="p-2 text-left text-[13px] font-medium dark:text-gray-300">Product</th>
+                                        <th className="p-2 text-right text-[13px] font-medium dark:text-gray-300">Purchase Price</th>
+                                        <th className="p-2 text-right text-[13px] font-medium dark:text-gray-300">Total Liter</th>
+                                        <th className="p-2 text-right text-[13px] font-medium dark:text-gray-300">Total Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {data.purchase_data.map((item, index) => (
+                                        <tr key={index} className="border-b hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700">
+                                            <td className="p-2 text-[13px] dark:text-white">{item.product_name}</td>
+                                            <td className="p-2 text-right text-[13px] dark:text-gray-300">{parseFloat(item.avg_price).toFixed(2)}</td>
+                                            <td className="p-2 text-right text-[13px] dark:text-gray-300">{item.total_quantity.toLocaleString()}</td>
+                                            <td className="p-2 text-right text-[13px] dark:text-gray-300">{item.total_amount.toLocaleString()}</td>
+                                        </tr>
+                                    ))}
+                                    <tr className="border-b font-bold bg-gray-50 dark:bg-gray-700 dark:border-gray-700">
+                                        <td className="p-2 text-[13px] dark:text-white">Total</td>
+                                        <td className="p-2 text-right text-[13px] dark:text-white">-</td>
+                                        <td className="p-2 text-right text-[13px] dark:text-white">{data.purchase_data.reduce((sum, item) => sum + parseFloat(item.total_quantity), 0).toLocaleString()}</td>
+                                        <td className="p-2 text-right text-[13px] dark:text-white">{data.totals.total_purchases.toLocaleString()}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* Sales Details */}
+                <Card className="dark:border-gray-700 dark:bg-gray-800">
+                    <CardHeader>
+                        <CardTitle className="text-[16px] font-bold dark:text-white mb-2">Total Sales</CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                        <div className="overflow-x-auto">
+                            <table className="w-full">
+                                <thead>
+                                    <tr className="border-b dark:border-gray-700">
+                                        <th className="p-2 text-left text-[13px] font-medium dark:text-gray-300">Product</th>
+                                        <th className="p-2 text-right text-[13px] font-medium dark:text-gray-300">Purchase Price</th>
+                                        <th className="p-2 text-right text-[13px] font-medium dark:text-gray-300">Sale Price</th>
+                                        <th className="p-2 text-right text-[13px] font-medium dark:text-gray-300">Total Liter</th>
+                                        <th className="p-2 text-right text-[13px] font-medium dark:text-gray-300">Total Amount</th>
+                                        <th className="p-2 text-right text-[13px] font-medium dark:text-gray-300">Total Profit</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {[...data.sales_data, ...data.credit_sales_data].map((item, index) => {
+                                        const purchasePrice = parseFloat(item.purchase_price);
+                                        const salePrice = parseFloat(item.sale_price);
+                                        const totalProfit = (salePrice - purchasePrice) * parseFloat(item.total_quantity);
+                                        return (
+                                            <tr key={index} className="border-b hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700">
+                                                <td className="p-2 text-[13px] dark:text-white">{item.product_name}</td>
+                                                <td className="p-2 text-right text-[13px] dark:text-gray-300">{purchasePrice.toFixed(2)}</td>
+                                                <td className="p-2 text-right text-[13px] dark:text-gray-300">{salePrice.toFixed(2)}</td>
+                                                <td className="p-2 text-right text-[13px] dark:text-gray-300">{item.total_quantity.toLocaleString()}</td>
+                                                <td className="p-2 text-right text-[13px] dark:text-gray-300">{item.total_amount.toLocaleString()}</td>
+                                                <td className="p-2 text-right text-[13px] dark:text-gray-300">{totalProfit.toLocaleString()}</td>
+                                            </tr>
+                                        );
+                                    })}
+                                    <tr className="border-b font-bold bg-gray-50 dark:bg-gray-700 dark:border-gray-700">
+                                        <td className="p-2 text-[13px] dark:text-white">Total</td>
+                                        <td className="p-2 text-right text-[13px] dark:text-white">-</td>
+                                        <td className="p-2 text-right text-[13px] dark:text-white">-</td>
+                                        <td className="p-2 text-right text-[13px] dark:text-white">{[...data.sales_data, ...data.credit_sales_data].reduce((sum, item) => sum + parseFloat(item.total_quantity), 0).toLocaleString()}</td>
+                                        <td className="p-2 text-right text-[13px] dark:text-white">{data.totals.total_sales.toLocaleString()}</td>
+                                        <td className="p-2 text-right text-[13px] dark:text-white">{[...data.sales_data, ...data.credit_sales_data].reduce((sum, item) => {
+                                            const purchasePrice = parseFloat(item.purchase_price);
+                                            const salePrice = parseFloat(item.sale_price);
+                                            return sum + ((salePrice - purchasePrice) * parseFloat(item.total_quantity));
+                                        }, 0).toLocaleString()}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div className="p-3 bg-gray-50 dark:bg-gray-800">
+                            <div className="font-bold text-[14px] dark:text-white mb-2">
+                                In Stock: {data.stock_data.reduce((sum, item) => sum + parseFloat(item.quantity || 0), 0).toLocaleString()}
+                            </div>
+                            <div className="font-bold text-[14px] dark:text-white mb-2">
+                                Total Profit: {[...data.sales_data, ...data.credit_sales_data].reduce((sum, item) => {
+                                    const purchasePrice = parseFloat(item.purchase_price);
+                                    const salePrice = parseFloat(item.sale_price);
+                                    return sum + ((salePrice - purchasePrice) * parseFloat(item.total_quantity));
+                                }, 0).toLocaleString()}
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* Profit Summary */}
+                <Card className="dark:border-gray-700 dark:bg-gray-800">
+                    <CardHeader>
+                        <CardTitle className="text-[16px] font-bold dark:text-white mb-2">Profit Summary</CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                        <div className="overflow-x-auto">
+                            <table className="w-full">
+                                <thead>
+                                    <tr className="border-b dark:border-gray-700">
+                                        <th className="p-2 text-left text-[13px] font-medium dark:text-gray-300">Description</th>
+                                        <th className="p-2 text-right text-[13px] font-medium dark:text-gray-300">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr className="border-b hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700">
+                                        <td className="p-2 text-[13px] dark:text-white">Total Sales</td>
+                                        <td className="p-2 text-right text-[13px] dark:text-gray-300">{data.totals.total_sales.toLocaleString()}</td>
+                                    </tr>
+                                    <tr className="border-b hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700">
+                                        <td className="p-2 text-[13px] dark:text-white">Total Purchase</td>
+                                        <td className="p-2 text-right text-[13px] dark:text-gray-300">({data.totals.total_purchases.toLocaleString()})</td>
+                                    </tr>
+                                    <tr className="border-b font-bold bg-gray-50 dark:bg-gray-700 dark:border-gray-700">
+                                        <td className="p-2 text-[13px] dark:text-white">Gross Profit</td>
+                                        <td className="p-2 text-right text-[13px] dark:text-white">{(data.totals.total_sales - data.totals.total_purchases).toLocaleString()}</td>
+                                    </tr>
+                                    <tr className="border-b hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700">
+                                        <td className="p-2 text-[13px] dark:text-white">Total Admin Expenses</td>
+                                        <td className="p-2 text-right text-[13px] dark:text-gray-300">({data.totals.total_admin_expenses.toLocaleString()})</td>
+                                    </tr>
+                                    <tr className="border-b font-bold bg-green-50 dark:bg-green-700 dark:border-gray-700">
+                                        <td className="p-2 text-[13px] dark:text-white">Net Profit</td>
+                                        <td className="p-2 text-right text-[13px] dark:text-white">{((data.totals.total_sales - data.totals.total_purchases) - data.totals.total_admin_expenses).toLocaleString()}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div className="p-3 bg-gray-50 dark:bg-gray-800">
+                            <div className="font-bold text-[14px] dark:text-white">
+                                In Stock: {data.stock_data.reduce((sum, item) => sum + parseFloat(item.quantity || 0), 0).toLocaleString()}
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* Admin Expenses */}
+                <Card className="dark:border-gray-700 dark:bg-gray-800">
+                    <CardHeader>
+                        <CardTitle className="text-[16px] font-bold dark:text-white mb-2">General Admin Expenses</CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                        <div className="overflow-x-auto">
+                            <table className="w-full">
+                                <thead>
+                                    <tr className="border-b dark:border-gray-700">
+                                        <th className="p-2 text-left text-[13px] font-medium dark:text-gray-300">Expense Type</th>
+                                        <th className="p-2 text-right text-[13px] font-medium dark:text-gray-300">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {data.admin_expenses.map((expense, index) => (
+                                        <tr key={index} className="border-b hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700">
+                                            <td className="p-2 text-[13px] dark:text-white">{expense.expense_type}</td>
+                                            <td className="p-2 text-right text-[13px] dark:text-gray-300">{expense.total_amount.toLocaleString()}</td>
+                                        </tr>
+                                    ))}
+                                    <tr className="border-b font-bold bg-gray-50 dark:bg-gray-700 dark:border-gray-700">
+                                        <td className="p-2 text-[13px] dark:text-white">Total Admin Expenses</td>
+                                        <td className="p-2 text-right text-[13px] dark:text-white">{data.totals.total_admin_expenses.toLocaleString()}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </CardContent>
                 </Card>
