@@ -153,6 +153,7 @@ const mainNavItems = [
         children: [
             { title: 'Groups', href: '/groups', icon: Database },
             { title: 'Accounts', href: '/accounts', icon: Database },
+            { title: 'Liability and Assets', href: '/liability-assets', icon: BarChart3 },
             {
                 title: 'General Ledger',
                 href: '/general-ledger',

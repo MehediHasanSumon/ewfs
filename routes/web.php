@@ -354,6 +354,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('loans/{account}', [LoanController::class, 'show'])->name('loans.show');
     Route::get('loans/{account}/statement', [LoanController::class, 'statement'])->name('loans.statement');
     Route::get('loans/{account}/statement-pdf', [LoanController::class, 'downloadStatementPdf'])->name('loans.statement.pdf');
+    Route::get('loans/{account}/loans-pdf', [LoanController::class, 'downloadLoansPdf'])->name('loans.loans.pdf');
+    Route::get('loans/{account}/payments-pdf', [LoanController::class, 'downloadPaymentsPdf'])->name('loans.payments.pdf');
 });
 
 require __DIR__.'/settings.php';

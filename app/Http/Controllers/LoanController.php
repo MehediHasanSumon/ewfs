@@ -316,4 +316,120 @@ class LoanController extends Controller
         
         return $pdf->stream('loan-statement-' . $account->ac_number . '.pdf');
     }
+
+    public function downloadLoansPdf(Account $account)
+    {
+        $companySetting = CompanySetting::first();
+        
+        $totalLoan = Voucher::where('to_account_id', $account->id)
+            ->where('voucher_type', 'Receipt')
+            ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+            ->sum('transactions.amount') ?? 0;
+
+        $totalLoan += Voucher::where('from_account_id', $account->id)
+            ->where('voucher_type', 'Receipt')
+            ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+            ->sum('transactions.amount') ?? 0;
+
+        $totalPayment = Voucher::where('from_account_id', $account->id)
+            ->where('voucher_type', 'Payment')
+            ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+            ->sum('transactions.amount') ?? 0;
+
+        $totalPayment += Voucher::where('to_account_id', $account->id)
+            ->where('voucher_type', 'Payment')
+            ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+            ->sum('transactions.amount') ?? 0;
+
+        $recentLoans = Voucher::where(function($q) use ($account) {
+                $q->where('to_account_id', $account->id)
+                  ->orWhere('from_account_id', $account->id);
+            })
+            ->where('voucher_type', 'Receipt')
+            ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+            ->orderBy('vouchers.date', 'desc')
+            ->select('vouchers.*', 'transactions.amount')
+            ->get()
+            ->map(function($voucher) {
+                return [
+                    'voucher_no' => $voucher->voucher_no,
+                    'date' => $voucher->date,
+                    'amount' => $voucher->amount,
+                    'description' => $voucher->description ?? 'Loan Received'
+                ];
+            });
+
+        $loanAccount = [
+            'name' => $account->name,
+            'ac_number' => $account->ac_number
+        ];
+
+        $currentBalance = $totalLoan - $totalPayment;
+
+        $pdf = Pdf::loadView('pdf.loan-summary', compact('companySetting', 'loanAccount', 'totalLoan', 'currentBalance', 'recentLoans'));
+        
+        return $pdf->stream('loan-summary-' . $account->ac_number . '.pdf');
+    }
+
+    public function downloadPaymentsPdf(Request $request, Account $account)
+    {
+        $companySetting = CompanySetting::first();
+        
+        $totalLoan = Voucher::where('to_account_id', $account->id)
+            ->where('voucher_type', 'Receipt')
+            ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+            ->sum('transactions.amount') ?? 0;
+
+        $totalLoan += Voucher::where('from_account_id', $account->id)
+            ->where('voucher_type', 'Receipt')
+            ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+            ->sum('transactions.amount') ?? 0;
+
+        $totalPayment = Voucher::where('from_account_id', $account->id)
+            ->where('voucher_type', 'Payment')
+            ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+            ->sum('transactions.amount') ?? 0;
+
+        $totalPayment += Voucher::where('to_account_id', $account->id)
+            ->where('voucher_type', 'Payment')
+            ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+            ->sum('transactions.amount') ?? 0;
+
+        $query = Voucher::where(function($q) use ($account) {
+                $q->where('to_account_id', $account->id)
+                  ->orWhere('from_account_id', $account->id);
+            })
+            ->where('voucher_type', 'Payment')
+            ->join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+            ->select('vouchers.*', 'transactions.amount');
+
+        if ($request->start_date) {
+            $query->whereDate('vouchers.date', '>=', $request->start_date);
+        }
+        if ($request->end_date) {
+            $query->whereDate('vouchers.date', '<=', $request->end_date);
+        }
+
+        $recentPayments = $query->orderBy('vouchers.date', 'desc')
+            ->get()
+            ->map(function($voucher) {
+                return [
+                    'voucher_no' => $voucher->voucher_no,
+                    'date' => $voucher->date,
+                    'amount' => $voucher->amount,
+                    'description' => $voucher->description ?? 'Loan Payment'
+                ];
+            });
+
+        $loanAccount = [
+            'name' => $account->name,
+            'ac_number' => $account->ac_number
+        ];
+
+        $currentBalance = $totalLoan - $totalPayment;
+
+        $pdf = Pdf::loadView('pdf.loan-payments', compact('companySetting', 'loanAccount', 'totalPayment', 'currentBalance', 'recentPayments'));
+        
+        return $pdf->stream('loan-payments-' . $account->ac_number . '.pdf');
+    }
 }
