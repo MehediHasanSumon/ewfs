@@ -8,13 +8,18 @@ interface AuthUser {
 }
 
 interface PageProps {
-    auth: {
+    auth?: {
         user: AuthUser | null;
     };
+    [key: string]: unknown;
 }
 
 export default function UserNavbar() {
-    const { auth, url } = usePage<PageProps>();
+    const pageProps = usePage<PageProps>();
+    const { auth, url } = pageProps.props || {};
+    
+    // Fallback if auth is undefined
+    const user = auth?.user || null;
 
     const isActive = (path: string) => {
         return url === path ? 'text-[#4154f1]' : 'text-[#012970] hover:text-[#4154f1]';
@@ -33,7 +38,7 @@ export default function UserNavbar() {
                         <li><Link href="/about" className={`px-3 py-4 ${isActive('/about')} font-medium font-poppins text-sm transition-colors`}>About</Link></li>
                         <li><Link href="/services" className={`px-3 py-4 ${isActive('/services')} font-medium font-poppins text-sm transition-colors`}>Services</Link></li>
                         <li><Link href="/contact" className={`px-3 py-4 ${isActive('/contact')} font-medium font-poppins text-sm transition-colors`}>Contact</Link></li>
-                        {auth?.user ? (
+                        {user ? (
                             <>
                                 <li><Link href="/dashboard" className={`px-3 py-4 ${isActive('/dashboard')} font-medium font-poppins text-sm transition-colors`}>Dashboard</Link></li>
                                 <li><Link href="/logout" method="post" as="button" className="px-3 py-4 text-[#012970] hover:text-[#4154f1] font-medium font-poppins text-sm transition-colors bg-transparent border-none cursor-pointer">Logout</Link></li>
