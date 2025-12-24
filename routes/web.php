@@ -47,10 +47,20 @@ use App\Http\Controllers\LiabilityAssetsController;
 use App\Http\Controllers\BalanceSheetController;
 
 Route::get('/', function () {
-    return Inertia::render('welcome', [
-        'canRegister' => Features::enabled(Features::registration()),
-    ]);
-})->name('home');
+    return Inertia::render('home');
+});
+
+Route::get('/about', function () {
+    return Inertia::render('about');
+});
+
+Route::get('/services', function () {
+    return Inertia::render('services');
+});
+
+Route::get('/contact', function () {
+    return Inertia::render('contact');
+});
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', function () {
