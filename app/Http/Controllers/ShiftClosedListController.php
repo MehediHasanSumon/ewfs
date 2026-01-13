@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\IsShiftClose;
 use App\Models\Shift;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class ShiftClosedListController extends Controller
@@ -48,8 +49,19 @@ class ShiftClosedListController extends Controller
     public function destroy($id)
     {
         $shiftClosed = IsShiftClose::findOrFail($id);
+        
+        DB::table('daily_readings')
+            ->where('shift_id', $shiftClosed->shift_id)
+            ->whereDate('created_at', $shiftClosed->close_date)
+            ->delete();
+            
+        DB::table('dispenser_readings')
+            ->where('shift_id', $shiftClosed->shift_id)
+            ->whereDate('created_at', $shiftClosed->close_date)
+            ->delete();
+        
         $shiftClosed->delete();
-        return redirect()->back()->with('success', 'Shift closed record deleted successfully.');
+        return redirect()->back()->with('success', 'Shift and related data deleted successfully.');
     }
 
     public function bulkDelete(Request $request)
@@ -59,7 +71,21 @@ class ShiftClosedListController extends Controller
             'ids.*' => 'exists:is_shift_closes,id'
         ]);
 
+        $shiftClosedRecords = IsShiftClose::whereIn('id', $request->ids)->get();
+        
+        foreach ($shiftClosedRecords as $record) {
+            DB::table('daily_readings')
+                ->where('shift_id', $record->shift_id)
+                ->whereDate('created_at', $record->close_date)
+                ->delete();
+                
+            DB::table('dispenser_readings')
+                ->where('shift_id', $record->shift_id)
+                ->whereDate('created_at', $record->close_date)
+                ->delete();
+        }
+        
         IsShiftClose::whereIn('id', $request->ids)->delete();
-        return redirect()->back()->with('success', 'Selected records deleted successfully.');
+        return redirect()->back()->with('success', 'Selected records and related data deleted successfully.');
     }
 }
