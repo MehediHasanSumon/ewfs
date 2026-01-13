@@ -135,7 +135,7 @@ export default function Users({ users, roles = [], filters }: UsersProps) {
                 email_verified: user.email_verified,
                 banned: user.banned,
             });
-        } catch (error) {
+        } catch {
             setData({
                 name: user.name,
                 email: user.email,
@@ -502,7 +502,7 @@ export default function Users({ users, roles = [], filters }: UsersProps) {
                                                 type="checkbox"
                                                 checked={
                                                     selectedUsers.length ===
-                                                        users.data.length &&
+                                                    users.data.length &&
                                                     users.data.length > 0
                                                 }
                                                 onChange={toggleSelectAll}
@@ -581,7 +581,7 @@ export default function Users({ users, roles = [], filters }: UsersProps) {
                                                 <td className="p-4">
                                                     <div className="flex flex-wrap gap-1">
                                                         {user.roles.length >
-                                                        0 ? (
+                                                            0 ? (
                                                             user.roles.map(
                                                                 (
                                                                     role,
@@ -605,20 +605,18 @@ export default function Users({ users, roles = [], filters }: UsersProps) {
                                                     </div>
                                                 </td>
                                                 <td className="p-4">
-                                                    <span className={`px-2 py-1 rounded text-xs ${
-                                                        user.email_verified 
-                                                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                                                    <span className={`px-2 py-1 rounded text-xs ${user.email_verified
+                                                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                                                             : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                                                    }`}>
+                                                        }`}>
                                                         {user.email_verified ? 'Verified' : 'Unverified'}
                                                     </span>
                                                 </td>
                                                 <td className="p-4">
-                                                    <span className={`px-2 py-1 rounded text-xs ${
-                                                        user.banned 
-                                                            ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' 
+                                                    <span className={`px-2 py-1 rounded text-xs ${user.banned
+                                                            ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
                                                             : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                                                    }`}>
+                                                        }`}>
                                                         {user.banned ? 'Banned' : 'Active'}
                                                     </span>
                                                 </td>

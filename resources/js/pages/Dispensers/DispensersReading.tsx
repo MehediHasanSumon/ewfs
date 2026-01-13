@@ -4,7 +4,6 @@ import { FormModal } from '@/components/ui/form-modal';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SearchableSelect } from '@/components/ui/searchable-select';
-import { DatalistInput } from '@/components/ui/datalist-input';
 import { Combobox } from '@/components/ui/combobox';
 import {
     Select,
@@ -265,10 +264,10 @@ export default function DispenserReading({
             total_sales: 0,
         }))
     );
-    
 
 
-    const { data, setData, post, processing } = useForm({
+
+    const { data, setData, processing } = useForm({
         transaction_date: '',
         shift_id: '',
         credit_sales: '0',
@@ -305,7 +304,7 @@ export default function DispenserReading({
         field: string,
         value: string,
     ) => {
-        setCreditSalesData((prevData: any) => {
+        setCreditSalesData((prevData) => {
             const newProducts = [...prevData.products];
             newProducts[index] = { ...newProducts[index], [field]: value };
 
@@ -336,9 +335,6 @@ export default function DispenserReading({
                             (p) => p.id.toString() === selectedVehicle.products![0].id.toString(),
                         );
                         if (selectedProduct && selectedProduct.sales_price) {
-                            // Reset quantity if price changes logic is needed, or keep existing.
-                            // For now, let's just ensure price reference is correct for future calcs.
-                            // But we also need to calc amount if quantity exists.
                             const quantity = parseFloat(newProducts[index].quantity) || 0;
                             if (quantity > 0) {
                                 const amount = selectedProduct.sales_price * quantity;
@@ -686,6 +682,72 @@ export default function DispenserReading({
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        
+        // Validation
+        if (!data.transaction_date) {
+            alert('Transaction date is required');
+            return;
+        }
+        if (!data.shift_id) {
+            alert('Shift selection is required');
+            return;
+        }
+        
+        // Check if values are empty strings or invalid
+        const creditSales = parseFloat(data.credit_sales || '0');
+        const bankSales = parseFloat(data.bank_sales || '0');
+        const cashSales = parseFloat(data.cash_sales || '0');
+        const creditSalesOther = parseFloat(data.credit_sales_other || '0');
+        const bankSalesOther = parseFloat(data.bank_sales_other || '0');
+        const cashSalesOther = parseFloat(data.cash_sales_other || '0');
+        const cashReceive = parseFloat(data.cash_receive || '0');
+        const totalCash = parseFloat(data.total_cash || '0');
+        const cashPayment = parseFloat(data.cash_payment || '0');
+        const officePayment = parseFloat(data.office_payment || '0');
+        
+        if (isNaN(creditSales) || creditSales < 0) {
+            alert('Credit sales must be a valid positive number');
+            return;
+        }
+        if (isNaN(bankSales) || bankSales < 0) {
+            alert('Bank sales must be a valid positive number');
+            return;
+        }
+        if (isNaN(cashSales) || cashSales < 0) {
+            alert('Cash sales must be a valid positive number');
+            return;
+        }
+        if (isNaN(creditSalesOther) || creditSalesOther < 0) {
+            alert('Credit sales (other) must be a valid positive number');
+            return;
+        }
+        if (isNaN(bankSalesOther) || bankSalesOther < 0) {
+            alert('Bank sales (other) must be a valid positive number');
+            return;
+        }
+        if (isNaN(cashSalesOther) || cashSalesOther < 0) {
+            alert('Cash sales (other) must be a valid positive number');
+            return;
+        }
+        if (isNaN(cashReceive) || cashReceive < 0) {
+            alert('Cash receive must be a valid positive number');
+            return;
+        }
+        if (isNaN(totalCash) || totalCash < 0) {
+            alert('Total cash must be a valid positive number');
+            return;
+        }
+        if (isNaN(cashPayment) || cashPayment < 0) {
+            alert('Cash payment must be a valid positive number');
+            return;
+        }
+        // Check if all sales values are zero - prevent closing shift with no sales
+        const totalSalesAmount = creditSales + bankSales + cashSales + creditSalesOther + bankSalesOther + cashSalesOther;
+        if (totalSalesAmount === 0) {
+            alert('Cannot close shift with zero sales. Please add sales data first.');
+            return;
+        }
+        
         if (window.confirm('Are you sure you want to close this shift?')) {
             // Prepare other product sales data for backend
             const otherProductSalesData = otherProductsSales
@@ -741,7 +803,7 @@ export default function DispenserReading({
         const creditSalesOther = parseFloat(data.credit_sales_other) || 0;
         const bankSalesOther = parseFloat(data.bank_sales_other) || 0;
         const cashSalesOther = totalOtherProductsSales - creditSalesOther - bankSalesOther;
-        
+
         // Update cash_sales_other and recalculate totals in one go
         const creditSales = parseFloat(data.credit_sales) || 0;
         const bankSales = parseFloat(data.bank_sales) || 0;
@@ -752,7 +814,7 @@ export default function DispenserReading({
         const cashPayment = parseFloat(data.cash_payment) || 0;
         const officePayment = parseFloat(data.office_payment) || 0;
         const finalDueAmount = totalCash - cashPayment - officePayment;
-        
+
         setData(prev => ({
             ...prev,
             cash_sales_other: cashSalesOther.toFixed(2),
@@ -760,11 +822,11 @@ export default function DispenserReading({
             final_due_amount: finalDueAmount.toFixed(2),
         }));
     };
-    
+
     useEffect(() => {
         updateTotals();
     }, []);
-    
+
     useEffect(() => {
         updateOtherProductsCashSales();
     }, [otherProductsSales, data.credit_sales_other, data.bank_sales_other]);
@@ -1475,14 +1537,13 @@ export default function DispenserReading({
                                                 const rate = product?.sales_price ?? productInfo?.product?.sales_price ?? 0;
                                                 const creditSales = productData.credit_sales || 0;
                                                 const totalSale = productData.total_sale || 0;
-                                                
-                                                // Calculate proportional bank sales for this product
+
                                                 const totalAllOilSales = Object.values(productWiseData).reduce((sum, data) => sum + (data.total_sale || 0), 0);
                                                 const bankSalesTotal = parseFloat(data.bank_sales) || 0;
                                                 const proportion = totalAllOilSales > 0 ? totalSale / totalAllOilSales : 0;
                                                 const productBankSales = bankSalesTotal * proportion;
                                                 const cashSales = totalSale - creditSales - productBankSales;
-                                                
+
                                                 return (
                                                     <tr key={productId} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                                                         <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
@@ -1512,23 +1573,22 @@ export default function DispenserReading({
                                                     </tr>
                                                 );
                                             })}
-                                            
+
                                             {/* Other Products */}
-                                            {otherProductsSales.filter(sale => sale.sell_quantity > 0).map((sale, index) => {
+                                            {otherProductsSales.filter(sale => sale.sell_quantity > 0).map((sale) => {
                                                 const product = otherProducts.find(p => p.id === sale.product_id);
                                                 if (!product) return null;
-                                                
+
                                                 const totalSale = sale.total_sales || 0;
                                                 const creditSalesOther = parseFloat(data.credit_sales_other) || 0;
                                                 const bankSalesOther = parseFloat(data.bank_sales_other) || 0;
                                                 const totalOtherSales = otherProductsSales.reduce((sum, s) => sum + (s.total_sales || 0), 0);
-                                                
-                                                // Proportional distribution of credit and bank sales
+
                                                 const proportion = totalOtherSales > 0 ? totalSale / totalOtherSales : 0;
                                                 const productCreditSales = creditSalesOther * proportion;
                                                 const productBankSales = bankSalesOther * proportion;
                                                 const productCashSales = totalSale - productCreditSales - productBankSales;
-                                                
+
                                                 return (
                                                     <tr key={`other-${product.id}`} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                                                         <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
@@ -1857,7 +1917,7 @@ export default function DispenserReading({
                                             ...prev,
                                             products: newProducts,
                                         }));
-                                        
+
                                         const vehicle = vehicles.find(
                                             (v) => v.vehicle_number === value,
                                         );
@@ -2766,8 +2826,8 @@ export default function DispenserReading({
                     </div>
                     <div>
                         <Label htmlFor="payment_sub_type_id" className="dark:text-gray-200">Payment Sub Type</Label>
-                        <Select 
-                            value={cashReceiveData.payment_sub_type_id} 
+                        <Select
+                            value={cashReceiveData.payment_sub_type_id}
                             onValueChange={(value) => setCashReceiveData((prev) => ({ ...prev, payment_sub_type_id: value }))}
                             disabled={!cashReceiveData.voucher_category_id}
                         >
@@ -2775,7 +2835,7 @@ export default function DispenserReading({
                                 <SelectValue placeholder="Choose sub type" />
                             </SelectTrigger>
                             <SelectContent>
-                                {paymentSubTypes.filter(subType => 
+                                {paymentSubTypes.filter(subType =>
                                     subType.voucher_category_id.toString() === cashReceiveData.voucher_category_id
                                 ).map((subType) => (
                                     <SelectItem key={subType.id} value={subType.id.toString()}>
@@ -3259,8 +3319,8 @@ export default function DispenserReading({
                     </div>
                     <div>
                         <Label htmlFor="payment_sub_type_id" className="dark:text-gray-200">Payment Sub Type</Label>
-                        <Select 
-                            value={cashPaymentData.payment_sub_type_id} 
+                        <Select
+                            value={cashPaymentData.payment_sub_type_id}
                             onValueChange={(value) => setCashPaymentData((prev) => ({ ...prev, payment_sub_type_id: value }))}
                             disabled={!cashPaymentData.voucher_category_id}
                         >
@@ -3268,7 +3328,7 @@ export default function DispenserReading({
                                 <SelectValue placeholder="Choose sub type" />
                             </SelectTrigger>
                             <SelectContent>
-                                {paymentSubTypes.filter(subType => 
+                                {paymentSubTypes.filter(subType =>
                                     subType.voucher_category_id.toString() === cashPaymentData.voucher_category_id
                                 ).map((subType) => (
                                     <SelectItem key={subType.id} value={subType.id.toString()}>

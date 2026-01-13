@@ -34,6 +34,7 @@ use App\Http\Controllers\CustomerLedgerSummaryController;
 use App\Http\Controllers\CustomerLedgerDetailsController;
 use App\Http\Controllers\DispenserController;
 use App\Http\Controllers\DispenserReadingController;
+use App\Http\Controllers\ShiftClosedListController;
 use App\Http\Controllers\ProductRateController;
 use App\Http\Controllers\StockController;
 use App\Http\Controllers\PurchaseReportController;
@@ -181,6 +182,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('product/dispensers-reading/shifts/{date}', [DispenserReadingController::class, 'getShiftsByDate']);
     Route::get('product/get-shift-closing-data/{date}/{shift}', [DispenserReadingController::class, 'getShiftClosingData']);
     Route::post('product/dispensers-reading', [DispenserReadingController::class, 'store'])->name('dispensers-reading.store');
+    
+    // Shift Closed List routes
+    Route::get('shift-closed-list', [ShiftClosedListController::class, 'index'])->name('shift-closed-list.index');
+    Route::delete('shift-closed-list/{id}', [ShiftClosedListController::class, 'destroy'])->name('shift-closed-list.destroy');
+    Route::delete('shift-closed-list/bulk/delete', [ShiftClosedListController::class, 'bulkDelete'])->name('shift-closed-list.bulk.delete');
     
     // Group routes
     Route::get('groups', [GroupController::class, 'index'])->name('groups.index');
