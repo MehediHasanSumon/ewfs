@@ -31,21 +31,17 @@ class DispenserReadingController extends Controller
             ->groupBy('dispenser_id')
             ->map(function ($items) {
                 $latest = $items->first();
-                // যদি end_reading 0 হয় (first time), তাহলে original start_reading রাখি
-                // অন্যথায় next shift এর জন্য start_reading = current end_reading
                 if ($latest->end_reading == 0) {
-                    // First time reading - original start_reading রাখি
                     $latest->start_reading = $latest->start_reading;
                 } else {
-                    // Next shift - previous end_reading কে start_reading করি
                     $latest->start_reading = $latest->end_reading;
                 }
                 $latest->meter_test = 0;
                 $latest->product_id = $latest->product_id ?? ($latest->dispenser->product_id ?? null);
                 if ($latest->product) {
-                    $latest->product->sales_price = $latest->product->activeRate->sales_price ?? ($latest->item_rate ?? 0);
+                    $latest->product->sales_price = $latest->product->activeRate->sales_price ?? 0;
                 }
-                $latest->item_rate = $latest->item_rate ?? ($latest->product->activeRate->sales_price ?? 0);
+                $latest->item_rate = $latest->product->activeRate->sales_price ?? 0;
                 return $latest;
             })
             ->values();
@@ -139,7 +135,6 @@ class DispenserReadingController extends Controller
     public function getShiftClosingData($date, $shiftId)
     {
         try {
-            // Oil category (1001) sales
             $creditSales = DB::table('credit_sales')
                 ->where('sale_date', $date)
                 ->where('shift_id', $shiftId)
@@ -154,7 +149,6 @@ class DispenserReadingController extends Controller
                 ->whereIn('transactions.payment_type', ['bank', 'mobile bank'])
                 ->sum('sales.total_amount');
 
-            // Other products (not 1001) sales
             $creditSalesOther = DB::table('credit_sales')
                 ->where('sale_date', $date)
                 ->where('shift_id', $shiftId)
@@ -260,7 +254,6 @@ class DispenserReadingController extends Controller
                 ]);
             }
 
-            // Store other product sales
             if ($request->has('other_product_sales') && is_array($request->other_product_sales)) {
                 foreach ($request->other_product_sales as $sale) {
                     if (isset($sale['quantity']) && $sale['quantity'] > 0) {
@@ -275,7 +268,6 @@ class DispenserReadingController extends Controller
                             'remarks' => $sale['remarks'] ?? null,
                         ]);
 
-                        // Update stock
                         $stock = Stock::where('product_id', $sale['product_id'])->first();
                         if ($stock) {
                             $stock->decrement('current_stock', $sale['quantity']);

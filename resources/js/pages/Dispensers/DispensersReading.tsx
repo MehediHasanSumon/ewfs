@@ -1409,6 +1409,19 @@ export default function DispenserReading({
                                                 );
                                             })}
                                         </tbody>
+                                        <tfoot>
+                                            <tr className="bg-gray-50 font-semibold dark:bg-gray-700">
+                                                <td
+                                                    colSpan={9}
+                                                    className="border border-gray-200 px-3 py-2 text-right text-sm text-gray-900 dark:border-gray-600 dark:text-white"
+                                                >
+                                                    Total Sales:
+                                                </td>
+                                                <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
+                                                    {otherProductsSales.reduce((sum, sale) => sum + (sale.total_sales || 0), 0).toFixed(2)}
+                                                </td>
+                                            </tr>
+                                        </tfoot>
                                     </table>
                                 </div>
                             </div>
@@ -1546,6 +1559,33 @@ export default function DispenserReading({
                                                 );
                                             })}
                                         </tbody>
+                                        <tfoot>
+                                            <tr className="bg-gray-50 font-semibold dark:bg-gray-700">
+                                                <td
+                                                    colSpan={4}
+                                                    className="border border-gray-200 px-3 py-2 text-right text-sm text-gray-900 dark:border-gray-600 dark:text-white"
+                                                >
+                                                    Total:
+                                                </td>
+                                                <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
+                                                    {[
+                                                        ...Object.entries(productWiseData).filter(([productId, productData]) => {
+                                                            return productData.total_sale > 0 || productData.net_reading > 0;
+                                                        }).map(([productId, productData]) => productData.total_sale || 0),
+                                                        ...otherProductsSales.filter(sale => sale.sell_quantity > 0).map(sale => sale.total_sales || 0)
+                                                    ].reduce((sum, sale) => sum + sale, 0).toFixed(2)}
+                                                </td>
+                                                <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
+                                                    {(parseFloat(data.credit_sales) + parseFloat(data.credit_sales_other)).toFixed(2)}
+                                                </td>
+                                                <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
+                                                    {(parseFloat(data.bank_sales) + parseFloat(data.bank_sales_other)).toFixed(2)}
+                                                </td>
+                                                <td className="border border-gray-200 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:text-white">
+                                                    {(parseFloat(data.cash_sales) + parseFloat(data.cash_sales_other)).toFixed(2)}
+                                                </td>
+                                            </tr>
+                                        </tfoot>
                                     </table>
                                 </div>
                             </div>
