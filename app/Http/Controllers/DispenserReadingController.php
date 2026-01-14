@@ -12,6 +12,7 @@ use App\Models\Customer;
 use App\Models\IsShiftClose;
 use App\Models\DailyReading;
 use App\Models\OtherProductSale;
+use App\Models\DailyOtherProductSale;
 use App\Models\Stock;
 use App\Models\VoucherCategory;
 use App\Models\PaymentSubType;
@@ -259,15 +260,17 @@ class DispenserReadingController extends Controller
             if ($request->has('other_product_sales') && is_array($request->other_product_sales)) {
                 foreach ($request->other_product_sales as $sale) {
                     if (isset($sale['quantity']) && $sale['quantity'] > 0) {
-                        OtherProductSale::create([
-                            'sale_date' => $request->transaction_date,
+                        $product = Product::with('unit')->find($sale['product_id']);
+                        
+                        DailyOtherProductSale::create([
+                            'date' => $request->transaction_date,
                             'shift_id' => $request->shift_id,
-                            'employee_id' => $sale['employee_id'],
                             'product_id' => $sale['product_id'],
-                            'quantity' => $sale['quantity'],
-                            'unit_price' => $sale['unit_price'],
-                            'total_amount' => $sale['quantity'] * $sale['unit_price'],
-                            'remarks' => $sale['remarks'] ?? null,
+                            'unit_id' => $product->unit_id,
+                            'item_rate' => $sale['unit_price'],
+                            'sell_quantity' => $sale['quantity'],
+                            'employee_id' => $sale['employee_id'],
+                            'total_sales' => $sale['quantity'] * $sale['unit_price'],
                         ]);
 
                         $stock = Stock::where('product_id', $sale['product_id'])->first();

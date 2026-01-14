@@ -55,4 +55,9 @@ class Product extends Model
     {
         return $this->hasOne(ProductRate::class)->where('status', true)->latest('effective_date');
     }
+
+    public function dailyOtherProductSales()
+    {
+        return $this->hasMany(DailyOtherProductSale::class);
+    }
 }

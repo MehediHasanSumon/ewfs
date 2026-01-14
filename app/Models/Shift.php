@@ -16,4 +16,9 @@ class Shift extends Model
     {
         return $this->hasMany(Sale::class);
     }
+
+    public function dailyOtherProductSales()
+    {
+        return $this->hasMany(DailyOtherProductSale::class);
+    }
 }

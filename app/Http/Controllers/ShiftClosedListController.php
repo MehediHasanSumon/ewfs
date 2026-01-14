@@ -59,6 +59,11 @@ class ShiftClosedListController extends Controller
             ->where('shift_id', $shiftClosed->shift_id)
             ->whereDate('created_at', $shiftClosed->close_date)
             ->delete();
+            
+        DB::table('daily_other_product_sales')
+            ->where('shift_id', $shiftClosed->shift_id)
+            ->whereDate('date', $shiftClosed->close_date)
+            ->delete();
         
         $shiftClosed->delete();
         return redirect()->back()->with('success', 'Shift and related data deleted successfully.');
@@ -82,6 +87,11 @@ class ShiftClosedListController extends Controller
             DB::table('dispenser_readings')
                 ->where('shift_id', $record->shift_id)
                 ->whereDate('created_at', $record->close_date)
+                ->delete();
+                
+            DB::table('daily_other_product_sales')
+                ->where('shift_id', $record->shift_id)
+                ->whereDate('date', $record->close_date)
                 ->delete();
         }
         
