@@ -185,6 +185,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     
     // Shift Closed List routes
     Route::get('shift-closed-list', [ShiftClosedListController::class, 'index'])->name('shift-closed-list.index');
+    Route::get('shift-closed-list/{id}', [ShiftClosedListController::class, 'show'])->name('shift-closed-list.show');
     Route::delete('shift-closed-list/{id}', [ShiftClosedListController::class, 'destroy'])->name('shift-closed-list.destroy');
     Route::delete('shift-closed-list/bulk/delete', [ShiftClosedListController::class, 'bulkDelete'])->name('shift-closed-list.bulk.delete');
     

@@ -5,13 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import { Combobox } from '@/components/ui/combobox';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, } from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
@@ -264,9 +259,10 @@ export default function DispenserReading({
             total_sales: 0,
         }))
     );
-
-
-
+    const [isValidationModalOpen, setIsValidationModalOpen] = useState(false);
+    const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+    const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+    const [validationError, setValidationError] = useState('');
     const { data, setData, processing } = useForm({
         transaction_date: '',
         shift_id: '',
@@ -682,18 +678,18 @@ export default function DispenserReading({
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        
-        // Validation
+
         if (!data.transaction_date) {
-            alert('Transaction date is required');
+            setValidationError('Transaction date is required');
+            setIsValidationModalOpen(true);
             return;
         }
         if (!data.shift_id) {
-            alert('Shift selection is required');
+            setValidationError('Shift selection is required');
+            setIsValidationModalOpen(true);
             return;
         }
-        
-        // Check if values are empty strings or invalid
+
         const creditSales = parseFloat(data.credit_sales || '0');
         const bankSales = parseFloat(data.bank_sales || '0');
         const cashSales = parseFloat(data.cash_sales || '0');
@@ -703,78 +699,89 @@ export default function DispenserReading({
         const cashReceive = parseFloat(data.cash_receive || '0');
         const totalCash = parseFloat(data.total_cash || '0');
         const cashPayment = parseFloat(data.cash_payment || '0');
-        const officePayment = parseFloat(data.office_payment || '0');
-        
+
         if (isNaN(creditSales) || creditSales < 0) {
-            alert('Credit sales must be a valid positive number');
+            setValidationError('Credit sales must be a valid positive number');
+            setIsValidationModalOpen(true);
             return;
         }
         if (isNaN(bankSales) || bankSales < 0) {
-            alert('Bank sales must be a valid positive number');
+            setValidationError('Bank sales must be a valid positive number');
+            setIsValidationModalOpen(true);
             return;
         }
         if (isNaN(cashSales) || cashSales < 0) {
-            alert('Cash sales must be a valid positive number');
+            setValidationError('Cash sales must be a valid positive number');
+            setIsValidationModalOpen(true);
             return;
         }
         if (isNaN(creditSalesOther) || creditSalesOther < 0) {
-            alert('Credit sales (other) must be a valid positive number');
+            setValidationError('Credit sales (other) must be a valid positive number');
+            setIsValidationModalOpen(true);
             return;
         }
         if (isNaN(bankSalesOther) || bankSalesOther < 0) {
-            alert('Bank sales (other) must be a valid positive number');
+            setValidationError('Bank sales (other) must be a valid positive number');
+            setIsValidationModalOpen(true);
             return;
         }
         if (isNaN(cashSalesOther) || cashSalesOther < 0) {
-            alert('Cash sales (other) must be a valid positive number');
+            setValidationError('Cash sales (other) must be a valid positive number');
+            setIsValidationModalOpen(true);
             return;
         }
         if (isNaN(cashReceive) || cashReceive < 0) {
-            alert('Cash receive must be a valid positive number');
+            setValidationError('Cash receive must be a valid positive number');
+            setIsValidationModalOpen(true);
             return;
         }
         if (isNaN(totalCash) || totalCash < 0) {
-            alert('Total cash must be a valid positive number');
+            setValidationError('Total cash must be a valid positive number');
+            setIsValidationModalOpen(true);
             return;
         }
         if (isNaN(cashPayment) || cashPayment < 0) {
-            alert('Cash payment must be a valid positive number');
+            setValidationError('Cash payment must be a valid positive number');
+            setIsValidationModalOpen(true);
             return;
         }
-        // Check if all sales values are zero - prevent closing shift with no sales
+
         const totalSalesAmount = creditSales + bankSales + cashSales + creditSalesOther + bankSalesOther + cashSalesOther;
         if (totalSalesAmount === 0) {
-            alert('Cannot close shift with zero sales. Please add sales data first.');
+            setValidationError('Cannot close shift with zero sales. Please add sales data first.');
+            setIsValidationModalOpen(true);
             return;
         }
-        
-        if (window.confirm('Are you sure you want to close this shift?')) {
-            // Prepare other product sales data for backend
-            const otherProductSalesData = otherProductsSales
-                .filter(sale => sale.sell_quantity > 0)
-                .map(sale => ({
-                    product_id: sale.product_id,
-                    quantity: sale.sell_quantity,
-                    unit_price: otherProducts.find(p => p.id === sale.product_id)?.sales_price || 0,
-                    employee_id: sale.sell_by,
-                    remarks: null
-                }));
 
-            const submitData = {
-                ...data,
-                other_product_sales: otherProductSalesData
-            };
+        setIsConfirmModalOpen(true);
+    };
 
-            router.post('/product/dispensers-reading', submitData, {
-                onSuccess: () => {
-                    alert('Shift closed successfully.');
-                    window.location.reload();
-                },
-                onError: () => {
-                    alert('Failed to close shift.');
-                },
-            });
-        }
+    const handleConfirmSubmit = () => {
+        setIsConfirmModalOpen(false);
+        const otherProductSalesData = otherProductsSales
+            .filter(sale => sale.sell_quantity > 0)
+            .map(sale => ({
+                product_id: sale.product_id,
+                quantity: sale.sell_quantity,
+                unit_price: otherProducts.find(p => p.id === sale.product_id)?.sales_price || 0,
+                employee_id: sale.sell_by,
+                remarks: null
+            }));
+
+        const submitData = {
+            ...data,
+            other_product_sales: otherProductSalesData
+        };
+
+        router.post('/product/dispensers-reading', submitData, {
+            onSuccess: () => {
+                setIsSuccessModalOpen(true);
+            },
+            onError: () => {
+                setValidationError('Failed to close shift.');
+                setIsValidationModalOpen(true);
+            },
+        });
     };
 
     const getAvailableShifts = (selectedDate: string) => {
@@ -1522,7 +1529,7 @@ export default function DispenserReading({
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {/* Oil Products from Dispensers */}
+
                                             {Object.entries(productWiseData).filter(([productId, productData]) => {
                                                 return productData.total_sale > 0 || productData.net_reading > 0;
                                             }).map(([productId, productData]) => {
@@ -4429,6 +4436,45 @@ export default function DispenserReading({
                         </div>
                     </div>
                 </FormModal>
+
+                <Dialog open={isValidationModalOpen} onOpenChange={setIsValidationModalOpen}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Validation Error</DialogTitle>
+                            <DialogDescription>{validationError}</DialogDescription>
+                        </DialogHeader>
+                        <DialogFooter>
+                            <Button onClick={() => setIsValidationModalOpen(false)}>OK</Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
+                <Dialog open={isConfirmModalOpen} onOpenChange={setIsConfirmModalOpen}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Confirm Shift Close</DialogTitle>
+                            <DialogDescription>Are you sure you want to close this shift?</DialogDescription>
+                        </DialogHeader>
+                        <DialogFooter>
+                            <Button variant="outline" onClick={() => setIsConfirmModalOpen(false)}>Cancel</Button>
+                            <Button onClick={handleConfirmSubmit} disabled={processing}>
+                                {processing ? 'Processing...' : 'Confirm'}
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
+                <Dialog open={isSuccessModalOpen} onOpenChange={setIsSuccessModalOpen}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Success</DialogTitle>
+                            <DialogDescription>Shift closed successfully.</DialogDescription>
+                        </DialogHeader>
+                        <DialogFooter>
+                            <Button onClick={() => window.location.reload()}>OK</Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
             </div>
         </AppLayout>
     );

@@ -22,6 +22,7 @@ import {
     Filter,
     Clock,
     Trash2,
+    Eye,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -32,6 +33,15 @@ interface ShiftClosed {
     shift: {
         id: number;
         name: string;
+    };
+    daily_reading?: {
+        credit_sales: number;
+        bank_sales: number;
+        cash_sales: number;
+        total_cash: number;
+        cash_payment: number;
+        office_payment: number;
+        final_due_amount: number;
     };
 }
 
@@ -261,6 +271,27 @@ export default function ShiftClosedList({ shiftClosedList, shifts, filters }: Sh
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
                                             Shift
                                         </th>
+                                        <th className="p-4 text-right text-[13px] font-medium dark:text-gray-300">
+                                            Credit Sales
+                                        </th>
+                                        <th className="p-4 text-right text-[13px] font-medium dark:text-gray-300">
+                                            Bank Sales
+                                        </th>
+                                        <th className="p-4 text-right text-[13px] font-medium dark:text-gray-300">
+                                            Cash Sales
+                                        </th>
+                                        <th className="p-4 text-right text-[13px] font-medium dark:text-gray-300">
+                                            Total Cash
+                                        </th>
+                                        <th className="p-4 text-right text-[13px] font-medium dark:text-gray-300">
+                                            Cash Payment
+                                        </th>
+                                        <th className="p-4 text-right text-[13px] font-medium dark:text-gray-300">
+                                            Office Payment
+                                        </th>
+                                        <th className="p-4 text-right text-[13px] font-medium dark:text-gray-300">
+                                            Final Due
+                                        </th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
                                             Actions
                                         </th>
@@ -291,21 +322,52 @@ export default function ShiftClosedList({ shiftClosedList, shifts, filters }: Sh
                                                 <td className="p-4 text-[13px] dark:text-gray-300">
                                                     {record.shift?.name}
                                                 </td>
+                                                <td className="p-4 text-right text-[13px] dark:text-white">
+                                                    {Number(record.daily_reading?.credit_sales || 0).toFixed(2)}
+                                                </td>
+                                                <td className="p-4 text-right text-[13px] dark:text-white">
+                                                    {Number(record.daily_reading?.bank_sales || 0).toFixed(2)}
+                                                </td>
+                                                <td className="p-4 text-right text-[13px] dark:text-white">
+                                                    {Number(record.daily_reading?.cash_sales || 0).toFixed(2)}
+                                                </td>
+                                                <td className="p-4 text-right text-[13px] dark:text-white">
+                                                    {Number(record.daily_reading?.total_cash || 0).toFixed(2)}
+                                                </td>
+                                                <td className="p-4 text-right text-[13px] dark:text-white">
+                                                    {Number(record.daily_reading?.cash_payment || 0).toFixed(2)}
+                                                </td>
+                                                <td className="p-4 text-right text-[13px] dark:text-white">
+                                                    {Number(record.daily_reading?.office_payment || 0).toFixed(2)}
+                                                </td>
+                                                <td className="p-4 text-right text-[13px] dark:text-white">
+                                                    {Number(record.daily_reading?.final_due_amount || 0).toFixed(2)}
+                                                </td>
                                                 <td className="p-4 text-[13px] dark:text-white">
-                                                    <Button
-                                                        variant="destructive"
-                                                        size="sm"
-                                                        onClick={() => handleDelete(record)}
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
+                                                    <div className="flex gap-2">
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => router.get(`/shift-closed-list/${record.id}`)}
+                                                        >
+                                                            <Eye className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => handleDelete(record)}
+                                                            className="text-red-600 hover:text-red-700"
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         ))
                                     ) : (
                                         <tr>
                                             <td
-                                                colSpan={4}
+                                                colSpan={11}
                                                 className="p-8 text-center text-gray-500 dark:text-gray-400"
                                             >
                                                 <Clock className="mx-auto mb-4 h-12 w-12 text-gray-400" />
