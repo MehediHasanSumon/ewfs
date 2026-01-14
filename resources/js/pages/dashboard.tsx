@@ -1,4 +1,5 @@
 import { PlaceholderPattern } from '@/components/ui/placeholder-pattern';
+import { usePermission } from '@/hooks/usePermission';
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
@@ -11,7 +12,11 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
+
 export default function Dashboard() {
+    const { can, permissions } = usePermission();
+    console.log(can("view-user"))
+    console.log(permissions);
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Dashboard" />
