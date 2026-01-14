@@ -4,7 +4,7 @@ import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, FileText } from 'lucide-react';
 
 interface ShiftClosedShowProps {
     shiftClosed: {
@@ -72,10 +72,16 @@ export default function ShiftClosedShow({ shiftClosed }: ShiftClosedShowProps) {
                             {shiftClosed.shift.name} - {new Date(shiftClosed.close_date).toLocaleDateString()}
                         </p>
                     </div>
-                    <Button variant="outline" onClick={() => router.get('/shift-closed-list')}>
-                        <ArrowLeft className="mr-2 h-4 w-4" />
-                        Back
-                    </Button>
+                    <div className="flex gap-2">
+                        <Button variant="success" onClick={() => window.location.href = `/shift-closed-list/${shiftClosed.id}/download-pdf`}>
+                            <FileText className="mr-2 h-4 w-4" />
+                            Download
+                        </Button>
+                        <Button variant="outline" onClick={() => router.get('/shift-closed-list')}>
+                            <ArrowLeft className="mr-2 h-4 w-4" />
+                            Back
+                        </Button>
+                    </div>
                 </div>
 
                 <Card className="dark:border-gray-700 dark:bg-gray-800">

@@ -23,6 +23,7 @@ import {
     Clock,
     Trash2,
     Eye,
+    FileText,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -77,18 +78,18 @@ interface ShiftClosedListProps {
         shift_id?: string;
         start_date?: string;
         end_date?: string;
-        sort?: string;
+        sortBy?: string;
         direction?: string;
     };
 }
 
-export default function ShiftClosedList({ shiftClosedList, shifts, filters }: ShiftClosedListProps) {
-    const [search, setSearch] = useState(filters?.search || '');
-    const [shift, setShift] = useState(filters?.shift_id || 'all');
-    const [startDate, setStartDate] = useState(filters?.start_date || '');
-    const [endDate, setEndDate] = useState(filters?.end_date || '');
-    const sortBy = filters?.sort || 'close_date';
-    const sortOrder = filters?.direction || 'desc';
+export default function ShiftClosedList({ shiftClosedList, shifts, filters = {} }: ShiftClosedListProps) {
+    const [search, setSearch] = useState(filters['search'] || '');
+    const [shift, setShift] = useState(filters['shift_id'] || 'all');
+    const [startDate, setStartDate] = useState(filters['start_date'] || '');
+    const [endDate, setEndDate] = useState(filters['end_date'] || '');
+    const [sortField, setSortField] = useState(filters['sortBy'] || 'close_date');
+    const [sortDirection, setSortDirection] = useState(filters['direction'] || 'desc');
     const [selectedItems, setSelectedItems] = useState<number[]>([]);
     const [deletingItem, setDeletingItem] = useState<ShiftClosed | null>(null);
     const [isBulkDeleting, setIsBulkDeleting] = useState(false);
@@ -99,13 +100,15 @@ export default function ShiftClosedList({ shiftClosedList, shifts, filters }: Sh
             shift_id: shift === 'all' ? undefined : shift,
             start_date: startDate || undefined,
             end_date: endDate || undefined,
-            sort: sortBy,
-            direction: sortOrder,
+            sort: sortField,
+            direction: sortDirection,
         });
     };
 
     const handleSort = (column: string) => {
-        const newOrder = sortBy === column && sortOrder === 'asc' ? 'desc' : 'asc';
+        const newOrder = sortField === column && sortDirection === 'asc' ? 'desc' : 'asc';
+        setSortField(column);
+        setSortDirection(newOrder);
         router.get('/shift-closed-list', {
             search: search || undefined,
             shift_id: shift === 'all' ? undefined : shift,
@@ -178,6 +181,22 @@ export default function ShiftClosedList({ shiftClosedList, shifts, filters }: Sh
                                 Delete Selected ({selectedItems.length})
                             </Button>
                         )}
+                        <Button
+                            variant="success"
+                            onClick={() => {
+                                const params = new URLSearchParams();
+                                if (search) params.append('search', search);
+                                if (shift !== 'all') params.append('shift_id', shift);
+                                if (startDate) params.append('start_date', startDate);
+                                if (endDate) params.append('end_date', endDate);
+                                if (sortField) params.append('sort', sortField);
+                                if (sortDirection) params.append('direction', sortDirection);
+                                window.location.href = `/shift-closed-list/download-pdf?${params.toString()}`;
+                            }}
+                        >
+                            <FileText className="mr-2 h-4 w-4" />
+                            Download
+                        </Button>
                     </div>
                 </div>
 
@@ -260,8 +279,8 @@ export default function ShiftClosedList({ shiftClosedList, shifts, filters }: Sh
                                         >
                                             <div className="flex items-center gap-1">
                                                 Date
-                                                {sortBy === 'close_date' &&
-                                                    (sortOrder === 'asc' ? (
+                                                {sortField === 'close_date' &&
+                                                    (sortDirection === 'asc' ? (
                                                         <ChevronUp className="h-4 w-4" />
                                                     ) : (
                                                         <ChevronDown className="h-4 w-4" />

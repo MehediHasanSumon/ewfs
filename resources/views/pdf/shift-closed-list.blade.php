@@ -64,20 +64,21 @@
             width: 100%;
             border-collapse: collapse;
             margin-top: 10px;
+            font-size: 9px;
         }
         th, td {
             border: 1px solid #ccc;
-            padding: 8px 6px;
+            padding: 6px 4px;
             text-align: left;
         }
         th {
             background-color: #f2f2f2;
             font-weight: bold;
-            font-size: 11px;
+            font-size: 9px;
             color: #000;
         }
         td {
-            font-size: 10px;
+            font-size: 8px;
             color: #333;
         }
         .text-center {
@@ -138,16 +139,16 @@
     <table>
         <thead>
             <tr>
-                <th class="text-center" style="width: 40px;">SL</th>
-                <th style="width: 80px;">Date</th>
-                <th style="width: 80px;">Shift</th>
-                <th class="text-right" style="width: 70px;">Credit Sales</th>
-                <th class="text-right" style="width: 70px;">Bank Sales</th>
-                <th class="text-right" style="width: 70px;">Cash Sales</th>
-                <th class="text-right" style="width: 70px;">Total Cash</th>
-                <th class="text-right" style="width: 70px;">Cash Payment</th>
-                <th class="text-right" style="width: 70px;">Office Payment</th>
-                <th class="text-right" style="width: 70px;">Final Due</th>
+                <th class="text-center" style="width: 30px;">SL</th>
+                <th style="width: 60px;">Date</th>
+                <th style="width: 60px;">Shift</th>
+                <th class="text-right" style="width: 55px;">Credit Sales</th>
+                <th class="text-right" style="width: 55px;">Bank Sales</th>
+                <th class="text-right" style="width: 55px;">Cash Sales</th>
+                <th class="text-right" style="width: 55px;">Total Cash</th>
+                <th class="text-right" style="width: 55px;">Cash Payment</th>
+                <th class="text-right" style="width: 55px;">Office Payment</th>
+                <th class="text-right" style="width: 55px;">Final Due</th>
             </tr>
         </thead>
         <tbody>
