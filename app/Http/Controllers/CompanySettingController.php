@@ -8,9 +8,20 @@ use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Validator;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Routing\Controllers\HasMiddleware;
 
-class CompanySettingController extends Controller
+class CompanySettingController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:view-company-setting', only: ['index', 'show', 'downloadPdf']),
+            new Middleware('permission:create-company-setting', only: ['create', 'store']),
+            new Middleware('permission:update-company-setting', only: ['edit', 'update']),
+            new Middleware('permission:delete-company-setting', only: ['destroy', 'bulkDelete']),
+        ];
+    }
     public function index(Request $request)
     {
         $query = CompanySetting::query();

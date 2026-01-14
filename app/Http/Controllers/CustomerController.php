@@ -15,9 +15,20 @@ use App\Models\Voucher;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Routing\Controllers\HasMiddleware;
 
-class CustomerController extends Controller
+class CustomerController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:view-customer', only: ['index', 'show', 'statement', 'downloadPdf', 'downloadSalesPdf', 'downloadPaymentsPdf']),
+            new Middleware('permission:create-customer', only: ['store']),
+            new Middleware('permission:update-customer', only: ['update']),
+            new Middleware('permission:delete-customer', only: ['destroy', 'bulkDelete']),
+        ];
+    }
     public function index(Request $request)
     {
         $query = Customer::select('id', 'account_id', 'code', 'name', 'mobile', 'email', 'nid_number', 'vat_reg_no', 'tin_no', 'trade_license', 'discount_rate', 'security_deposit', 'credit_limit', 'address', 'status', 'created_at')

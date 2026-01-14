@@ -15,9 +15,20 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Routing\Controllers\HasMiddleware;
 
-class PurchaseController extends Controller
+class PurchaseController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:view-purchase', only: ['index', 'downloadPdf']),
+            new Middleware('permission:create-purchase', only: ['store']),
+            new Middleware('permission:update-purchase', only: ['edit', 'update']),
+            new Middleware('permission:delete-purchase', only: ['destroy', 'bulkDelete']),
+        ];
+    }
     public function index(Request $request)
     {
         $query = Purchase::with(['supplier', 'product', 'fromAccount', 'transaction']);

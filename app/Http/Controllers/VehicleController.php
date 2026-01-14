@@ -9,9 +9,20 @@ use App\Models\Product;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Routing\Controllers\HasMiddleware;
 
-class VehicleController extends Controller
+class VehicleController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:view-vehicle', only: ['index', 'downloadPdf']),
+            new Middleware('permission:create-vehicle', only: ['store']),
+            new Middleware('permission:update-vehicle', only: ['update']),
+            new Middleware('permission:delete-vehicle', only: ['destroy', 'bulkDelete']),
+        ];
+    }
     public function index(Request $request)
     {
         $query = Vehicle::select('id', 'customer_id', 'vehicle_type', 'vehicle_name', 'vehicle_number', 'reg_date', 'status', 'created_at')

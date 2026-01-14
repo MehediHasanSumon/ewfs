@@ -8,9 +8,17 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Routing\Controllers\HasMiddleware;
 
-class CashBookLedgerController extends Controller
+class CashBookLedgerController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:view-account', only: ['index', 'downloadPdf']),
+        ];
+    }
     public function index(Request $request)
     {
         $startDate = $request->start_date ?? date('Y-m-d');

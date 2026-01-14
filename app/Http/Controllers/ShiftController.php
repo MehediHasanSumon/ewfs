@@ -7,9 +7,20 @@ use App\Models\CompanySetting;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Routing\Controllers\HasMiddleware;
 
-class ShiftController extends Controller
+class ShiftController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:view-shift', only: ['index', 'downloadPdf']),
+            new Middleware('permission:create-shift', only: ['store']),
+            new Middleware('permission:update-shift', only: ['update']),
+            new Middleware('permission:delete-shift', only: ['destroy', 'bulkDelete']),
+        ];
+    }
     public function index(Request $request)
     {
         $query = Shift::query();

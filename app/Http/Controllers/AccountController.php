@@ -9,9 +9,20 @@ use App\Models\CompanySetting;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Routing\Controllers\HasMiddleware;
 
-class AccountController extends Controller
+class AccountController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:view-account', only: ['index', 'downloadPdf']),
+            new Middleware('permission:create-account', only: ['store']),
+            new Middleware('permission:update-account', only: ['update']),
+            new Middleware('permission:delete-account', only: ['destroy']),
+        ];
+    }
     public function index(Request $request)
     {
         $query = Account::select('id', 'name', 'ac_number', 'group_id', 'group_code', 'status', 'created_at')

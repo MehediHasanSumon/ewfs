@@ -11,9 +11,20 @@ use App\Models\Voucher;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Routing\Controllers\HasMiddleware;
 
-class SupplierController extends Controller
+class SupplierController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:view-supplier', only: ['index', 'show', 'statement', 'downloadPdf', 'downloadPurchasesPdf', 'downloadPaymentsPdf']),
+            new Middleware('permission:create-supplier', only: ['store']),
+            new Middleware('permission:update-supplier', only: ['update']),
+            new Middleware('permission:delete-supplier', only: ['destroy', 'bulkDelete']),
+        ];
+    }
     public function index(Request $request)
     {
         $query = Supplier::with('account.group');

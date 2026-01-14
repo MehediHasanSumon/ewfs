@@ -8,9 +8,20 @@ use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 use App\Models\CompanySetting;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Routing\Controllers\HasMiddleware;
 
-class RoleController extends Controller
+class RoleController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:view-role', only: ['index', 'downloadPdf']),
+            new Middleware('permission:create-role', only: ['store']),
+            new Middleware('permission:update-role', only: ['edit', 'update']),
+            new Middleware('permission:delete-role', only: ['destroy', 'bulkDelete']),
+        ];
+    }
     public function index(Request $request)
     {
         $query = Role::withCount(['permissions', 'users']);

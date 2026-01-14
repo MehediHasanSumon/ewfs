@@ -5,12 +5,20 @@ namespace App\Http\Controllers;
 use App\Models\Account;
 use App\Models\CompanySetting;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Barryvdh\DomPDF\Facade\Pdf;
 
-class GeneralLedgerController extends Controller
+class GeneralLedgerController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:view-account', only: ['index', 'downloadPdf']),
+        ];
+    }
     public function index(Request $request)
     {
         $startDate = $request->start_date ?? date('Y-m-d');

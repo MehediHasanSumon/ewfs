@@ -6,11 +6,22 @@ use App\Models\EmpDepartment;
 use App\Models\EmpType;
 use App\Models\CompanySetting;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Inertia\Inertia;
 use Barryvdh\DomPDF\Facade\Pdf;
 
-class EmpDepartmentController extends Controller
+class EmpDepartmentController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:view-employee', only: ['index', 'downloadPdf']),
+            new Middleware('permission:create-employee', only: ['store']),
+            new Middleware('permission:update-employee', only: ['update']),
+            new Middleware('permission:delete-employee', only: ['destroy', 'bulkDelete']),
+        ];
+    }
     public function index(Request $request)
     {
         $query = EmpDepartment::with('empType');

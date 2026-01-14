@@ -11,11 +11,19 @@ use App\Models\Customer;
 use App\Models\OfficePayment;
 use App\Models\Stock;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Inertia\Inertia;
 use Barryvdh\DomPDF\Facade\Pdf;
 
-class LiabilityAssetsController extends Controller
+class LiabilityAssetsController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:view-account', only: ['index', 'downloadPdf']),
+        ];
+    }
     public function index(Request $request)
     {
         // Calculate Purchase Due (total purchases - total supplier payments)

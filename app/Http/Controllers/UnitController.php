@@ -7,9 +7,20 @@ use App\Models\CompanySetting;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Routing\Controllers\HasMiddleware;
 
-class UnitController extends Controller
+class UnitController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:view-unit', only: ['index', 'downloadPdf']),
+            new Middleware('permission:create-unit', only: ['store']),
+            new Middleware('permission:update-unit', only: ['update']),
+            new Middleware('permission:delete-unit', only: ['destroy', 'bulkDelete']),
+        ];
+    }
     public function index(Request $request)
     {
         $query = Unit::query();

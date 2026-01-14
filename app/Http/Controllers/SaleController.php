@@ -20,9 +20,20 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Routing\Controllers\HasMiddleware;
 
-class SaleController extends Controller
+class SaleController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:view-sale', only: ['index', 'downloadBatchPdf', 'downloadPdf']),
+            new Middleware('permission:create-sale', only: ['store']),
+            new Middleware('permission:update-sale', only: ['edit', 'update']),
+            new Middleware('permission:delete-sale', only: ['destroy', 'bulkDelete']),
+        ];
+    }
     public function index(Request $request)
     {
         $query = Sale::with(['product', 'shift', 'transaction'])

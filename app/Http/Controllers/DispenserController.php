@@ -8,11 +8,22 @@ use App\Models\Product;
 use App\Models\ProductRate;
 use App\Models\CompanySetting;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Inertia\Inertia;
 use Barryvdh\DomPDF\Facade\Pdf;
 
-class DispenserController extends Controller
+class DispenserController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:view-dispenser', only: ['index', 'downloadPdf']),
+            new Middleware('permission:create-dispenser', only: ['store']),
+            new Middleware('permission:update-dispenser', only: ['update']),
+            new Middleware('permission:delete-dispenser', only: ['destroy', 'bulkDelete']),
+        ];
+    }
     public function index(Request $request)
     {
         $query = Dispenser::with('product');

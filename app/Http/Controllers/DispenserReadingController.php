@@ -17,12 +17,21 @@ use App\Models\Stock;
 use App\Models\VoucherCategory;
 use App\Models\PaymentSubType;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
-class DispenserReadingController extends Controller
+class DispenserReadingController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:view-dispenser', only: ['index', 'getShiftsByDate', 'getShiftClosingData']),
+            new Middleware('permission:create-dispenser', only: ['store']),
+        ];
+    }
     public function index()
     {
         $dispenserReading = DispenserReading::with(['product.activeRate', 'dispenser'])

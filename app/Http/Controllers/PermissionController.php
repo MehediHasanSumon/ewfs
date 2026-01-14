@@ -7,9 +7,20 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Spatie\Permission\Models\Permission;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Routing\Controllers\HasMiddleware;
 
-class PermissionController extends Controller
+class PermissionController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:view-permission', only: ['index', 'downloadPdf']),
+            new Middleware('permission:create-permission', only: ['store']),
+            new Middleware('permission:update-permission', only: ['update']),
+            new Middleware('permission:delete-permission', only: ['destroy', 'bulkDelete']),
+        ];
+    }
     public function index(Request $request)
     {
         $query = Permission::withCount('roles');

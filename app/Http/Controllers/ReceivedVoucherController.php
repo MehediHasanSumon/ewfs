@@ -16,9 +16,20 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Routing\Controllers\HasMiddleware;
 
-class ReceivedVoucherController extends Controller
+class ReceivedVoucherController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:view-voucher', only: ['index', 'downloadPdf']),
+            new Middleware('permission:create-voucher', only: ['store']),
+            new Middleware('permission:update-voucher', only: ['update']),
+            new Middleware('permission:delete-voucher', only: ['destroy', 'bulkDelete']),
+        ];
+    }
     public function index(Request $request)
     {
         $query = Voucher::with(['shift', 'fromAccount', 'toAccount', 'voucherCategory', 'paymentSubType', 'transaction'])

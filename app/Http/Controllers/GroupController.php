@@ -5,11 +5,22 @@ namespace App\Http\Controllers;
 use App\Models\Group;
 use App\Models\CompanySetting;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Inertia\Inertia;
 use Barryvdh\DomPDF\Facade\Pdf;
 
-class GroupController extends Controller
+class GroupController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:view-account', only: ['index', 'getParentChild', 'downloadPdf']),
+            new Middleware('permission:create-account', only: ['store']),
+            new Middleware('permission:update-account', only: ['update']),
+            new Middleware('permission:delete-account', only: ['destroy', 'bulkDelete']),
+        ];
+    }
     public function getParentChild($code)
     {
         $parentChild = Group::where('code', 'like', $code . '%')

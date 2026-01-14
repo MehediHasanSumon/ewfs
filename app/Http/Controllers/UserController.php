@@ -9,9 +9,20 @@ use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
 use Inertia\Inertia;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Routing\Controllers\HasMiddleware;
 
-class UserController extends Controller
+class UserController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:view-user', only: ['index', 'downloadPdf']),
+            new Middleware('permission:create-user', only: ['store']),
+            new Middleware('permission:update-user', only: ['edit', 'update']),
+            new Middleware('permission:delete-user', only: ['destroy', 'bulkDelete']),
+        ];
+    }
     public function index(Request $request)
     {
         $query = User::select('id', 'name', 'email', 'email_verified_at', 'banned', 'created_at')

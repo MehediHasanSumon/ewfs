@@ -8,9 +8,20 @@ use App\Models\CompanySetting;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Routing\Controllers\HasMiddleware;
 
-class ProductRateController extends Controller
+class ProductRateController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:view-product-rate', only: ['index', 'downloadPdf']),
+            new Middleware('permission:create-product-rate', only: ['store']),
+            new Middleware('permission:update-product-rate', only: ['update']),
+            new Middleware('permission:delete-product-rate', only: ['destroy', 'bulkDelete']),
+        ];
+    }
     public function index(Request $request)
     {
         $query = ProductRate::with('product');

@@ -5,13 +5,21 @@ namespace App\Http\Controllers;
 use App\Models\Account;
 use App\Models\Voucher;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Inertia\Inertia;
 use Inertia\Response;
 use App\Models\CompanySetting;
 use Barryvdh\DomPDF\Facade\Pdf;
 
-class LoanController extends Controller
+class LoanController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:view-account', only: ['index', 'show', 'statement', 'downloadStatementPdf', 'downloadLoansPdf', 'downloadPaymentsPdf']),
+        ];
+    }
     public function index(Request $request): Response
     {
         $query = Account::where('group_code', '400010002')

@@ -14,9 +14,20 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Routing\Controllers\HasMiddleware;
 
-class OfficePaymentController extends Controller
+class OfficePaymentController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:view-office-payment', only: ['index', 'downloadPdf']),
+            new Middleware('permission:create-office-payment', only: ['store']),
+            new Middleware('permission:update-office-payment', only: ['update']),
+            new Middleware('permission:delete-office-payment', only: ['destroy', 'bulkDelete']),
+        ];
+    }
     public function index(Request $request)
     {
         $query = OfficePayment::with(['shift', 'to_account', 'transaction']);

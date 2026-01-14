@@ -14,9 +14,17 @@ use App\Models\Stock;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Routing\Controllers\HasMiddleware;
 
-class BalanceSheetController extends Controller
+class BalanceSheetController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:view-account', only: ['index', 'downloadPdf']),
+        ];
+    }
     public function index(Request $request)
     {
         $date = $request->get('date', now()->format('Y-m-d'));

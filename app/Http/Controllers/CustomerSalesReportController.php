@@ -7,9 +7,17 @@ use App\Models\CompanySetting;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Routing\Controllers\HasMiddleware;
 
-class CustomerSalesReportController extends Controller
+class CustomerSalesReportController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:view-sale', only: ['index', 'downloadPdf']),
+        ];
+    }
     public function index(Request $request)
     {
         $query = Sale::with(['shift'])

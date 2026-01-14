@@ -8,9 +8,20 @@ use App\Models\CompanySetting;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Routing\Controllers\HasMiddleware;
 
-class PaymentSubTypeController extends Controller
+class PaymentSubTypeController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:view-payment-sub-type', only: ['index', 'downloadPdf']),
+            new Middleware('permission:create-payment-sub-type', only: ['store']),
+            new Middleware('permission:update-payment-sub-type', only: ['edit', 'update']),
+            new Middleware('permission:delete-payment-sub-type', only: ['destroy', 'bulkDelete']),
+        ];
+    }
     public function index(Request $request)
     {
         $query = PaymentSubType::select('id', 'code', 'name', 'voucher_category_id', 'type', 'status', 'created_at')
