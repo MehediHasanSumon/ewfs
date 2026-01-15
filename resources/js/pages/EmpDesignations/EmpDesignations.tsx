@@ -10,6 +10,7 @@ import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
 import { Head, useForm, router } from '@inertiajs/react';
+import { usePermission } from '@/hooks/usePermission';
 import { Plus, Edit, Trash2, Briefcase, ChevronUp, ChevronDown, Filter, X, FileText } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
@@ -53,6 +54,10 @@ interface EmpDesignationsProps {
 }
 
 export default function EmpDesignations({ designations, filters }: EmpDesignationsProps) {
+    const { can } = usePermission();
+    const hasActionPermission = can('update-employee') || can('delete-employee');
+    const canFilter = can('can-emp-designation-filter');
+    const canDownload = can('can-emp-designation-download');
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editingDesignation, setEditingDesignation] = useState<EmpDesignation | null>(null);
     const [deletingDesignation, setDeletingDesignation] = useState<EmpDesignation | null>(null);
@@ -218,7 +223,7 @@ export default function EmpDesignations({ designations, filters }: EmpDesignatio
                         <p className="text-gray-600 dark:text-gray-400">Manage employee designations and positions</p>
                     </div>
                     <div className="flex gap-2">
-                        {selectedDesignations.length > 0 && (
+                        {selectedDesignations.length > 0 && can('delete-employee') && (
                             <Button 
                                 variant="destructive" 
                                 onClick={handleBulkDelete}
@@ -227,30 +232,35 @@ export default function EmpDesignations({ designations, filters }: EmpDesignatio
                                 Delete Selected ({selectedDesignations.length})
                             </Button>
                         )}
-                        <Button
-                            variant="success"
-                            onClick={() => {
-                                const params = new URLSearchParams();
-                                if (search) params.append('search', search);
-                                if (status !== 'all') params.append('status', status);
-                                if (startDate) params.append('start_date', startDate);
-                                if (endDate) params.append('end_date', endDate);
-                                if (sortBy) params.append('sort_by', sortBy);
-                                if (sortOrder) params.append('sort_order', sortOrder);
-                                window.location.href = `/emp-designations/download-pdf?${params.toString()}`;
-                            }}
-                        >
-                            <FileText className="h-4 w-4 mr-2" />
-                            Download
-                        </Button>
-                        <Button onClick={() => setIsCreateOpen(true)}>
-                            <Plus className="h-4 w-4 mr-2" />
-                            Add Designation
-                        </Button>
+                        {canDownload && (
+                            <Button
+                                variant="success"
+                                onClick={() => {
+                                    const params = new URLSearchParams();
+                                    if (search) params.append('search', search);
+                                    if (status !== 'all') params.append('status', status);
+                                    if (startDate) params.append('start_date', startDate);
+                                    if (endDate) params.append('end_date', endDate);
+                                    if (sortBy) params.append('sort_by', sortBy);
+                                    if (sortOrder) params.append('sort_order', sortOrder);
+                                    window.location.href = `/emp-designations/download-pdf?${params.toString()}`;
+                                }}
+                            >
+                                <FileText className="h-4 w-4 mr-2" />
+                                Download
+                            </Button>
+                        )}
+                        {can('create-employee') && (
+                            <Button onClick={() => setIsCreateOpen(true)}>
+                                <Plus className="h-4 w-4 mr-2" />
+                                Add Designation
+                            </Button>
+                        )}
                     </div>
                 </div>
 
                 {/* Filter Card */}
+                {canFilter && (
                 <Card className="dark:bg-gray-800 dark:border-gray-700">
                     <CardHeader>
                         <CardTitle className="dark:text-white flex items-center gap-2">
@@ -312,6 +322,7 @@ export default function EmpDesignations({ designations, filters }: EmpDesignatio
                         </div>
                     </CardContent>
                 </Card>
+                )}
 
                 <Card className="dark:bg-gray-800 dark:border-gray-700">
                     <CardContent>
@@ -334,7 +345,9 @@ export default function EmpDesignations({ designations, filters }: EmpDesignatio
                                             </div>
                                         </th>
                                         <th className="text-left py-3 px-4 text-[13px] font-semibold text-gray-700 dark:text-gray-300">Status</th>
-                                        <th className="text-left py-3 px-4 text-[13px] font-semibold text-gray-700 dark:text-gray-300">Actions</th>
+                                        {hasActionPermission && (
+                                            <th className="text-left py-3 px-4 text-[13px] font-semibold text-gray-700 dark:text-gray-300">Actions</th>
+                                        )}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -354,30 +367,36 @@ export default function EmpDesignations({ designations, filters }: EmpDesignatio
                                                     {designation.status ? 'Active' : 'Inactive'}
                                                 </span>
                                             </td>
-                                            <td className="py-3 px-4">
-                                                <div className="flex gap-2">
-                                                    <Button 
-                                                        variant="ghost" 
-                                                        size="sm"
-                                                        onClick={() => handleEdit(designation)}
-                                                        className="text-indigo-600 hover:text-indigo-800"
-                                                    >
-                                                        <Edit className="h-4 w-4" />
-                                                    </Button>
-                                                    <Button 
-                                                        variant="ghost" 
-                                                        size="sm"
-                                                        onClick={() => handleDelete(designation)}
-                                                        className="text-red-600 hover:text-red-800"
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                </div>
-                                            </td>
+                                            {hasActionPermission && (
+                                                <td className="py-3 px-4">
+                                                    <div className="flex gap-2">
+                                                        {can('update-employee') && (
+                                                            <Button 
+                                                                variant="ghost" 
+                                                                size="sm"
+                                                                onClick={() => handleEdit(designation)}
+                                                                className="text-indigo-600 hover:text-indigo-800"
+                                                            >
+                                                                <Edit className="h-4 w-4" />
+                                                            </Button>
+                                                        )}
+                                                        {can('delete-employee') && (
+                                                            <Button 
+                                                                variant="ghost" 
+                                                                size="sm"
+                                                                onClick={() => handleDelete(designation)}
+                                                                className="text-red-600 hover:text-red-800"
+                                                            >
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                            )}
                                         </tr>
                                     )) : (
                                         <tr>
-                                            <td colSpan={4} className="py-12 text-center text-gray-500 dark:text-gray-400">
+                                            <td colSpan={hasActionPermission ? 4 : 3} className="py-12 text-center text-gray-500 dark:text-gray-400">
                                                 <Briefcase className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                                                 No designations found
                                             </td>

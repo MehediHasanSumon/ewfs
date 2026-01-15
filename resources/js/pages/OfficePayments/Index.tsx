@@ -28,6 +28,7 @@ import {
     X,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { usePermission } from '@/hooks/usePermission';
 
 interface OfficePayment {
     id: number;
@@ -108,6 +109,10 @@ export default function OfficePayments({
     types = [],
     filters = {},
 }: OfficePaymentsProps) {
+    const { can } = usePermission();
+    const hasActionPermission = can('update-office-payment') || can('delete-office-payment');
+    const canFilter = can('can-office-payment-filter');
+    const canDownload = can('can-office-payment-download');
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editingPayment, setEditingPayment] = useState<OfficePayment | null>(
         null,
@@ -327,7 +332,7 @@ export default function OfficePayments({
                         </p>
                     </div>
                     <div className="flex gap-2">
-                        {selectedPayments.length > 0 && (
+                        {selectedPayments.length > 0 && can('delete-office-payment') && (
                             <Button
                                 variant="destructive"
                                 onClick={handleBulkDelete}
@@ -336,35 +341,40 @@ export default function OfficePayments({
                                 Delete Selected ({selectedPayments.length})
                             </Button>
                         )}
-                        <Button
-                            variant="success"
-                            onClick={() => {
-                                const params = new URLSearchParams();
-                                if (search) params.append('search', search);
-                                if (startDate)
-                                    params.append('start_date', startDate);
-                                if (endDate) params.append('end_date', endDate);
-                                if (selectedType)
-                                    params.append('type', selectedType);
-                                if (selectedShift)
-                                    params.append('shift_id', selectedShift);
-                                if (sortBy) params.append('sort_by', sortBy);
-                                if (sortOrder)
-                                    params.append('sort_order', sortOrder);
-                                window.location.href = `/office-payments/download-pdf?${params.toString()}`;
-                            }}
-                        >
-                            <FileText className="mr-2 h-4 w-4" />
-                            Download
-                        </Button>
-                        <Button onClick={() => setIsCreateOpen(true)}>
-                            <Plus className="mr-2 h-4 w-4" />
-                            Add Office Payment
-                        </Button>
+                        {canDownload && (
+                            <Button
+                                variant="success"
+                                onClick={() => {
+                                    const params = new URLSearchParams();
+                                    if (search) params.append('search', search);
+                                    if (startDate)
+                                        params.append('start_date', startDate);
+                                    if (endDate) params.append('end_date', endDate);
+                                    if (selectedType)
+                                        params.append('type', selectedType);
+                                    if (selectedShift)
+                                        params.append('shift_id', selectedShift);
+                                    if (sortBy) params.append('sort_by', sortBy);
+                                    if (sortOrder)
+                                        params.append('sort_order', sortOrder);
+                                    window.location.href = `/office-payments/download-pdf?${params.toString()}`;
+                                }}
+                            >
+                                <FileText className="mr-2 h-4 w-4" />
+                                Download
+                            </Button>
+                        )}
+                        {can('create-office-payment') && (
+                            <Button onClick={() => setIsCreateOpen(true)}>
+                                <Plus className="mr-2 h-4 w-4" />
+                                Add Office Payment
+                            </Button>
+                        )}
                     </div>
                 </div>
 
                 {/* Filter Card */}
+                {canFilter && (
                 <Card className="dark:border-gray-700 dark:bg-gray-800">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 dark:text-white">
@@ -488,6 +498,7 @@ export default function OfficePayments({
                         </div>
                     </CardContent>
                 </Card>
+                )}
 
                 <Card className="dark:border-gray-700 dark:bg-gray-800">
                     <CardContent>
@@ -536,9 +547,11 @@ export default function OfficePayments({
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
                                             Remarks
                                         </th>
+                                        {hasActionPermission && (
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
                                             Actions
                                         </th>
+                                        )}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -587,8 +600,10 @@ export default function OfficePayments({
                                                 <td className="p-4 text-[13px] dark:text-gray-300">
                                                     {payment.remarks || 'N/A'}
                                                 </td>
+                                                {hasActionPermission && (
                                                 <td className="p-4">
                                                     <div className="flex gap-2">
+                                                        {can('update-office-payment') && (
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
@@ -601,6 +616,8 @@ export default function OfficePayments({
                                                         >
                                                             <Edit className="h-4 w-4" />
                                                         </Button>
+                                                        )}
+                                                        {can('delete-office-payment') && (
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
@@ -613,14 +630,16 @@ export default function OfficePayments({
                                                         >
                                                             <Trash2 className="h-4 w-4" />
                                                         </Button>
+                                                        )}
                                                     </div>
                                                 </td>
+                                                )}
                                             </tr>
                                         ))
                                     ) : (
                                         <tr>
                                             <td
-                                                colSpan={7}
+                                                colSpan={hasActionPermission ? 7 : 6}
                                                 className="p-8 text-center text-gray-500 dark:text-gray-400"
                                             >
                                                 <Building className="mx-auto mb-4 h-12 w-12 text-gray-400" />

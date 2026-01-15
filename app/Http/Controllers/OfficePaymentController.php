@@ -22,7 +22,8 @@ class OfficePaymentController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('permission:view-office-payment', only: ['index', 'downloadPdf']),
+            new Middleware('permission:view-office-payment', only: ['index']),
+            new Middleware('permission:view-office-payment|can-office-payment-download', only: ['downloadPdf']),
             new Middleware('permission:create-office-payment', only: ['store']),
             new Middleware('permission:update-office-payment', only: ['update']),
             new Middleware('permission:delete-office-payment', only: ['destroy', 'bulkDelete']),

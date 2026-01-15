@@ -15,7 +15,7 @@ class CategoryController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('permission:view-category', only: ['index', 'downloadPdf']),
+            new Middleware('permission:view-category|can-category-download', only: ['index', 'downloadPdf']),
             new Middleware('permission:create-category', only: ['store']),
             new Middleware('permission:update-category', only: ['update']),
             new Middleware('permission:delete-category', only: ['destroy', 'bulkDelete']),

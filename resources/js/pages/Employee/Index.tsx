@@ -16,6 +16,7 @@ import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
+import { usePermission } from '@/hooks/usePermission';
 import {
     ChevronDown,
     ChevronUp,
@@ -111,6 +112,10 @@ export default function EmployeeIndex({
     empTypes = [], 
     filters = {} 
 }: EmployeesProps) {
+    const { can } = usePermission();
+    const hasActionPermission = can('update-employee') || can('delete-employee');
+    const canFilter = can('can-employee-filter');
+    const canDownload = can('can-employee-download');
     const [deletingEmployee, setDeletingEmployee] = useState<Employee | null>(null);
     const [selectedEmployees, setSelectedEmployees] = useState<number[]>([]);
     const [isBulkDeleting, setIsBulkDeleting] = useState(false);
@@ -271,7 +276,7 @@ export default function EmployeeIndex({
                         </p>
                     </div>
                     <div className="flex gap-2">
-                        {selectedEmployees.length > 0 && (
+                        {selectedEmployees.length > 0 && can('delete-employee') && (
                             <Button
                                 variant="destructive"
                                 onClick={handleBulkDelete}
@@ -280,33 +285,38 @@ export default function EmployeeIndex({
                                 Delete Selected ({selectedEmployees.length})
                             </Button>
                         )}
-                        <Button
-                            variant="success"
-                            onClick={() => {
-                                const params = new URLSearchParams();
-                                if (search) params.append('search', search);
-                                if (department !== 'all') params.append('department', department);
-                                if (designation !== 'all') params.append('designation', designation);
-                                if (type !== 'all') params.append('type', type);
-                                if (status !== 'all') params.append('status', status);
-                                if (startDate) params.append('start_date', startDate);
-                                if (endDate) params.append('end_date', endDate);
-                                if (sortBy) params.append('sort_by', sortBy);
-                                if (sortOrder) params.append('sort_order', sortOrder);
-                                window.location.href = `/employees/download-pdf?${params.toString()}`;
-                            }}
-                        >
-                            <FileText className="mr-2 h-4 w-4" />
-                            Download
-                        </Button>
-                        <Button onClick={() => router.get('/employees/create')}>
-                            <Plus className="mr-2 h-4 w-4" />
-                            Add Employee
-                        </Button>
+                        {canDownload && (
+                            <Button
+                                variant="success"
+                                onClick={() => {
+                                    const params = new URLSearchParams();
+                                    if (search) params.append('search', search);
+                                    if (department !== 'all') params.append('department', department);
+                                    if (designation !== 'all') params.append('designation', designation);
+                                    if (type !== 'all') params.append('type', type);
+                                    if (status !== 'all') params.append('status', status);
+                                    if (startDate) params.append('start_date', startDate);
+                                    if (endDate) params.append('end_date', endDate);
+                                    if (sortBy) params.append('sort_by', sortBy);
+                                    if (sortOrder) params.append('sort_order', sortOrder);
+                                    window.location.href = `/employees/download-pdf?${params.toString()}`;
+                                }}
+                            >
+                                <FileText className="mr-2 h-4 w-4" />
+                                Download
+                            </Button>
+                        )}
+                        {can('create-employee') && (
+                            <Button onClick={() => router.get('/employees/create')}>
+                                <Plus className="mr-2 h-4 w-4" />
+                                Add Employee
+                            </Button>
+                        )}
                     </div>
                 </div>
 
                 {/* Filter Card */}
+                {canFilter && (
                 <Card className="dark:border-gray-700 dark:bg-gray-800">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 dark:text-white">
@@ -403,6 +413,7 @@ export default function EmployeeIndex({
                         </div>
                     </CardContent>
                 </Card>
+                )}
 
                 <Card className="dark:border-gray-700 dark:bg-gray-800">
                     <CardContent>
@@ -437,7 +448,9 @@ export default function EmployeeIndex({
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Department</th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Designation</th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Status</th>
-                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Actions</th>
+                                        {hasActionPermission && (
+                                            <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Actions</th>
+                                        )}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -470,39 +483,45 @@ export default function EmployeeIndex({
                                                         {employee.status ? 'Active' : 'Inactive'}
                                                     </span>
                                                 </td>
-                                                <td className="p-4">
-                                                    <div className="flex gap-2">
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            onClick={() => router.get(`/employees/${employee.id}`)}
-                                                            className="text-blue-600 hover:text-blue-800"
-                                                        >
-                                                            <Eye className="h-4 w-4" />
-                                                        </Button>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            onClick={() => router.get(`/employees/${employee.id}/edit`)}
-                                                            className="text-indigo-600 hover:text-indigo-800"
-                                                        >
-                                                            <Edit className="h-4 w-4" />
-                                                        </Button>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            onClick={() => handleDelete(employee)}
-                                                            className="text-red-600 hover:text-red-800"
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
-                                                    </div>
-                                                </td>
+                                                {hasActionPermission && (
+                                                    <td className="p-4">
+                                                        <div className="flex gap-2">
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={() => router.get(`/employees/${employee.id}`)}
+                                                                className="text-blue-600 hover:text-blue-800"
+                                                            >
+                                                                <Eye className="h-4 w-4" />
+                                                            </Button>
+                                                            {can('update-employee') && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    onClick={() => router.get(`/employees/${employee.id}/edit`)}
+                                                                    className="text-indigo-600 hover:text-indigo-800"
+                                                                >
+                                                                    <Edit className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+                                                            {can('delete-employee') && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    onClick={() => handleDelete(employee)}
+                                                                    className="text-red-600 hover:text-red-800"
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                )}
                                             </tr>
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan={9} className="p-8 text-center text-gray-500 dark:text-gray-400">
+                                            <td colSpan={hasActionPermission ? 9 : 8} className="p-8 text-center text-gray-500 dark:text-gray-400">
                                                 <EmployeeIcon className="mx-auto mb-4 h-12 w-12 text-gray-400" />
                                                 No employees found
                                             </td>

@@ -8,6 +8,7 @@ import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router, Link } from '@inertiajs/react';
+import { usePermission } from '@/hooks/usePermission';
 import { Plus, Edit, Trash2, Building, Filter, X, Eye, FileText } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
@@ -54,6 +55,10 @@ interface CompanySettingsProps {
 }
 
 export default function CompanySettings({ companySettings = [], filters }: CompanySettingsProps) {
+    const { can } = usePermission();
+    const hasActionPermission = can('update-company-setting') || can('delete-company-setting');
+    const canFilter = can('can-company-setting-filter');
+    const canDownload = can('can-company-setting-download');
     const [deletingSetting, setDeletingSetting] = useState<CompanySetting | null>(null);
     const [selectedSettings, setSelectedSettings] = useState<number[]>([]);
     const [isBulkDeleting, setIsBulkDeleting] = useState(false);
@@ -127,7 +132,7 @@ export default function CompanySettings({ companySettings = [], filters }: Compa
                         <p className="text-gray-600 dark:text-gray-400">Manage company information and configuration</p>
                     </div>
                     <div className="flex gap-2">
-                        {selectedSettings.length > 0 && (
+                        {selectedSettings.length > 0 && can('delete-company-setting') && (
                             <Button 
                                 variant="destructive" 
                                 onClick={() => setIsBulkDeleting(true)}
@@ -136,30 +141,35 @@ export default function CompanySettings({ companySettings = [], filters }: Compa
                                 Delete Selected ({selectedSettings.length})
                             </Button>
                         )}
-                        <Button
-                            variant="success"
-                            onClick={() => {
-                                const params = new URLSearchParams();
-                                if (search) params.append('search', search);
-                                if (status !== 'all') params.append('status', status);
-                                if (startDate) params.append('start_date', startDate);
-                                if (endDate) params.append('end_date', endDate);
-                                window.location.href = `/company-settings/download-pdf?${params.toString()}`;
-                            }}
-                        >
-                            <FileText className="h-4 w-4 mr-2" />
-                            Download
-                        </Button>
-                        <Link href="/company-settings/create">
-                            <Button>
-                                <Plus className="h-4 w-4 mr-2" />
-                                Add Company Setting
+                        {canDownload && (
+                            <Button
+                                variant="success"
+                                onClick={() => {
+                                    const params = new URLSearchParams();
+                                    if (search) params.append('search', search);
+                                    if (status !== 'all') params.append('status', status);
+                                    if (startDate) params.append('start_date', startDate);
+                                    if (endDate) params.append('end_date', endDate);
+                                    window.location.href = `/company-settings/download-pdf?${params.toString()}`;
+                                }}
+                            >
+                                <FileText className="h-4 w-4 mr-2" />
+                                Download
                             </Button>
-                        </Link>
+                        )}
+                        {can('create-company-setting') && (
+                            <Link href="/company-settings/create">
+                                <Button>
+                                    <Plus className="h-4 w-4 mr-2" />
+                                    Add Company Setting
+                                </Button>
+                            </Link>
+                        )}
                     </div>
                 </div>
 
                 {/* Filter Card */}
+                {canFilter && (
                 <Card className="dark:bg-gray-800 dark:border-gray-700">
                     <CardHeader>
                         <CardTitle className="dark:text-white flex items-center gap-2">
@@ -229,6 +239,7 @@ export default function CompanySettings({ companySettings = [], filters }: Compa
                         </div>
                     </CardContent>
                 </Card>
+                )}
 
                 <Card className="dark:bg-gray-800 dark:border-gray-700">
                     <CardContent>
@@ -250,7 +261,9 @@ export default function CompanySettings({ companySettings = [], filters }: Compa
                                         <th className="text-left p-4 text-[13px] font-medium dark:text-gray-300">Cell Number</th>
                                         <th className="text-left p-4 text-[13px] font-medium dark:text-gray-300">Phone Number</th>
                                         <th className="text-left p-4 text-[13px] font-medium dark:text-gray-300">Status</th>
-                                        <th className="text-left p-4 text-[13px] font-medium dark:text-gray-300">Actions</th>
+                                        {hasActionPermission && (
+                                            <th className="text-left p-4 text-[13px] font-medium dark:text-gray-300">Actions</th>
+                                        )}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -274,40 +287,46 @@ export default function CompanySettings({ companySettings = [], filters }: Compa
                                                     {setting.status == 1 ? 'Active' : 'Disabled'}
                                                 </span>
                                             </td>
-                                            <td className="p-4">
-                                                <div className="flex gap-2">
-                                                    <Link href={`/company-settings/${setting.id}`}>
-                                                        <Button 
-                                                            variant="ghost" 
-                                                            size="sm"
-                                                            className="text-blue-600 hover:text-blue-800"
-                                                        >
-                                                            <Eye className="h-4 w-4" />
-                                                        </Button>
-                                                    </Link>
-                                                    <Link href={`/company-settings/${setting.id}/edit`}>
-                                                        <Button 
-                                                            variant="ghost" 
-                                                            size="sm"
-                                                            className="text-indigo-600 hover:text-indigo-800"
-                                                        >
-                                                            <Edit className="h-4 w-4" />
-                                                        </Button>
-                                                    </Link>
-                                                    <Button 
-                                                        variant="ghost" 
-                                                        size="sm"
-                                                        onClick={() => handleDelete(setting)}
-                                                        className="text-red-600 hover:text-red-800"
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                </div>
-                                            </td>
+                                            {hasActionPermission && (
+                                                <td className="p-4">
+                                                    <div className="flex gap-2">
+                                                        <Link href={`/company-settings/${setting.id}`}>
+                                                            <Button 
+                                                                variant="ghost" 
+                                                                size="sm"
+                                                                className="text-blue-600 hover:text-blue-800"
+                                                            >
+                                                                <Eye className="h-4 w-4" />
+                                                            </Button>
+                                                        </Link>
+                                                        {can('update-company-setting') && (
+                                                            <Link href={`/company-settings/${setting.id}/edit`}>
+                                                                <Button 
+                                                                    variant="ghost" 
+                                                                    size="sm"
+                                                                    className="text-indigo-600 hover:text-indigo-800"
+                                                                >
+                                                                    <Edit className="h-4 w-4" />
+                                                                </Button>
+                                                            </Link>
+                                                        )}
+                                                        {can('delete-company-setting') && (
+                                                            <Button 
+                                                                variant="ghost" 
+                                                                size="sm"
+                                                                onClick={() => handleDelete(setting)}
+                                                                className="text-red-600 hover:text-red-800"
+                                                            >
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                            )}
                                         </tr>
                                     )) : (
                                         <tr>
-                                            <td colSpan={8} className="p-8 text-center text-gray-500 dark:text-gray-400">
+                                            <td colSpan={hasActionPermission ? 8 : 7} className="p-8 text-center text-gray-500 dark:text-gray-400">
                                                 <Building className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                                                 No company settings found
                                             </td>

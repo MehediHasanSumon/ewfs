@@ -1,10 +1,10 @@
-Accounts
+Accounts                ---Done
 auth
 BalanceSheet
 BankBookLedger
 CashBookLedger
-Categories
-CompanySettings
+Categories              ---Done
+CompanySettings         ---Done
 CreditSales
 CustomerDetailsBill
 CustomerLedgerDetails
@@ -13,16 +13,16 @@ Customers
 CustomerSummaryBill
 DailyStatement
 Dispensers
-EmpDepartments
-EmpDesignations
-Employee
-EmpTypes
+EmpDepartments          ---Done
+EmpDesignations         ---Done
+Employee                ---Done
+EmpTypes                ---Done
 GeneralLedger
-Groups
+Groups                  ---Done
 LiabilityAssets
 loans
-OfficePayments
-PaymentSubTypes
+OfficePayments         ---Done
+PaymentSubTypes        ---Done
 Permissions             ---Done
 ProductRates            ---Done
 Products                ---Done
@@ -31,7 +31,7 @@ Reports
 Roles                   ---Done
 Sales                   ---Done
 settings
-ShiftClosedList
+ShiftClosedList         ---Done
 Shifts                  ---Done
 StockReport
 Stocks                  ---Done

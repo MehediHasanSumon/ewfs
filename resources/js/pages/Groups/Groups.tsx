@@ -16,6 +16,7 @@ import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router, useForm } from '@inertiajs/react';
+import { usePermission } from '@/hooks/usePermission';
 import {
     Building,
     ChevronDown,
@@ -70,6 +71,10 @@ export default function Groups({
     masterGroups = {},
     filters,
 }: GroupsProps) {
+    const { can } = usePermission();
+    const hasActionPermission = can('update-account') || can('delete-account');
+    const canFilter = can('can-group-filter');
+    const canDownload = can('can-group-download');
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editingGroup, setEditingGroup] = useState<Group | null>(null);
     const [deletingGroup, setDeletingGroup] = useState<Group | null>(null);
@@ -284,7 +289,7 @@ export default function Groups({
                         </p>
                     </div>
                     <div className="flex gap-2">
-                        {selectedGroups.length > 0 && (
+                        {selectedGroups.length > 0 && can('delete-account') && (
                             <Button
                                 variant="destructive"
                                 onClick={handleBulkDelete}
@@ -293,31 +298,36 @@ export default function Groups({
                                 Delete Selected ({selectedGroups.length})
                             </Button>
                         )}
-                        <Button
-                            variant="success"
-                            onClick={() => {
-                                const params = new URLSearchParams();
-                                if (search) params.append('search', search);
-                                if (masterGroup !== 'all')
-                                    params.append('master_group', masterGroup);
-                                if (status !== 'all')
-                                    params.append('status', status);
-                                params.append('sort_by', sortBy);
-                                params.append('sort_order', sortOrder);
-                                window.location.href = `/groups/download-pdf?${params.toString()}`;
-                            }}
-                        >
-                            <FileText className="mr-2 h-4 w-4" />
-                            Download
-                        </Button>
-                        <Button onClick={() => setIsCreateOpen(true)}>
-                            <Plus className="mr-2 h-4 w-4" />
-                            Add Group
-                        </Button>
+                        {canDownload && (
+                            <Button
+                                variant="success"
+                                onClick={() => {
+                                    const params = new URLSearchParams();
+                                    if (search) params.append('search', search);
+                                    if (masterGroup !== 'all')
+                                        params.append('master_group', masterGroup);
+                                    if (status !== 'all')
+                                        params.append('status', status);
+                                    params.append('sort_by', sortBy);
+                                    params.append('sort_order', sortOrder);
+                                    window.location.href = `/groups/download-pdf?${params.toString()}`;
+                                }}
+                            >
+                                <FileText className="mr-2 h-4 w-4" />
+                                Download
+                            </Button>
+                        )}
+                        {can('create-account') && (
+                            <Button onClick={() => setIsCreateOpen(true)}>
+                                <Plus className="mr-2 h-4 w-4" />
+                                Add Group
+                            </Button>
+                        )}
                     </div>
                 </div>
 
                 {/* Filter Card */}
+                {canFilter && (
                 <Card className="dark:border-gray-700 dark:bg-gray-800">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 dark:text-white">
@@ -449,6 +459,7 @@ export default function Groups({
                         </div>
                     </CardContent>
                 </Card>
+                )}
 
                 <Card className="dark:border-gray-700 dark:bg-gray-800">
                     <CardContent>
@@ -520,9 +531,11 @@ export default function Groups({
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
                                             Status
                                         </th>
-                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
-                                            Actions
-                                        </th>
+                                        {hasActionPermission && (
+                                            <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
+                                                Actions
+                                            </th>
+                                        )}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -568,40 +581,46 @@ export default function Groups({
                                                         {group.status ? 'Active' : 'Inactive'}
                                                     </span>
                                                 </td>
-                                                <td className="p-4">
-                                                    <div className="flex gap-2">
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            onClick={() =>
-                                                                handleEdit(
-                                                                    group,
-                                                                )
-                                                            }
-                                                            className="text-indigo-600 hover:text-indigo-800"
-                                                        >
-                                                            <Edit className="h-4 w-4" />
-                                                        </Button>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            onClick={() =>
-                                                                setDeletingGroup(
-                                                                    group,
-                                                                )
-                                                            }
-                                                            className="text-red-600 hover:text-red-800"
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
-                                                    </div>
-                                                </td>
+                                                {hasActionPermission && (
+                                                    <td className="p-4">
+                                                        <div className="flex gap-2">
+                                                            {can('update-account') && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    onClick={() =>
+                                                                        handleEdit(
+                                                                            group,
+                                                                        )
+                                                                    }
+                                                                    className="text-indigo-600 hover:text-indigo-800"
+                                                                >
+                                                                    <Edit className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+                                                            {can('delete-account') && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    onClick={() =>
+                                                                        setDeletingGroup(
+                                                                            group,
+                                                                        )
+                                                                    }
+                                                                    className="text-red-600 hover:text-red-800"
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                )}
                                             </tr>
                                         ))
                                     ) : (
                                         <tr>
                                             <td
-                                                colSpan={7}
+                                                colSpan={hasActionPermission ? 7 : 6}
                                                 className="p-8 text-center text-gray-500 dark:text-gray-400"
                                             >
                                                 <Building className="mx-auto mb-4 h-12 w-12 text-gray-400" />

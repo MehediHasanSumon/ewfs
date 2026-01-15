@@ -26,6 +26,7 @@ import {
     FileText,
 } from 'lucide-react';
 import { useState } from 'react';
+import { usePermission } from '@/hooks/usePermission';
 
 interface ShiftClosed {
     id: number;
@@ -84,6 +85,10 @@ interface ShiftClosedListProps {
 }
 
 export default function ShiftClosedList({ shiftClosedList, shifts, filters = {} }: ShiftClosedListProps) {
+    const { can } = usePermission();
+    const hasActionPermission = can('delete-is-shift-close');
+    const canFilter = can('can-is-shift-close-filter');
+    const canDownload = can('can-is-shift-close-download');
     const [search, setSearch] = useState(filters['search'] || '');
     const [shift, setShift] = useState(filters['shift_id'] || 'all');
     const [startDate, setStartDate] = useState(filters['start_date'] || '');
@@ -172,7 +177,7 @@ export default function ShiftClosedList({ shiftClosedList, shifts, filters = {} 
                         </p>
                     </div>
                     <div className="flex gap-2">
-                        {selectedItems.length > 0 && (
+                        {selectedItems.length > 0 && can('delete-is-shift-close') && (
                             <Button
                                 variant="destructive"
                                 onClick={handleBulkDelete}
@@ -181,25 +186,28 @@ export default function ShiftClosedList({ shiftClosedList, shifts, filters = {} 
                                 Delete Selected ({selectedItems.length})
                             </Button>
                         )}
-                        <Button
-                            variant="success"
-                            onClick={() => {
-                                const params = new URLSearchParams();
-                                if (search) params.append('search', search);
-                                if (shift !== 'all') params.append('shift_id', shift);
-                                if (startDate) params.append('start_date', startDate);
-                                if (endDate) params.append('end_date', endDate);
-                                if (sortField) params.append('sort', sortField);
-                                if (sortDirection) params.append('direction', sortDirection);
-                                window.location.href = `/shift-closed-list/download-pdf?${params.toString()}`;
-                            }}
-                        >
-                            <FileText className="mr-2 h-4 w-4" />
-                            Download
-                        </Button>
+                        {canDownload && (
+                            <Button
+                                variant="success"
+                                onClick={() => {
+                                    const params = new URLSearchParams();
+                                    if (search) params.append('search', search);
+                                    if (shift !== 'all') params.append('shift_id', shift);
+                                    if (startDate) params.append('start_date', startDate);
+                                    if (endDate) params.append('end_date', endDate);
+                                    if (sortField) params.append('sort', sortField);
+                                    if (sortDirection) params.append('direction', sortDirection);
+                                    window.location.href = `/shift-closed-list/download-pdf?${params.toString()}`;
+                                }}
+                            >
+                                <FileText className="mr-2 h-4 w-4" />
+                                Download
+                            </Button>
+                        )}
                     </div>
                 </div>
 
+                {canFilter && (
                 <Card className="dark:border-gray-700 dark:bg-gray-800">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 dark:text-white">
@@ -260,6 +268,7 @@ export default function ShiftClosedList({ shiftClosedList, shifts, filters = {} 
                         </div>
                     </CardContent>
                 </Card>
+                )}
 
                 <Card className="dark:border-gray-700 dark:bg-gray-800">
                     <CardContent>
@@ -311,9 +320,11 @@ export default function ShiftClosedList({ shiftClosedList, shifts, filters = {} 
                                         <th className="p-4 text-right text-[13px] font-medium dark:text-gray-300">
                                             Final Due
                                         </th>
+                                        {hasActionPermission && (
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
                                             Actions
                                         </th>
+                                        )}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -362,6 +373,7 @@ export default function ShiftClosedList({ shiftClosedList, shifts, filters = {} 
                                                 <td className="p-4 text-right text-[13px] dark:text-white">
                                                     {Number(record.daily_reading?.final_due_amount || 0).toFixed(2)}
                                                 </td>
+                                                {hasActionPermission && (
                                                 <td className="p-4 text-[13px] dark:text-white">
                                                     <div className="flex gap-2">
                                                         <Button
@@ -371,6 +383,7 @@ export default function ShiftClosedList({ shiftClosedList, shifts, filters = {} 
                                                         >
                                                             <Eye className="h-4 w-4" />
                                                         </Button>
+                                                        {can('delete-is-shift-close') && (
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
@@ -379,14 +392,16 @@ export default function ShiftClosedList({ shiftClosedList, shifts, filters = {} 
                                                         >
                                                             <Trash2 className="h-4 w-4" />
                                                         </Button>
+                                                        )}
                                                     </div>
                                                 </td>
+                                                )}
                                             </tr>
                                         ))
                                     ) : (
                                         <tr>
                                             <td
-                                                colSpan={11}
+                                                colSpan={hasActionPermission ? 11 : 10}
                                                 className="p-8 text-center text-gray-500 dark:text-gray-400"
                                             >
                                                 <Clock className="mx-auto mb-4 h-12 w-12 text-gray-400" />

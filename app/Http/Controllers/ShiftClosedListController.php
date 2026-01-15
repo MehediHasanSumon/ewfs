@@ -17,7 +17,8 @@ class ShiftClosedListController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('permission:view-is-shift-close', only: ['index', 'show', 'downloadPdf', 'downloadShowPdf']),
+            new Middleware('permission:view-is-shift-close', only: ['index', 'show']),
+            new Middleware('permission:view-is-shift-close|can-is-shift-close-download', only: ['downloadPdf', 'downloadShowPdf']),
             new Middleware('permission:delete-is-shift-close', only: ['destroy', 'bulkDelete']),
         ];
     }

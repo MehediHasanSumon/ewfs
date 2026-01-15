@@ -10,6 +10,7 @@ import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
 import { Head, useForm, router } from '@inertiajs/react';
+import { usePermission } from '@/hooks/usePermission';
 import { Plus, Edit, Trash2, Building, ChevronUp, ChevronDown, Filter, X, FileText } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
@@ -62,6 +63,10 @@ interface EmpDepartmentsProps {
 }
 
 export default function EmpDepartments({ departments, empTypes, filters }: EmpDepartmentsProps) {
+    const { can } = usePermission();
+    const hasActionPermission = can('update-employee') || can('delete-employee');
+    const canFilter = can('can-emp-department-filter');
+    const canDownload = can('can-emp-department-download');
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editingDepartment, setEditingDepartment] = useState<EmpDepartment | null>(null);
     const [deletingDepartment, setDeletingDepartment] = useState<EmpDepartment | null>(null);
@@ -240,7 +245,7 @@ export default function EmpDepartments({ departments, empTypes, filters }: EmpDe
                         <p className="text-gray-600 dark:text-gray-400">Manage employee departments and divisions</p>
                     </div>
                     <div className="flex gap-2">
-                        {selectedDepartments.length > 0 && (
+                        {selectedDepartments.length > 0 && can('delete-employee') && (
                             <Button 
                                 variant="destructive" 
                                 onClick={handleBulkDelete}
@@ -249,31 +254,36 @@ export default function EmpDepartments({ departments, empTypes, filters }: EmpDe
                                 Delete Selected ({selectedDepartments.length})
                             </Button>
                         )}
-                        <Button
-                            variant="success"
-                            onClick={() => {
-                                const params = new URLSearchParams();
-                                if (search) params.append('search', search);
-                                if (status !== 'all') params.append('status', status);
-                                if (empTypeId !== 'all') params.append('emp_type_id', empTypeId);
-                                if (startDate) params.append('start_date', startDate);
-                                if (endDate) params.append('end_date', endDate);
-                                if (sortBy) params.append('sort_by', sortBy);
-                                if (sortOrder) params.append('sort_order', sortOrder);
-                                window.location.href = `/emp-departments/download-pdf?${params.toString()}`;
-                            }}
-                        >
-                            <FileText className="h-4 w-4 mr-2" />
-                            Download
-                        </Button>
-                        <Button onClick={() => setIsCreateOpen(true)}>
-                            <Plus className="h-4 w-4 mr-2" />
-                            Add Department
-                        </Button>
+                        {canDownload && (
+                            <Button
+                                variant="success"
+                                onClick={() => {
+                                    const params = new URLSearchParams();
+                                    if (search) params.append('search', search);
+                                    if (status !== 'all') params.append('status', status);
+                                    if (empTypeId !== 'all') params.append('emp_type_id', empTypeId);
+                                    if (startDate) params.append('start_date', startDate);
+                                    if (endDate) params.append('end_date', endDate);
+                                    if (sortBy) params.append('sort_by', sortBy);
+                                    if (sortOrder) params.append('sort_order', sortOrder);
+                                    window.location.href = `/emp-departments/download-pdf?${params.toString()}`;
+                                }}
+                            >
+                                <FileText className="h-4 w-4 mr-2" />
+                                Download
+                            </Button>
+                        )}
+                        {can('create-employee') && (
+                            <Button onClick={() => setIsCreateOpen(true)}>
+                                <Plus className="h-4 w-4 mr-2" />
+                                Add Department
+                            </Button>
+                        )}
                     </div>
                 </div>
 
                 {/* Filter Card */}
+                {canFilter && (
                 <Card className="dark:bg-gray-800 dark:border-gray-700">
                     <CardHeader>
                         <CardTitle className="dark:text-white flex items-center gap-2">
@@ -351,6 +361,7 @@ export default function EmpDepartments({ departments, empTypes, filters }: EmpDe
                         </div>
                     </CardContent>
                 </Card>
+                )}
 
                 <Card className="dark:bg-gray-800 dark:border-gray-700">
                     <CardContent>
@@ -374,7 +385,9 @@ export default function EmpDepartments({ departments, empTypes, filters }: EmpDe
                                         </th>
                                         <th className="text-left py-3 px-4 text-[13px] font-semibold text-gray-700 dark:text-gray-300">Employee Type</th>
                                         <th className="text-left py-3 px-4 text-[13px] font-semibold text-gray-700 dark:text-gray-300">Status</th>
-                                        <th className="text-left py-3 px-4 text-[13px] font-semibold text-gray-700 dark:text-gray-300">Actions</th>
+                                        {hasActionPermission && (
+                                            <th className="text-left py-3 px-4 text-[13px] font-semibold text-gray-700 dark:text-gray-300">Actions</th>
+                                        )}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -397,30 +410,36 @@ export default function EmpDepartments({ departments, empTypes, filters }: EmpDe
                                                     {department.status ? 'Active' : 'Inactive'}
                                                 </span>
                                             </td>
-                                            <td className="py-3 px-4">
-                                                <div className="flex gap-2">
-                                                    <Button 
-                                                        variant="ghost" 
-                                                        size="sm"
-                                                        onClick={() => handleEdit(department)}
-                                                        className="text-indigo-600 hover:text-indigo-800"
-                                                    >
-                                                        <Edit className="h-4 w-4" />
-                                                    </Button>
-                                                    <Button 
-                                                        variant="ghost" 
-                                                        size="sm"
-                                                        onClick={() => handleDelete(department)}
-                                                        className="text-red-600 hover:text-red-800"
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                </div>
-                                            </td>
+                                            {hasActionPermission && (
+                                                <td className="py-3 px-4">
+                                                    <div className="flex gap-2">
+                                                        {can('update-employee') && (
+                                                            <Button 
+                                                                variant="ghost" 
+                                                                size="sm"
+                                                                onClick={() => handleEdit(department)}
+                                                                className="text-indigo-600 hover:text-indigo-800"
+                                                            >
+                                                                <Edit className="h-4 w-4" />
+                                                            </Button>
+                                                        )}
+                                                        {can('delete-employee') && (
+                                                            <Button 
+                                                                variant="ghost" 
+                                                                size="sm"
+                                                                onClick={() => handleDelete(department)}
+                                                                className="text-red-600 hover:text-red-800"
+                                                            >
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                            )}
                                         </tr>
                                     )) : (
                                         <tr>
-                                            <td colSpan={5} className="py-12 text-center text-gray-500 dark:text-gray-400">
+                                            <td colSpan={hasActionPermission ? 5 : 4} className="py-12 text-center text-gray-500 dark:text-gray-400">
                                                 <Building className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                                                 No departments found
                                             </td>

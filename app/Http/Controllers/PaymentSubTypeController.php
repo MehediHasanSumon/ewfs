@@ -16,7 +16,8 @@ class PaymentSubTypeController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('permission:view-payment-sub-type', only: ['index', 'downloadPdf']),
+            new Middleware('permission:view-payment-sub-type', only: ['index']),
+            new Middleware('permission:view-payment-sub-type|can-payment-sub-type-download', only: ['downloadPdf']),
             new Middleware('permission:create-payment-sub-type', only: ['store']),
             new Middleware('permission:update-payment-sub-type', only: ['edit', 'update']),
             new Middleware('permission:delete-payment-sub-type', only: ['destroy', 'bulkDelete']),

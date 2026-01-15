@@ -15,7 +15,7 @@ class EmpTypeController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('permission:view-employee', only: ['index', 'downloadPdf']),
+            new Middleware('permission:view-employee|can-emp-type-download', only: ['index', 'downloadPdf']),
             new Middleware('permission:create-employee', only: ['store']),
             new Middleware('permission:update-employee', only: ['update']),
             new Middleware('permission:delete-employee', only: ['destroy', 'bulkDelete']),

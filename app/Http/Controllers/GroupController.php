@@ -15,7 +15,7 @@ class GroupController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('permission:view-account', only: ['index', 'getParentChild', 'downloadPdf']),
+            new Middleware('permission:view-account|can-group-download', only: ['index', 'getParentChild', 'downloadPdf']),
             new Middleware('permission:create-account', only: ['store']),
             new Middleware('permission:update-account', only: ['update']),
             new Middleware('permission:delete-account', only: ['destroy', 'bulkDelete']),

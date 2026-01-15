@@ -22,7 +22,7 @@ class EmployeeController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('permission:view-employee', only: ['index', 'show', 'statement', 'downloadPaymentsPdf', 'downloadReceiptsPdf', 'downloadPdf']),
+            new Middleware('permission:view-employee|can-employee-download', only: ['index', 'show', 'statement', 'downloadPaymentsPdf', 'downloadReceiptsPdf', 'downloadPdf']),
             new Middleware('permission:create-employee', only: ['create', 'store']),
             new Middleware('permission:update-employee', only: ['edit', 'update']),
             new Middleware('permission:delete-employee', only: ['destroy', 'bulkDelete']),

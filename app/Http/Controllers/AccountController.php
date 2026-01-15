@@ -17,7 +17,7 @@ class AccountController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('permission:view-account', only: ['index', 'downloadPdf']),
+            new Middleware('permission:view-account|can-account-download', only: ['index', 'downloadPdf']),
             new Middleware('permission:create-account', only: ['store']),
             new Middleware('permission:update-account', only: ['update']),
             new Middleware('permission:delete-account', only: ['destroy']),
