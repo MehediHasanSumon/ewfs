@@ -5,11 +5,11 @@ BankBookLedger
 CashBookLedger
 Categories              ---Done
 CompanySettings         ---Done
-CreditSales
+CreditSales             ---Done
 CustomerDetailsBill
 CustomerLedgerDetails
 CustomerLedgerSummary
-Customers
+Customers               ---Done
 CustomerSummaryBill
 DailyStatement
 Dispensers
@@ -39,4 +39,4 @@ Suppliers               ---Done
 Units                   ---Done
 Users                   ---Done
 Vehicles                ---Done
-Vouchers
+Vouchers                ---Done

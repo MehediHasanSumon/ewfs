@@ -23,7 +23,8 @@ class CreditSaleController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('permission:view-credit-sale', only: ['index', 'downloadPdf']),
+            new Middleware('permission:view-credit-sale', only: ['index']),
+            new Middleware('permission:view-credit-sale|can-credit-sale-download', only: ['downloadPdf']),
             new Middleware('permission:create-credit-sale', only: ['store']),
             new Middleware('permission:update-credit-sale', only: ['edit', 'update']),
             new Middleware('permission:delete-credit-sale', only: ['destroy', 'bulkDelete']),

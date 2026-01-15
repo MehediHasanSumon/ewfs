@@ -29,6 +29,7 @@ import {
     X,
 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
+import { usePermission } from '@/hooks/usePermission';
 
 interface ReceivedVoucher {
     id: number;
@@ -123,6 +124,10 @@ export default function ReceivedVoucher({
     paymentSubTypes = [],
     filters = {},
 }: ReceivedVoucherProps) {
+    const { can } = usePermission();
+    const hasActionPermission = can('update-voucher') || can('delete-voucher');
+    const canFilter = can('can-voucher-filter');
+    const canDownload = can('can-voucher-download');
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editingVoucher, setEditingVoucher] =
         useState<ReceivedVoucher | null>(null);
@@ -367,7 +372,7 @@ export default function ReceivedVoucher({
                         </p>
                     </div>
                     <div className="flex gap-2">
-                        {selectedVouchers.length > 0 && (
+                        {selectedVouchers.length > 0 && can('delete-voucher') && (
                             <Button
                                 variant="destructive"
                                 onClick={handleBulkDelete}
@@ -376,34 +381,39 @@ export default function ReceivedVoucher({
                                 Delete Selected ({selectedVouchers.length})
                             </Button>
                         )}
-                        <Button
-                            variant="success"
-                            onClick={() => {
-                                const params = new URLSearchParams();
-                                if (search) params.append('search', search);
+                        {canDownload && (
+                            <Button
+                                variant="success"
+                                onClick={() => {
+                                    const params = new URLSearchParams();
+                                    if (search) params.append('search', search);
 
-                                if (paymentMethod !== 'all')
-                                    params.append('payment_method', paymentMethod);
-                                if (startDate)
-                                    params.append('start_date', startDate);
-                                if (endDate) params.append('end_date', endDate);
-                                if (sortBy) params.append('sort_by', sortBy);
-                                if (sortOrder)
-                                    params.append('sort_order', sortOrder);
-                                window.location.href = `/vouchers/received/download-pdf?${params.toString()}`;
-                            }}
-                        >
-                            <FileText className="mr-2 h-4 w-4" />
-                            Download
-                        </Button>
-                        <Button onClick={() => setIsCreateOpen(true)}>
-                            <Plus className="mr-2 h-4 w-4" />
-                            Add Received Voucher
-                        </Button>
+                                    if (paymentMethod !== 'all')
+                                        params.append('payment_method', paymentMethod);
+                                    if (startDate)
+                                        params.append('start_date', startDate);
+                                    if (endDate) params.append('end_date', endDate);
+                                    if (sortBy) params.append('sort_by', sortBy);
+                                    if (sortOrder)
+                                        params.append('sort_order', sortOrder);
+                                    window.location.href = `/vouchers/received/download-pdf?${params.toString()}`;
+                                }}
+                            >
+                                <FileText className="mr-2 h-4 w-4" />
+                                Download
+                            </Button>
+                        )}
+                        {can('create-voucher') && (
+                            <Button onClick={() => setIsCreateOpen(true)}>
+                                <Plus className="mr-2 h-4 w-4" />
+                                Add Received Voucher
+                            </Button>
+                        )}
                     </div>
                 </div>
 
                 {/* Filter Card */}
+                {canFilter && (
                 <Card className="dark:border-gray-700 dark:bg-gray-800">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 dark:text-white">
@@ -495,6 +505,7 @@ export default function ReceivedVoucher({
                         </div>
                     </CardContent>
                 </Card>
+                )}
 
                 <Card className="dark:border-gray-700 dark:bg-gray-800">
                     <CardContent>
@@ -549,9 +560,11 @@ export default function ReceivedVoucher({
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
                                             Payment Method
                                         </th>
-                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
-                                            Actions
-                                        </th>
+                                        {hasActionPermission && (
+                                            <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
+                                                Actions
+                                            </th>
+                                        )}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -603,40 +616,46 @@ export default function ReceivedVoucher({
                                                         {voucher.transaction?.payment_type || 'N/A'}
                                                     </span>
                                                 </td>
-                                                <td className="p-4">
-                                                    <div className="flex gap-2">
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            onClick={() =>
-                                                                handleEdit(
-                                                                    voucher,
-                                                                )
-                                                            }
-                                                            className="text-indigo-600 hover:text-indigo-800"
-                                                        >
-                                                            <Edit className="h-4 w-4" />
-                                                        </Button>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            onClick={() =>
-                                                                handleDelete(
-                                                                    voucher,
-                                                                )
-                                                            }
-                                                            className="text-red-600 hover:text-red-800"
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
-                                                    </div>
-                                                </td>
+                                                {hasActionPermission && (
+                                                    <td className="p-4">
+                                                        <div className="flex gap-2">
+                                                            {can('update-voucher') && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    onClick={() =>
+                                                                        handleEdit(
+                                                                            voucher,
+                                                                        )
+                                                                    }
+                                                                    className="text-indigo-600 hover:text-indigo-800"
+                                                                >
+                                                                    <Edit className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+                                                            {can('delete-voucher') && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    onClick={() =>
+                                                                        handleDelete(
+                                                                            voucher,
+                                                                        )
+                                                                    }
+                                                                    className="text-red-600 hover:text-red-800"
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                )}
                                             </tr>
                                         ))
                                     ) : (
                                         <tr>
                                             <td
-                                                colSpan={9}
+                                                colSpan={hasActionPermission ? 10 : 9}
                                                 className="p-8 text-center text-gray-500 dark:text-gray-400"
                                             >
                                                 <Receipt className="mx-auto mb-4 h-12 w-12 text-gray-400" />

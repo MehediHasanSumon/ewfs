@@ -24,7 +24,8 @@ class PaymentVoucherController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('permission:view-voucher', only: ['index', 'downloadPdf']),
+            new Middleware('permission:view-voucher', only: ['index']),
+            new Middleware('permission:view-voucher|can-voucher-download', only: ['downloadPdf']),
             new Middleware('permission:create-voucher', only: ['store']),
             new Middleware('permission:update-voucher', only: ['update']),
             new Middleware('permission:delete-voucher', only: ['destroy', 'bulkDelete']),

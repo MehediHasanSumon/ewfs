@@ -23,7 +23,8 @@ class CustomerController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('permission:view-customer', only: ['index', 'show', 'statement', 'downloadPdf', 'downloadSalesPdf', 'downloadPaymentsPdf']),
+            new Middleware('permission:view-customer', only: ['index', 'show', 'statement', 'downloadSalesPdf', 'downloadPaymentsPdf']),
+            new Middleware('permission:view-customer|can-customer-download', only: ['downloadPdf']),
             new Middleware('permission:create-customer', only: ['store']),
             new Middleware('permission:update-customer', only: ['update']),
             new Middleware('permission:delete-customer', only: ['destroy', 'bulkDelete']),
