@@ -449,6 +449,8 @@ class UserManager extends Command
                 foreach ($actions as $action) {
                     Permission::firstOrCreate(['name' => "{$action}-{$model}"]);
                 }
+                Permission::firstOrCreate(['name' => "can-{$model}-filter"]);
+                Permission::firstOrCreate(['name' => "can-{$model}-download"]);
             }
 
             // Add extra static permissions
@@ -457,10 +459,14 @@ class UserManager extends Command
                 'update-role',
                 'delete-role',
                 'view-role',
+                'can-role-filter',
+                'can-role-download',
                 'create-permission',
                 'update-permission',
                 'delete-permission',
                 'view-permission',
+                'can-permission-filter',
+                'can-permission-download',
             ];
 
             foreach ($extraPermissions as $permissionName) {

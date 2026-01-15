@@ -15,7 +15,8 @@ class ShiftController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('permission:view-shift', only: ['index', 'downloadPdf']),
+            new Middleware('permission:view-shift', only: ['index']),
+            new Middleware('permission:can-shift-download', only: ['downloadPdf']),
             new Middleware('permission:create-shift', only: ['store']),
             new Middleware('permission:update-shift', only: ['update']),
             new Middleware('permission:delete-shift', only: ['destroy', 'bulkDelete']),

@@ -17,10 +17,11 @@ class StockController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('permission:view-stock', only: ['index', 'downloadPdf']),
+            new Middleware('permission:view-stock', only: ['index']),
             new Middleware('permission:create-stock', only: ['store']),
             new Middleware('permission:update-stock', only: ['update']),
             new Middleware('permission:delete-stock', only: ['destroy', 'bulkDelete']),
+            new Middleware('permission:can-stock-download', only: ['downloadPdf']),
         ];
     }
     public function index(Request $request)

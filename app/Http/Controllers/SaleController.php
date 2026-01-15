@@ -28,7 +28,8 @@ class SaleController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('permission:view-sale', only: ['index', 'downloadBatchPdf', 'downloadPdf']),
+            new Middleware('permission:view-sale', only: ['index', 'downloadBatchPdf']),
+            new Middleware('permission:view-sale|can-sale-download', only: ['downloadPdf']),
             new Middleware('permission:create-sale', only: ['store']),
             new Middleware('permission:update-sale', only: ['edit', 'update']),
             new Middleware('permission:delete-sale', only: ['destroy', 'bulkDelete']),

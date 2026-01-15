@@ -29,6 +29,7 @@ import {
     X,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { usePermission } from '@/hooks/usePermission';
 
 interface User {
     id: number;
@@ -80,6 +81,10 @@ interface UsersProps {
 }
 
 export default function Users({ users, roles = [], filters }: UsersProps) {
+    const { can } = usePermission();
+    const hasActionPermission = can('update-user') || can('delete-user');
+    const canFilter = can('can-user-filter');
+    const canDownload = can('can-user-download');
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
     const [deletingUser, setDeletingUser] = useState<User | null>(null);
@@ -288,7 +293,7 @@ export default function Users({ users, roles = [], filters }: UsersProps) {
                         </p>
                     </div>
                     <div className="flex gap-2">
-                        {selectedUsers.length > 0 && (
+                        {selectedUsers.length > 0 && can('delete-user') && (
                             <Button
                                 variant="destructive"
                                 onClick={handleBulkDelete}
@@ -297,6 +302,7 @@ export default function Users({ users, roles = [], filters }: UsersProps) {
                                 Delete Selected ({selectedUsers.length})
                             </Button>
                         )}
+                        {canDownload && (
                         <Button
                             variant="success"
                             onClick={() => {
@@ -317,14 +323,18 @@ export default function Users({ users, roles = [], filters }: UsersProps) {
                             <FileText className="mr-2 h-4 w-4" />
                             Download
                         </Button>
+                        )}
+                        {can('create-user') && (
                         <Button onClick={() => setIsCreateOpen(true)}>
                             <Plus className="mr-2 h-4 w-4" />
                             Add User
                         </Button>
+                        )}
                     </div>
                 </div>
 
                 {/* Filter Card */}
+                {canFilter && (
                 <Card className="dark:border-gray-700 dark:bg-gray-800">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 dark:text-white">
@@ -490,6 +500,7 @@ export default function Users({ users, roles = [], filters }: UsersProps) {
                         </div>
                     </CardContent>
                 </Card>
+                )}
 
                 <Card className="dark:border-gray-700 dark:bg-gray-800">
                     <CardContent>
@@ -546,9 +557,11 @@ export default function Users({ users, roles = [], filters }: UsersProps) {
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
                                             Banned
                                         </th>
+                                        {hasActionPermission && (
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
                                             Actions
                                         </th>
+                                        )}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -620,8 +633,10 @@ export default function Users({ users, roles = [], filters }: UsersProps) {
                                                         {user.banned ? 'Banned' : 'Active'}
                                                     </span>
                                                 </td>
+                                                {hasActionPermission && (
                                                 <td className="p-4">
                                                     <div className="flex gap-2">
+                                                        {can('update-user') && (
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
@@ -632,6 +647,8 @@ export default function Users({ users, roles = [], filters }: UsersProps) {
                                                         >
                                                             <Edit className="h-4 w-4" />
                                                         </Button>
+                                                        )}
+                                                        {can('delete-user') && (
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
@@ -644,14 +661,16 @@ export default function Users({ users, roles = [], filters }: UsersProps) {
                                                         >
                                                             <Trash2 className="h-4 w-4" />
                                                         </Button>
+                                                        )}
                                                     </div>
                                                 </td>
+                                                )}
                                             </tr>
                                         ))
                                     ) : (
                                         <tr>
                                             <td
-                                                colSpan={7}
+                                                colSpan={hasActionPermission ? 7 : 6}
                                                 className="p-8 text-center text-gray-500 dark:text-gray-400"
                                             >
                                                 <UsersIcon className="mx-auto mb-4 h-12 w-12 text-gray-400" />

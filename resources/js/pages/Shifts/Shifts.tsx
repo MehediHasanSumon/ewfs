@@ -12,6 +12,7 @@ import { type BreadcrumbItem } from '@/types';
 import { Head, useForm, router } from '@inertiajs/react';
 import { Plus, Edit, Trash2, Clock, ChevronUp, ChevronDown, Filter, X, FileText } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { usePermission } from '@/hooks/usePermission';
 
 interface Shift {
     id: number;
@@ -55,6 +56,11 @@ interface ShiftsProps {
 }
 
 export default function Shifts({ shifts, filters }: ShiftsProps) {
+    const { can } = usePermission();
+    const hasActionPermission = can('update-shift') || can('delete-shift');
+    const canFilter = can('can-shift-filter');
+    const canDownload = can('can-shift-download');
+    
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editingShift, setEditingShift] = useState<Shift | null>(null);
     const [deletingShift, setDeletingShift] = useState<Shift | null>(null);
@@ -224,7 +230,7 @@ export default function Shifts({ shifts, filters }: ShiftsProps) {
                         <p className="text-gray-600 dark:text-gray-400">Manage work shifts and schedules</p>
                     </div>
                     <div className="flex gap-2">
-                        {selectedShifts.length > 0 && (
+                        {selectedShifts.length > 0 && can('delete-shift') && (
                             <Button 
                                 variant="destructive" 
                                 onClick={handleBulkDelete}
@@ -233,30 +239,35 @@ export default function Shifts({ shifts, filters }: ShiftsProps) {
                                 Delete Selected ({selectedShifts.length})
                             </Button>
                         )}
-                        <Button
-                            variant="success"
-                            onClick={() => {
-                                const params = new URLSearchParams();
-                                if (search) params.append('search', search);
-                                if (status !== 'all') params.append('status', status);
-                                if (startDate) params.append('start_date', startDate);
-                                if (endDate) params.append('end_date', endDate);
-                                if (sortBy) params.append('sort_by', sortBy);
-                                if (sortOrder) params.append('sort_order', sortOrder);
-                                window.location.href = `/shifts/download-pdf?${params.toString()}`;
-                            }}
-                        >
-                            <FileText className="h-4 w-4 mr-2" />
-                            Download
-                        </Button>
-                        <Button onClick={() => setIsCreateOpen(true)}>
-                            <Plus className="h-4 w-4 mr-2" />
-                            Add Shift
-                        </Button>
+                        {canDownload && (
+                            <Button
+                                variant="success"
+                                onClick={() => {
+                                    const params = new URLSearchParams();
+                                    if (search) params.append('search', search);
+                                    if (status !== 'all') params.append('status', status);
+                                    if (startDate) params.append('start_date', startDate);
+                                    if (endDate) params.append('end_date', endDate);
+                                    if (sortBy) params.append('sort_by', sortBy);
+                                    if (sortOrder) params.append('sort_order', sortOrder);
+                                    window.location.href = `/shifts/download-pdf?${params.toString()}`;
+                                }}
+                            >
+                                <FileText className="h-4 w-4 mr-2" />
+                                Download
+                            </Button>
+                        )}
+                        {can('create-shift') && (
+                            <Button onClick={() => setIsCreateOpen(true)}>
+                                <Plus className="h-4 w-4 mr-2" />
+                                Add Shift
+                            </Button>
+                        )}
                     </div>
                 </div>
 
                 {/* Filter Card */}
+                {canFilter && (
                 <Card className="dark:bg-gray-800 dark:border-gray-700">
                     <CardHeader>
                         <CardTitle className="dark:text-white flex items-center gap-2">
@@ -318,6 +329,7 @@ export default function Shifts({ shifts, filters }: ShiftsProps) {
                         </div>
                     </CardContent>
                 </Card>
+                )}
 
                 <Card className="dark:bg-gray-800 dark:border-gray-700">
                     <CardContent>
@@ -342,7 +354,7 @@ export default function Shifts({ shifts, filters }: ShiftsProps) {
                                         <th className="text-left py-3 px-4 text-[13px] font-semibold text-gray-700 dark:text-gray-300">Start Time</th>
                                         <th className="text-left py-3 px-4 text-[13px] font-semibold text-gray-700 dark:text-gray-300">End Time</th>
                                         <th className="text-left py-3 px-4 text-[13px] font-semibold text-gray-700 dark:text-gray-300">Status</th>
-                                        <th className="text-left py-3 px-4 text-[13px] font-semibold text-gray-700 dark:text-gray-300">Actions</th>
+                                        {hasActionPermission && <th className="text-left py-3 px-4 text-[13px] font-semibold text-gray-700 dark:text-gray-300">Actions</th>}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -364,8 +376,10 @@ export default function Shifts({ shifts, filters }: ShiftsProps) {
                                                     {shift.status ? 'Active' : 'Inactive'}
                                                 </span>
                                             </td>
+                                            {hasActionPermission && (
                                             <td className="py-3 px-4">
                                                 <div className="flex gap-2">
+                                                    {can('update-shift') && (
                                                     <Button 
                                                         variant="ghost" 
                                                         size="sm"
@@ -374,6 +388,8 @@ export default function Shifts({ shifts, filters }: ShiftsProps) {
                                                     >
                                                         <Edit className="h-4 w-4" />
                                                     </Button>
+                                                    )}
+                                                    {can('delete-shift') && (
                                                     <Button 
                                                         variant="ghost" 
                                                         size="sm"
@@ -382,12 +398,14 @@ export default function Shifts({ shifts, filters }: ShiftsProps) {
                                                     >
                                                         <Trash2 className="h-4 w-4" />
                                                     </Button>
+                                                    )}
                                                 </div>
                                             </td>
+                                            )}
                                         </tr>
                                     )) : (
                                         <tr>
-                                            <td colSpan={6} className="py-12 text-center text-gray-500 dark:text-gray-400">
+                                            <td colSpan={hasActionPermission ? 6 : 5} className="py-12 text-center text-gray-500 dark:text-gray-400">
                                                 <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                                                 No shifts found
                                             </td>

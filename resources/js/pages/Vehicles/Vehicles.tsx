@@ -11,8 +11,9 @@ import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router, useForm } from '@inertiajs/react';
-import { ChevronDown, ChevronUp, Edit, FileText, Filter, Plus, Trash2, X, Car } from 'lucide-react';
+import { Edit, FileText, Filter, Plus, Trash2, X, Car } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { usePermission } from '@/hooks/usePermission';
 
 interface Customer {
     id: number;
@@ -22,6 +23,7 @@ interface Customer {
 interface Product {
     id: number;
     name: string;
+    product_name: string;
 }
 
 interface Vehicle {
@@ -71,6 +73,10 @@ interface VehiclesProps {
 }
 
 export default function Vehicles({ vehicles, customers = [], products = [], filters }: VehiclesProps) {
+    const { can } = usePermission();
+    const hasActionPermission = can('update-vehicle') || can('delete-vehicle');
+    const canFilter = can('can-vehicle-filter');
+    const canDownload = can('can-vehicle-download');
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
     const [deletingVehicle, setDeletingVehicle] = useState<Vehicle | null>(null);
@@ -79,8 +85,6 @@ export default function Vehicles({ vehicles, customers = [], products = [], filt
     const [search, setSearch] = useState(filters?.search || '');
     const [customer, setCustomer] = useState(filters?.customer || 'all');
     const [status, setStatus] = useState(filters?.status || 'all');
-    const [sortBy, setSortBy] = useState(filters?.sort_by || 'created_at');
-    const [sortOrder, setSortOrder] = useState(filters?.sort_order || 'desc');
     const [perPage, setPerPage] = useState(filters?.per_page || 10);
 
     const { data, setData, post, put, processing, errors, reset } = useForm({
@@ -174,8 +178,6 @@ export default function Vehicles({ vehicles, customers = [], products = [], filt
                 search: search || undefined,
                 customer: customer === 'all' ? undefined : customer,
                 status: status === 'all' ? undefined : status,
-                sort_by: sortBy,
-                sort_order: sortOrder,
                 per_page: perPage,
             },
             { preserveState: true },
@@ -189,26 +191,6 @@ export default function Vehicles({ vehicles, customers = [], products = [], filt
         router.get(
             '/vehicles',
             {
-                sort_by: sortBy,
-                sort_order: sortOrder,
-                per_page: perPage,
-            },
-            { preserveState: true },
-        );
-    };
-
-    const handleSort = (column: string) => {
-        const newOrder = sortBy === column && sortOrder === 'asc' ? 'desc' : 'asc';
-        setSortBy(column);
-        setSortOrder(newOrder);
-        router.get(
-            '/vehicles',
-            {
-                search: search || undefined,
-                customer: customer === 'all' ? undefined : customer,
-                status: status === 'all' ? undefined : status,
-                sort_by: column,
-                sort_order: newOrder,
                 per_page: perPage,
             },
             { preserveState: true },
@@ -222,8 +204,6 @@ export default function Vehicles({ vehicles, customers = [], products = [], filt
                 search: search || undefined,
                 customer: customer === 'all' ? undefined : customer,
                 status: status === 'all' ? undefined : status,
-                sort_by: sortBy,
-                sort_order: sortOrder,
                 per_page: perPage,
                 page,
             },
@@ -253,7 +233,7 @@ export default function Vehicles({ vehicles, customers = [], products = [], filt
                         </p>
                     </div>
                     <div className="flex gap-2">
-                        {selectedVehicles.length > 0 && (
+                        {selectedVehicles.length > 0 && can('delete-vehicle') && (
                             <Button
                                 variant="destructive"
                                 onClick={handleBulkDelete}
@@ -262,6 +242,7 @@ export default function Vehicles({ vehicles, customers = [], products = [], filt
                                 Delete Selected ({selectedVehicles.length})
                             </Button>
                         )}
+                        {canDownload && (
                         <Button
                             variant="success"
                             onClick={() => {
@@ -269,14 +250,14 @@ export default function Vehicles({ vehicles, customers = [], products = [], filt
                                 if (search) params.append('search', search);
                                 if (customer !== 'all') params.append('customer', customer);
                                 if (status !== 'all') params.append('status', status);
-                                if (sortBy) params.append('sort_by', sortBy);
-                                if (sortOrder) params.append('sort_order', sortOrder);
                                 window.location.href = `/vehicles/download-pdf?${params.toString()}`;
                             }}
                         >
                             <FileText className="mr-2 h-4 w-4" />
                             Download
                         </Button>
+                        )}
+                        {can('create-vehicle') && (
                         <Button onClick={() => {
                             setIsCreateOpen(true);
                             reset();
@@ -284,10 +265,12 @@ export default function Vehicles({ vehicles, customers = [], products = [], filt
                             <Plus className="mr-2 h-4 w-4" />
                             Add Vehicle
                         </Button>
+                        )}
                     </div>
                 </div>
 
                 {/* Filter Card */}
+                {canFilter && (
                 <Card className="dark:border-gray-700 dark:bg-gray-800">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 dark:text-white">
@@ -318,8 +301,6 @@ export default function Vehicles({ vehicles, customers = [], products = [], filt
                                                 search: search || undefined,
                                                 customer: value === 'all' ? undefined : value,
                                                 status: status === 'all' ? undefined : status,
-                                                sort_by: sortBy,
-                                                sort_order: sortOrder,
                                                 per_page: perPage,
                                             },
                                             { preserveState: true },
@@ -351,8 +332,6 @@ export default function Vehicles({ vehicles, customers = [], products = [], filt
                                                 search: search || undefined,
                                                 customer: customer === 'all' ? undefined : customer,
                                                 status: value === 'all' ? undefined : value,
-                                                sort_by: sortBy,
-                                                sort_order: sortOrder,
                                                 per_page: perPage,
                                             },
                                             { preserveState: true },
@@ -381,6 +360,7 @@ export default function Vehicles({ vehicles, customers = [], products = [], filt
                         </div>
                     </CardContent>
                 </Card>
+                )}
 
                 <Card className="dark:border-gray-700 dark:bg-gray-800">
                     <CardContent>
@@ -393,7 +373,7 @@ export default function Vehicles({ vehicles, customers = [], products = [], filt
                                                 type="checkbox"
                                                 checked={
                                                     selectedVehicles.length ===
-                                                        vehicles.data.length &&
+                                                    vehicles.data.length &&
                                                     vehicles.data.length > 0
                                                 }
                                                 onChange={toggleSelectAll}
@@ -421,9 +401,11 @@ export default function Vehicles({ vehicles, customers = [], products = [], filt
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
                                             Status
                                         </th>
+                                        {hasActionPermission && (
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
                                             Actions
                                         </th>
+                                        )}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -480,8 +462,10 @@ export default function Vehicles({ vehicles, customers = [], products = [], filt
                                                         {vehicle.status ? 'Active' : 'Inactive'}
                                                     </Badge>
                                                 </td>
+                                                {hasActionPermission && (
                                                 <td className="p-4">
                                                     <div className="flex gap-2">
+                                                        {can('update-vehicle') && (
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
@@ -490,6 +474,8 @@ export default function Vehicles({ vehicles, customers = [], products = [], filt
                                                         >
                                                             <Edit className="h-4 w-4" />
                                                         </Button>
+                                                        )}
+                                                        {can('delete-vehicle') && (
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
@@ -498,14 +484,16 @@ export default function Vehicles({ vehicles, customers = [], products = [], filt
                                                         >
                                                             <Trash2 className="h-4 w-4" />
                                                         </Button>
+                                                        )}
                                                     </div>
                                                 </td>
+                                                )}
                                             </tr>
                                         ))
                                     ) : (
                                         <tr>
                                             <td
-                                                colSpan={9}
+                                                colSpan={hasActionPermission ? 9 : 8}
                                                 className="p-8 text-center text-gray-500 dark:text-gray-400"
                                             >
                                                 <Car className="mx-auto mb-4 h-12 w-12 text-gray-400" />
@@ -533,8 +521,6 @@ export default function Vehicles({ vehicles, customers = [], products = [], filt
                                         search: search || undefined,
                                         customer: customer === 'all' ? undefined : customer,
                                         status: status === 'all' ? undefined : status,
-                                        sort_by: sortBy,
-                                        sort_order: sortOrder,
                                         per_page: newPerPage,
                                     },
                                     { preserveState: true },

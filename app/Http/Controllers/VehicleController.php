@@ -17,10 +17,11 @@ class VehicleController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('permission:view-vehicle', only: ['index', 'downloadPdf']),
+            new Middleware('permission:view-vehicle', only: ['index']),
             new Middleware('permission:create-vehicle', only: ['store']),
             new Middleware('permission:update-vehicle', only: ['update']),
             new Middleware('permission:delete-vehicle', only: ['destroy', 'bulkDelete']),
+            new Middleware('permission:can-vehicle-download', only: ['downloadPdf']),
         ];
     }
     public function index(Request $request)

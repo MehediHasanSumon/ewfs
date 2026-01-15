@@ -13,6 +13,7 @@ import { type BreadcrumbItem } from '@/types';
 import { Head, useForm, router } from '@inertiajs/react';
 import { Plus, Search, Edit, Trash2, Key, ChevronUp, ChevronDown, Filter, X, FileText } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { usePermission } from '@/hooks/usePermission';
 
 interface Permission {
     id: number;
@@ -54,6 +55,11 @@ interface PermissionsProps {
 }
 
 export default function Permissions({ permissions, filters }: PermissionsProps) {
+    const { can } = usePermission();
+    const hasActionPermission = can('update-permission') || can('delete-permission');
+    const canFilter = can('can-permission-filter');
+    const canDownload = can('can-permission-download');
+    
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editingPermission, setEditingPermission] = useState<Permission | null>(null);
     const [deletingPermission, setDeletingPermission] = useState<Permission | null>(null);
@@ -213,7 +219,7 @@ export default function Permissions({ permissions, filters }: PermissionsProps) 
                         <p className="text-gray-600 dark:text-gray-400">Manage system permissions and access controls</p>
                     </div>
                     <div className="flex gap-2">
-                        {selectedPermissions.length > 0 && (
+                        {selectedPermissions.length > 0 && can('delete-permission') && (
                             <Button 
                                 variant="destructive" 
                                 onClick={handleBulkDelete}
@@ -222,30 +228,35 @@ export default function Permissions({ permissions, filters }: PermissionsProps) 
                                 Delete Selected ({selectedPermissions.length})
                             </Button>
                         )}
-                        <Button
-                            variant="success"
-                            onClick={() => {
-                                const params = new URLSearchParams();
-                                if (search) params.append('search', search);
-                                if (module !== 'all') params.append('module', module);
-                                if (startDate) params.append('start_date', startDate);
-                                if (endDate) params.append('end_date', endDate);
-                                if (sortBy) params.append('sort_by', sortBy);
-                                if (sortOrder) params.append('sort_order', sortOrder);
-                                window.location.href = `/permissions/download-pdf?${params.toString()}`;
-                            }}
-                        >
-                            <FileText className="h-4 w-4 mr-2" />
-                            Download
-                        </Button>
-                        <Button onClick={() => setIsCreateOpen(true)}>
-                            <Plus className="h-4 w-4 mr-2" />
-                            Add Permission
-                        </Button>
+                        {canDownload && (
+                            <Button
+                                variant="success"
+                                onClick={() => {
+                                    const params = new URLSearchParams();
+                                    if (search) params.append('search', search);
+                                    if (module !== 'all') params.append('module', module);
+                                    if (startDate) params.append('start_date', startDate);
+                                    if (endDate) params.append('end_date', endDate);
+                                    if (sortBy) params.append('sort_by', sortBy);
+                                    if (sortOrder) params.append('sort_order', sortOrder);
+                                    window.location.href = `/permissions/download-pdf?${params.toString()}`;
+                                }}
+                            >
+                                <FileText className="h-4 w-4 mr-2" />
+                                Download
+                            </Button>
+                        )}
+                        {can('create-permission') && (
+                            <Button onClick={() => setIsCreateOpen(true)}>
+                                <Plus className="h-4 w-4 mr-2" />
+                                Add Permission
+                            </Button>
+                        )}
                     </div>
                 </div>
 
                 {/* Filter Card */}
+                {canFilter && (
                 <Card className="dark:bg-gray-800 dark:border-gray-700">
                     <CardHeader>
                         <CardTitle className="dark:text-white flex items-center gap-2">
@@ -308,6 +319,7 @@ export default function Permissions({ permissions, filters }: PermissionsProps) 
                         </div>
                     </CardContent>
                 </Card>
+                )}
 
                 <Card className="dark:bg-gray-800 dark:border-gray-700">
                     <CardContent>
@@ -337,7 +349,7 @@ export default function Permissions({ permissions, filters }: PermissionsProps) 
                                                 {sortBy === 'roles_count' && (sortOrder === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
                                             </div>
                                         </th>
-                                        <th className="text-left py-3 px-4 text-[13px] font-semibold text-gray-700 dark:text-gray-300">Actions</th>
+                                        {hasActionPermission && <th className="text-left py-3 px-4 text-[13px] font-semibold text-gray-700 dark:text-gray-300">Actions</th>}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -359,8 +371,10 @@ export default function Permissions({ permissions, filters }: PermissionsProps) 
                                             </td>
                                             <td className="py-3 px-4 text-[13px] text-gray-700 dark:text-gray-300">{permission.description}</td>
                                             <td className="py-3 px-4 text-[13px] text-gray-700 dark:text-gray-300">{permission.roles_count} roles</td>
+                                            {hasActionPermission && (
                                             <td className="py-3 px-4">
                                                 <div className="flex gap-2">
+                                                    {can('update-permission') && (
                                                     <Button 
                                                         variant="ghost" 
                                                         size="sm"
@@ -369,6 +383,8 @@ export default function Permissions({ permissions, filters }: PermissionsProps) 
                                                     >
                                                         <Edit className="h-4 w-4" />
                                                     </Button>
+                                                    )}
+                                                    {can('delete-permission') && (
                                                     <Button 
                                                         variant="ghost" 
                                                         size="sm"
@@ -377,12 +393,14 @@ export default function Permissions({ permissions, filters }: PermissionsProps) 
                                                     >
                                                         <Trash2 className="h-4 w-4" />
                                                     </Button>
+                                                    )}
                                                 </div>
                                             </td>
+                                            )}
                                         </tr>
                                     )) : (
                                         <tr>
-                                            <td colSpan={6} className="py-12 text-center text-gray-500 dark:text-gray-400">
+                                            <td colSpan={hasActionPermission ? 6 : 5} className="py-12 text-center text-gray-500 dark:text-gray-400">
                                                 <Key className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                                                 No permissions found
                                             </td>

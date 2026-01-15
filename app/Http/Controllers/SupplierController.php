@@ -19,10 +19,11 @@ class SupplierController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('permission:view-supplier', only: ['index', 'show', 'statement', 'downloadPdf', 'downloadPurchasesPdf', 'downloadPaymentsPdf']),
+            new Middleware('permission:view-supplier', only: ['index', 'show', 'statement']),
             new Middleware('permission:create-supplier', only: ['store']),
             new Middleware('permission:update-supplier', only: ['update']),
             new Middleware('permission:delete-supplier', only: ['destroy', 'bulkDelete']),
+            new Middleware('permission:can-supplier-download', only: ['downloadPdf', 'downloadPurchasesPdf', 'downloadPaymentsPdf']),
         ];
     }
     public function index(Request $request)

@@ -29,6 +29,7 @@ import {
     X,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { usePermission } from '@/hooks/usePermission';
 
 interface Purchase {
     id: number;
@@ -112,6 +113,11 @@ export default function Purchases({
     products = [],
     filters = {},
 }: PurchasesProps) {
+    const { can } = usePermission();
+    const hasActionPermission = can('update-purchase') || can('delete-purchase');
+    const canFilter = can('can-purchase-filter');
+    const canDownload = can('can-purchase-download');
+    
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editingPurchase, setEditingPurchase] = useState<Purchase | null>(
         null,
@@ -587,7 +593,7 @@ export default function Purchases({
                         </p>
                     </div>
                     <div className="flex gap-2">
-                        {selectedPurchases.length > 0 && (
+                        {selectedPurchases.length > 0 && can('delete-purchase') && (
                             <Button
                                 variant="destructive"
                                 onClick={handleBulkDelete}
@@ -596,38 +602,43 @@ export default function Purchases({
                                 Delete Selected ({selectedPurchases.length})
                             </Button>
                         )}
-                        <Button
-                            variant="success"
-                            onClick={() => {
-                                const params = new URLSearchParams();
-                                if (search) params.append('search', search);
-                                if (supplier !== 'all')
-                                    params.append('supplier', supplier);
-                                if (paymentStatus !== 'all')
-                                    params.append(
-                                        'payment_status',
-                                        paymentStatus,
-                                    );
-                                if (startDate)
-                                    params.append('start_date', startDate);
-                                if (endDate) params.append('end_date', endDate);
-                                if (sortBy) params.append('sort_by', sortBy);
-                                if (sortOrder)
-                                    params.append('sort_order', sortOrder);
-                                window.location.href = `/purchases/download-pdf?${params.toString()}`;
-                            }}
-                        >
-                            <FileText className="mr-2 h-4 w-4" />
-                            Download
-                        </Button>
-                        <Button onClick={() => setIsCreateOpen(true)}>
-                            <Plus className="mr-2 h-4 w-4" />
-                            Add Purchase
-                        </Button>
+                        {canDownload && (
+                            <Button
+                                variant="success"
+                                onClick={() => {
+                                    const params = new URLSearchParams();
+                                    if (search) params.append('search', search);
+                                    if (supplier !== 'all')
+                                        params.append('supplier', supplier);
+                                    if (paymentStatus !== 'all')
+                                        params.append(
+                                            'payment_status',
+                                            paymentStatus,
+                                        );
+                                    if (startDate)
+                                        params.append('start_date', startDate);
+                                    if (endDate) params.append('end_date', endDate);
+                                    if (sortBy) params.append('sort_by', sortBy);
+                                    if (sortOrder)
+                                        params.append('sort_order', sortOrder);
+                                    window.location.href = `/purchases/download-pdf?${params.toString()}`;
+                                }}
+                            >
+                                <FileText className="mr-2 h-4 w-4" />
+                                Download
+                            </Button>
+                        )}
+                        {can('create-purchase') && (
+                            <Button onClick={() => setIsCreateOpen(true)}>
+                                <Plus className="mr-2 h-4 w-4" />
+                                Add Purchase
+                            </Button>
+                        )}
                     </div>
                 </div>
 
                 {/* Filter Card */}
+                {canFilter && (
                 <Card className="dark:border-gray-700 dark:bg-gray-800">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 dark:text-white">
@@ -748,6 +759,7 @@ export default function Purchases({
                         </div>
                     </CardContent>
                 </Card>
+                )}
 
                 <Card className="dark:border-gray-700 dark:bg-gray-800">
                     <CardContent>
@@ -804,9 +816,11 @@ export default function Purchases({
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
                                             Status
                                         </th>
+                                        {hasActionPermission && (
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
                                             Actions
                                         </th>
+                                        )}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -872,8 +886,10 @@ export default function Purchases({
                                                               : 'Due'}
                                                     </span>
                                                 </td>
+                                                {hasActionPermission && (
                                                 <td className="p-4">
                                                     <div className="flex gap-2">
+                                                        {can('update-purchase') && (
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
@@ -886,6 +902,8 @@ export default function Purchases({
                                                         >
                                                             <Edit className="h-4 w-4" />
                                                         </Button>
+                                                        )}
+                                                        {can('delete-purchase') && (
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
@@ -898,14 +916,16 @@ export default function Purchases({
                                                         >
                                                             <Trash2 className="h-4 w-4" />
                                                         </Button>
+                                                        )}
                                                     </div>
                                                 </td>
+                                                )}
                                             </tr>
                                         ))
                                     ) : (
                                         <tr>
                                             <td
-                                                colSpan={10}
+                                                colSpan={hasActionPermission ? 10 : 9}
                                                 className="p-8 text-center text-gray-500 dark:text-gray-400"
                                             >
                                                 <ShoppingCart className="mx-auto mb-4 h-12 w-12 text-gray-400" />

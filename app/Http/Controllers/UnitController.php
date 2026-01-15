@@ -15,10 +15,11 @@ class UnitController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('permission:view-unit', only: ['index', 'downloadPdf']),
+            new Middleware('permission:view-unit', only: ['index']),
             new Middleware('permission:create-unit', only: ['store']),
             new Middleware('permission:update-unit', only: ['update']),
             new Middleware('permission:delete-unit', only: ['destroy', 'bulkDelete']),
+            new Middleware('permission:can-unit-download', only: ['downloadPdf']),
         ];
     }
     public function index(Request $request)

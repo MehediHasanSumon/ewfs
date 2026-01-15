@@ -1,43 +1,42 @@
-AccountController      -- Done
-BalanceSheetController -- Done
-BankBookLedgerController -- Done
-CashBookLedgerController -- Done
-CategoryController     -- Done
-CompanySettingController -- Done
-CreditSaleController   -- Done
-CustomerController     -- Done
-CustomerDetailsBillController -- Done
-CustomerLedgerDetailsController -- Done
-CustomerLedgerSummaryController -- Done
-CustomerSalesReportController -- Done
-CustomerSummaryBillController -- Done
-DailyStatementController -- Done
-DispenserController -- Done
-DispenserReadingController -- Done
-EmpDepartmentController -- Done
-EmpDesignationController -- Done
-EmployeeController -- Done
-EmpTypeController -- Done
-GeneralLedgerController -- Done
-GroupController -- Done
-LiabilityAssetsController -- Done
-LoanController -- Done
-OfficePaymentController -- Done
-PaymentSubTypeController -- Done
-PaymentVoucherController -- Done
-PermissionController   -- Done
-ProductController      -- Done
-ProductRateController  -- Done
-PurchaseController     -- Done
-PurchaseReportController -- Done
-ReceivedVoucherController -- Done
-RoleController         -- Done
-SaleController         -- Done
-ShiftClosedListController -- Done
-ShiftController        -- Done
-StockController        -- Done
-StockReportController
-SupplierController     -- Done
-UnitController         -- Done
-UserController         -- Done
-VehicleController      -- Done
+Accounts
+auth
+BalanceSheet
+BankBookLedger
+CashBookLedger
+Categories
+CompanySettings
+CreditSales
+CustomerDetailsBill
+CustomerLedgerDetails
+CustomerLedgerSummary
+Customers
+CustomerSummaryBill
+DailyStatement
+Dispensers
+EmpDepartments
+EmpDesignations
+Employee
+EmpTypes
+GeneralLedger
+Groups
+LiabilityAssets
+loans
+OfficePayments
+PaymentSubTypes
+Permissions             ---Done
+ProductRates            ---Done
+Products                ---Done
+Purchases               ---Done
+Reports
+Roles                   ---Done
+Sales                   ---Done
+settings
+ShiftClosedList
+Shifts                  ---Done
+StockReport
+Stocks                  ---Done
+Suppliers               ---Done
+Units                   ---Done
+Users                   ---Done
+Vehicles                ---Done
+Vouchers

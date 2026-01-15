@@ -16,7 +16,8 @@ class ProductRateController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('permission:view-product-rate', only: ['index', 'downloadPdf']),
+            new Middleware('permission:view-product-rate', only: ['index']),
+            new Middleware('permission:can-product-rate-download', only: ['downloadPdf']),
             new Middleware('permission:create-product-rate', only: ['store']),
             new Middleware('permission:update-product-rate', only: ['update']),
             new Middleware('permission:delete-product-rate', only: ['destroy', 'bulkDelete']),

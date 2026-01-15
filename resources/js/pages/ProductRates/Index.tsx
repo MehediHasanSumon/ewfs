@@ -12,6 +12,7 @@ import { type BreadcrumbItem } from '@/types';
 import { Head, useForm, router } from '@inertiajs/react';
 import { Plus, Edit, Trash2, DollarSign, ChevronUp, ChevronDown, Filter, X, FileText } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { usePermission } from '@/hooks/usePermission';
 
 interface Product {
     id: number;
@@ -64,6 +65,11 @@ interface ProductRatesProps {
 }
 
 export default function Index({ rates, products, filters }: ProductRatesProps) {
+    const { can } = usePermission();
+    const hasActionPermission = can('update-product-rate') || can('delete-product-rate');
+    const canFilter = can('can-product-rate-filter');
+    const canDownload = can('can-product-rate-download');
+    
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editingRate, setEditingRate] = useState<ProductRate | null>(null);
     const [deletingRate, setDeletingRate] = useState<ProductRate | null>(null);
@@ -239,7 +245,7 @@ export default function Index({ rates, products, filters }: ProductRatesProps) {
                         </p>
                     </div>
                     <div className="flex gap-2">
-                        {selectedRates.length > 0 && (
+                        {selectedRates.length > 0 && can('delete-product-rate') && (
                             <Button 
                                 variant="destructive" 
                                 onClick={handleBulkDelete}
@@ -248,32 +254,37 @@ export default function Index({ rates, products, filters }: ProductRatesProps) {
                                 Delete Selected ({selectedRates.length})
                             </Button>
                         )}
-                        <Button
-                            variant="success"
-                            onClick={() => {
-                                const params = new URLSearchParams();
-                                if (search) params.append('search', search);
-                                if (status !== 'all') params.append('status', status);
-                                if (productId) params.append('product_id', productId);
-                                if (startDate) params.append('start_date', startDate);
-                                if (endDate) params.append('end_date', endDate);
-                                if (sortBy) params.append('sort_by', sortBy);
-                                if (sortOrder) params.append('sort_order', sortOrder);
-                                window.location.href = `/product-rates/download-pdf?${params.toString()}`;
-                            }}
-                        >
-                            <FileText className="mr-2 h-4 w-4" />
-                            Download
-                        </Button>
-                        <Button
-                            onClick={() => setIsCreateOpen(true)}
-                        >
-                            <Plus className="mr-2 h-4 w-4" />
-                            Add Rate
-                        </Button>
+                        {canDownload && (
+                            <Button
+                                variant="success"
+                                onClick={() => {
+                                    const params = new URLSearchParams();
+                                    if (search) params.append('search', search);
+                                    if (status !== 'all') params.append('status', status);
+                                    if (productId) params.append('product_id', productId);
+                                    if (startDate) params.append('start_date', startDate);
+                                    if (endDate) params.append('end_date', endDate);
+                                    if (sortBy) params.append('sort_by', sortBy);
+                                    if (sortOrder) params.append('sort_order', sortOrder);
+                                    window.location.href = `/product-rates/download-pdf?${params.toString()}`;
+                                }}
+                            >
+                                <FileText className="mr-2 h-4 w-4" />
+                                Download
+                            </Button>
+                        )}
+                        {can('create-product-rate') && (
+                            <Button
+                                onClick={() => setIsCreateOpen(true)}
+                            >
+                                <Plus className="mr-2 h-4 w-4" />
+                                Add Rate
+                            </Button>
+                        )}
                     </div>
                 </div>
 
+                {canFilter && (
                 <Card className="dark:border-gray-700 dark:bg-gray-800">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 dark:text-white">
@@ -367,6 +378,7 @@ export default function Index({ rates, products, filters }: ProductRatesProps) {
                         </div>
                     </CardContent>
                 </Card>
+                )}
 
                 <Card className="dark:border-gray-700 dark:bg-gray-800">
                     <CardContent>
@@ -395,7 +407,7 @@ export default function Index({ rates, products, filters }: ProductRatesProps) {
                                             </div>
                                         </th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Status</th>
-                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Actions</th>
+                                        {hasActionPermission && <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Actions</th>}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -425,8 +437,10 @@ export default function Index({ rates, products, filters }: ProductRatesProps) {
                                                     {rate.status === 1 ? 'Active' : 'Inactive'}
                                                 </span>
                                             </td>
+                                            {hasActionPermission && (
                                             <td className="p-4">
                                                 <div className="flex gap-2">
+                                                    {can('update-product-rate') && (
                                                     <Button 
                                                         variant="ghost" 
                                                         size="sm"
@@ -435,6 +449,8 @@ export default function Index({ rates, products, filters }: ProductRatesProps) {
                                                     >
                                                         <Edit className="h-4 w-4" />
                                                     </Button>
+                                                    )}
+                                                    {can('delete-product-rate') && (
                                                     <Button 
                                                         variant="ghost" 
                                                         size="sm"
@@ -443,13 +459,15 @@ export default function Index({ rates, products, filters }: ProductRatesProps) {
                                                     >
                                                         <Trash2 className="h-4 w-4" />
                                                     </Button>
+                                                    )}
                                                 </div>
                                             </td>
+                                            )}
                                         </tr>
                                     )) : (
                                         <tr>
                                             <td
-                                                colSpan={7}
+                                                colSpan={hasActionPermission ? 7 : 6}
                                                 className="p-8 text-center text-gray-500 dark:text-gray-400"
                                             >
                                                 <DollarSign className="mx-auto mb-4 h-12 w-12 text-gray-400" />

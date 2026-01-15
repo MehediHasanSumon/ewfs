@@ -12,6 +12,7 @@ import { type BreadcrumbItem } from '@/types';
 import { Head, router, useForm } from '@inertiajs/react';
 import { ChevronDown, ChevronUp, Edit, FileText, Filter, Package, Plus, Trash2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { usePermission } from '@/hooks/usePermission';
 
 interface Stock {
     id: number;
@@ -67,6 +68,10 @@ interface StocksProps {
 }
 
 export default function Stocks({ stocks, products = [], categories = [], filters = {} }: StocksProps) {
+    const { can } = usePermission();
+    const hasActionPermission = can('update-stock') || can('delete-stock');
+    const canFilter = can('can-stock-filter');
+    const canDownload = can('can-stock-download');
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editingStock, setEditingStock] = useState<Stock | null>(null);
     const [deletingStock, setDeletingStock] = useState<Stock | null>(null);
@@ -235,12 +240,13 @@ export default function Stocks({ stocks, products = [], categories = [], filters
                         <p className="text-gray-600 dark:text-gray-400">Manage stock levels</p>
                     </div>
                     <div className="flex gap-2">
-                        {selectedStocks.length > 0 && (
+                        {selectedStocks.length > 0 && can('delete-stock') && (
                             <Button variant="destructive" onClick={handleBulkDelete}>
                                 <Trash2 className="mr-2 h-4 w-4" />
                                 Delete Selected ({selectedStocks.length})
                             </Button>
                         )}
+                        {canDownload && (
                         <Button
                             variant="success"
                             onClick={() => {
@@ -257,12 +263,16 @@ export default function Stocks({ stocks, products = [], categories = [], filters
                         >
                             <FileText className="mr-2 h-4 w-4" />Download
                         </Button>
+                        )}
+                        {can('create-stock') && (
                         <Button onClick={handleCreate}>
                             <Plus className="mr-2 h-4 w-4" />Add Stock
                         </Button>
+                        )}
                     </div>
                 </div>
 
+                {canFilter && (
                 <Card className="dark:border-gray-700 dark:bg-gray-800">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 dark:text-white">
@@ -323,6 +333,7 @@ export default function Stocks({ stocks, products = [], categories = [], filters
                         </div>
                     </CardContent>
                 </Card>
+                )}
 
                 <Card className="dark:border-gray-700 dark:bg-gray-800">
                     <CardContent>
@@ -359,7 +370,9 @@ export default function Stocks({ stocks, products = [], categories = [], filters
                                                 {sortBy === 'available_stock' && (sortOrder === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
                                             </div>
                                         </th>
+                                        {hasActionPermission && (
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Actions</th>
+                                        )}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -380,8 +393,10 @@ export default function Stocks({ stocks, products = [], categories = [], filters
                                                 <td className="p-4 text-[13px] dark:text-gray-300">{stock.product.unit.name}</td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">{stock.current_stock.toLocaleString()}</td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">{stock.available_stock.toLocaleString()}</td>
+                                                {hasActionPermission && (
                                                 <td className="p-4">
                                                     <div className="flex gap-2">
+                                                        {can('update-stock') && (
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
@@ -390,6 +405,8 @@ export default function Stocks({ stocks, products = [], categories = [], filters
                                                         >
                                                             <Edit className="h-4 w-4" />
                                                         </Button>
+                                                        )}
+                                                        {can('delete-stock') && (
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
@@ -398,13 +415,15 @@ export default function Stocks({ stocks, products = [], categories = [], filters
                                                         >
                                                             <Trash2 className="h-4 w-4" />
                                                         </Button>
+                                                        )}
                                                     </div>
                                                 </td>
+                                                )}
                                             </tr>
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan={8} className="p-8 text-center text-gray-500 dark:text-gray-400">
+                                            <td colSpan={hasActionPermission ? 8 : 7} className="p-8 text-center text-gray-500 dark:text-gray-400">
                                                 <Package className="mx-auto mb-4 h-12 w-12 text-gray-400" />
                                                 No stocks found
                                             </td>

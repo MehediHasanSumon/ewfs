@@ -12,6 +12,7 @@ import { type BreadcrumbItem } from '@/types';
 import { Head, useForm, router } from '@inertiajs/react';
 import { Plus, Edit, Trash2, Shield, ChevronUp, ChevronDown, Filter, X, FileText } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { usePermission } from '@/hooks/usePermission';
 
 interface Role {
     id: number;
@@ -55,6 +56,11 @@ interface RolesProps {
 }
 
 export default function Roles({ roles, permissions = [], filters }: RolesProps) {
+    const { can } = usePermission();
+    const hasActionPermission = can('update-role') || can('delete-role');
+    const canFilter = can('can-role-filter');
+    const canDownload = can('can-role-download');
+    
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editingRole, setEditingRole] = useState<Role | null>(null);
     const [deletingRole, setDeletingRole] = useState<Role | null>(null);
@@ -218,7 +224,7 @@ export default function Roles({ roles, permissions = [], filters }: RolesProps) 
                         <p className="text-gray-600 dark:text-gray-400">Manage user roles and access levels</p>
                     </div>
                     <div className="flex gap-2">
-                        {selectedRoles.length > 0 && (
+                        {selectedRoles.length > 0 && can('delete-role') && (
                             <Button 
                                 variant="destructive" 
                                 onClick={handleBulkDelete}
@@ -227,29 +233,34 @@ export default function Roles({ roles, permissions = [], filters }: RolesProps) 
                                 Delete Selected ({selectedRoles.length})
                             </Button>
                         )}
-                        <Button
-                            variant="success"
-                            onClick={() => {
-                                const params = new URLSearchParams();
-                                if (search) params.append('search', search);
-                                if (startDate) params.append('start_date', startDate);
-                                if (endDate) params.append('end_date', endDate);
-                                if (sortBy) params.append('sort_by', sortBy);
-                                if (sortOrder) params.append('sort_order', sortOrder);
-                                window.location.href = `/roles/download-pdf?${params.toString()}`;
-                            }}
-                        >
-                            <FileText className="h-4 w-4 mr-2" />
-                            Download
-                        </Button>
-                        <Button onClick={() => setIsCreateOpen(true)}>
-                            <Plus className="h-4 w-4 mr-2" />
-                            Add Role
-                        </Button>
+                        {canDownload && (
+                            <Button
+                                variant="success"
+                                onClick={() => {
+                                    const params = new URLSearchParams();
+                                    if (search) params.append('search', search);
+                                    if (startDate) params.append('start_date', startDate);
+                                    if (endDate) params.append('end_date', endDate);
+                                    if (sortBy) params.append('sort_by', sortBy);
+                                    if (sortOrder) params.append('sort_order', sortOrder);
+                                    window.location.href = `/roles/download-pdf?${params.toString()}`;
+                                }}
+                            >
+                                <FileText className="h-4 w-4 mr-2" />
+                                Download
+                            </Button>
+                        )}
+                        {can('create-role') && (
+                            <Button onClick={() => setIsCreateOpen(true)}>
+                                <Plus className="h-4 w-4 mr-2" />
+                                Add Role
+                            </Button>
+                        )}
                     </div>
                 </div>
 
                 {/* Filter Card */}
+                {canFilter && (
                 <Card className="dark:bg-gray-800 dark:border-gray-700">
                     <CardHeader>
                         <CardTitle className="dark:text-white flex items-center gap-2">
@@ -299,6 +310,7 @@ export default function Roles({ roles, permissions = [], filters }: RolesProps) 
                         </div>
                     </CardContent>
                 </Card>
+                )}
 
                 <Card className="dark:bg-gray-800 dark:border-gray-700">
                     <CardContent>
@@ -333,7 +345,7 @@ export default function Roles({ roles, permissions = [], filters }: RolesProps) 
                                                 {sortBy === 'users_count' && (sortOrder === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
                                             </div>
                                         </th>
-                                        <th className="text-left py-3 px-4 text-[13px] font-semibold text-gray-700 dark:text-gray-300">Actions</th>
+                                        {hasActionPermission && <th className="text-left py-3 px-4 text-[13px] font-semibold text-gray-700 dark:text-gray-300">Actions</th>}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -351,8 +363,10 @@ export default function Roles({ roles, permissions = [], filters }: RolesProps) 
                                             <td className="py-3 px-4 text-[13px] text-gray-700 dark:text-gray-300">{role.description}</td>
                                             <td className="py-3 px-4 text-[13px] text-gray-700 dark:text-gray-300">{role.permissions_count} permissions</td>
                                             <td className="py-3 px-4 text-[13px] text-gray-700 dark:text-gray-300">{role.users_count} users</td>
+                                            {hasActionPermission && (
                                             <td className="py-3 px-4">
                                                 <div className="flex gap-2">
+                                                    {can('update-role') && (
                                                     <Button 
                                                         variant="ghost" 
                                                         size="sm"
@@ -361,6 +375,8 @@ export default function Roles({ roles, permissions = [], filters }: RolesProps) 
                                                     >
                                                         <Edit className="h-4 w-4" />
                                                     </Button>
+                                                    )}
+                                                    {can('delete-role') && (
                                                     <Button 
                                                         variant="ghost" 
                                                         size="sm"
@@ -369,12 +385,14 @@ export default function Roles({ roles, permissions = [], filters }: RolesProps) 
                                                     >
                                                         <Trash2 className="h-4 w-4" />
                                                     </Button>
+                                                    )}
                                                 </div>
                                             </td>
+                                            )}
                                         </tr>
                                     )) : (
                                         <tr>
-                                            <td colSpan={6} className="py-12 text-center text-gray-500 dark:text-gray-400">
+                                            <td colSpan={hasActionPermission ? 6 : 5} className="py-12 text-center text-gray-500 dark:text-gray-400">
                                                 <Shield className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                                                 No roles found
                                             </td>

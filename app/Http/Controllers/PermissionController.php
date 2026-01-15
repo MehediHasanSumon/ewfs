@@ -15,7 +15,8 @@ class PermissionController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('permission:view-permission', only: ['index', 'downloadPdf']),
+            new Middleware('permission:view-permission', only: ['index']),
+            new Middleware('permission:can-permission-download', only: ['downloadPdf']),
             new Middleware('permission:create-permission', only: ['store']),
             new Middleware('permission:update-permission', only: ['update']),
             new Middleware('permission:delete-permission', only: ['destroy', 'bulkDelete']),

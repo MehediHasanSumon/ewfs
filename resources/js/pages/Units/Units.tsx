@@ -12,6 +12,7 @@ import { type BreadcrumbItem } from '@/types';
 import { Head, useForm, router } from '@inertiajs/react';
 import { Plus, Edit, Trash2, Package, ChevronUp, ChevronDown, Filter, X, FileText } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { usePermission } from '@/hooks/usePermission';
 
 interface Unit {
     id: number;
@@ -54,6 +55,10 @@ interface UnitsProps {
 }
 
 export default function Units({ units, filters }: UnitsProps) {
+    const { can } = usePermission();
+    const hasActionPermission = can('update-unit') || can('delete-unit');
+    const canFilter = can('can-unit-filter');
+    const canDownload = can('can-unit-download');
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
     const [deletingUnit, setDeletingUnit] = useState<Unit | null>(null);
@@ -221,7 +226,7 @@ export default function Units({ units, filters }: UnitsProps) {
                         <p className="text-gray-600 dark:text-gray-400">Manage measurement units</p>
                     </div>
                     <div className="flex gap-2">
-                        {selectedUnits.length > 0 && (
+                        {selectedUnits.length > 0 && can('delete-unit') && (
                             <Button 
                                 variant="destructive" 
                                 onClick={handleBulkDelete}
@@ -230,6 +235,7 @@ export default function Units({ units, filters }: UnitsProps) {
                                 Delete Selected ({selectedUnits.length})
                             </Button>
                         )}
+                        {canDownload && (
                         <Button
                             variant="success"
                             onClick={() => {
@@ -246,14 +252,18 @@ export default function Units({ units, filters }: UnitsProps) {
                             <FileText className="h-4 w-4 mr-2" />
                             Download
                         </Button>
+                        )}
+                        {can('create-unit') && (
                         <Button onClick={() => setIsCreateOpen(true)}>
                             <Plus className="h-4 w-4 mr-2" />
                             Add Unit
                         </Button>
+                        )}
                     </div>
                 </div>
 
                 {/* Filter Card */}
+                {canFilter && (
                 <Card className="dark:bg-gray-800 dark:border-gray-700">
                     <CardHeader>
                         <CardTitle className="dark:text-white flex items-center gap-2">
@@ -315,6 +325,7 @@ export default function Units({ units, filters }: UnitsProps) {
                         </div>
                     </CardContent>
                 </Card>
+                )}
 
                 <Card className="dark:bg-gray-800 dark:border-gray-700">
                     <CardContent>
@@ -343,7 +354,9 @@ export default function Units({ units, filters }: UnitsProps) {
                                             </div>
                                         </th>
                                         <th className="text-left py-3 px-4 text-[13px] font-semibold text-gray-700 dark:text-gray-300">Status</th>
+                                        {hasActionPermission && (
                                         <th className="text-left py-3 px-4 text-[13px] font-semibold text-gray-700 dark:text-gray-300">Actions</th>
+                                        )}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -364,8 +377,10 @@ export default function Units({ units, filters }: UnitsProps) {
                                                     {unit.status ? 'Active' : 'Inactive'}
                                                 </span>
                                             </td>
+                                            {hasActionPermission && (
                                             <td className="py-3 px-4">
                                                 <div className="flex gap-2">
+                                                    {can('update-unit') && (
                                                     <Button 
                                                         variant="ghost" 
                                                         size="sm"
@@ -374,6 +389,8 @@ export default function Units({ units, filters }: UnitsProps) {
                                                     >
                                                         <Edit className="h-4 w-4" />
                                                     </Button>
+                                                    )}
+                                                    {can('delete-unit') && (
                                                     <Button 
                                                         variant="ghost" 
                                                         size="sm"
@@ -382,12 +399,14 @@ export default function Units({ units, filters }: UnitsProps) {
                                                     >
                                                         <Trash2 className="h-4 w-4" />
                                                     </Button>
+                                                    )}
                                                 </div>
                                             </td>
+                                            )}
                                         </tr>
                                     )) : (
                                         <tr>
-                                            <td colSpan={5} className="py-12 text-center text-gray-500 dark:text-gray-400">
+                                            <td colSpan={hasActionPermission ? 5 : 4} className="py-12 text-center text-gray-500 dark:text-gray-400">
                                                 <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                                                 No units found
                                             </td>

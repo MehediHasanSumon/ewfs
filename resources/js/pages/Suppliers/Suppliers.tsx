@@ -30,6 +30,7 @@ import {
     X,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { usePermission } from '@/hooks/usePermission';
 
 interface Supplier {
     id: number;
@@ -90,6 +91,10 @@ interface SuppliersProps {
 }
 
 export default function Suppliers({ suppliers, groups = [], lastSupplierGroup, filters }: SuppliersProps) {
+    const { can } = usePermission();
+    const hasActionPermission = can('update-supplier') || can('delete-supplier');
+    const canFilter = can('can-supplier-filter');
+    const canDownload = can('can-supplier-download');
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
     const [deletingSupplier, setDeletingSupplier] = useState<Supplier | null>(null);
@@ -270,7 +275,7 @@ export default function Suppliers({ suppliers, groups = [], lastSupplierGroup, f
                         </p>
                     </div>
                     <div className="flex gap-2">
-                        {selectedSuppliers.length > 0 && (
+                        {selectedSuppliers.length > 0 && can('delete-supplier') && (
                             <Button
                                 variant="destructive"
                                 onClick={handleBulkDelete}
@@ -279,6 +284,7 @@ export default function Suppliers({ suppliers, groups = [], lastSupplierGroup, f
                                 Delete Selected ({selectedSuppliers.length})
                             </Button>
                         )}
+                        {canDownload && (
                         <Button
                             variant="success"
                             onClick={() => {
@@ -293,6 +299,8 @@ export default function Suppliers({ suppliers, groups = [], lastSupplierGroup, f
                             <FileText className="mr-2 h-4 w-4" />
                             Download
                         </Button>
+                        )}
+                        {can('create-supplier') && (
                         <Button onClick={() => {
                             setIsCreateOpen(true);
 
@@ -300,10 +308,12 @@ export default function Suppliers({ suppliers, groups = [], lastSupplierGroup, f
                             <Plus className="mr-2 h-4 w-4" />
                             Add Supplier
                         </Button>
+                        )}
                     </div>
                 </div>
 
                 {/* Filter Card */}
+                {canFilter && (
                 <Card className="dark:border-gray-700 dark:bg-gray-800">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 dark:text-white">
@@ -371,6 +381,7 @@ export default function Suppliers({ suppliers, groups = [], lastSupplierGroup, f
                         </div>
                     </CardContent>
                 </Card>
+                )}
 
                 <Card className="dark:border-gray-700 dark:bg-gray-800">
                     <CardContent>
@@ -424,9 +435,11 @@ export default function Suppliers({ suppliers, groups = [], lastSupplierGroup, f
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
                                             Status
                                         </th>
+                                        {hasActionPermission && (
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
                                             Actions
                                         </th>
+                                        )}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -480,6 +493,7 @@ export default function Suppliers({ suppliers, groups = [], lastSupplierGroup, f
                                                         {supplier.status ? 'Active' : 'Inactive'}
                                                     </span>
                                                 </td>
+                                                {hasActionPermission && (
                                                 <td className="p-4">
                                                     <div className="flex gap-2">
                                                         <Button
@@ -490,6 +504,7 @@ export default function Suppliers({ suppliers, groups = [], lastSupplierGroup, f
                                                         >
                                                             <Eye className="h-4 w-4" />
                                                         </Button>
+                                                        {can('update-supplier') && (
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
@@ -498,6 +513,8 @@ export default function Suppliers({ suppliers, groups = [], lastSupplierGroup, f
                                                         >
                                                             <Edit className="h-4 w-4" />
                                                         </Button>
+                                                        )}
+                                                        {can('delete-supplier') && (
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
@@ -506,14 +523,16 @@ export default function Suppliers({ suppliers, groups = [], lastSupplierGroup, f
                                                         >
                                                             <Trash2 className="h-4 w-4" />
                                                         </Button>
+                                                        )}
                                                     </div>
                                                 </td>
+                                                )}
                                             </tr>
                                         ))
                                     ) : (
                                         <tr>
                                             <td
-                                                colSpan={10}
+                                                colSpan={hasActionPermission ? 10 : 9}
                                                 className="p-8 text-center text-gray-500 dark:text-gray-400"
                                             >
                                                 <SuppliersIcon className="mx-auto mb-4 h-12 w-12 text-gray-400" />

@@ -23,7 +23,8 @@ class PurchaseController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('permission:view-purchase', only: ['index', 'downloadPdf']),
+            new Middleware('permission:view-purchase', only: ['index']),
+            new Middleware('permission:can-purchase-download', only: ['downloadPdf']),
             new Middleware('permission:create-purchase', only: ['store']),
             new Middleware('permission:update-purchase', only: ['edit', 'update']),
             new Middleware('permission:delete-purchase', only: ['destroy', 'bulkDelete']),

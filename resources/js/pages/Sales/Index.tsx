@@ -29,6 +29,7 @@ import {
     X,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { usePermission } from '@/hooks/usePermission';
 
 interface Sale {
     id: number;
@@ -141,6 +142,10 @@ interface SalesProps {
 }
 
 export default function Sales({ sales, accounts = [], groupedAccounts = {}, products = [], vehicles = [], salesHistory = [], shifts = [], closedShifts = [], uniqueCustomers = [], uniqueVehicles = [], filters = {} }: SalesProps) {
+    const { can } = usePermission();
+    const hasActionPermission = can('update-sale') || can('delete-sale');
+    const canFilter = can('can-sale-filter');
+    const canDownload = can('can-sale-download');
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editingSale, setEditingSale] = useState<Sale | null>(null);
     const [deletingSale, setDeletingSale] = useState<Sale | null>(null);
@@ -651,7 +656,7 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
                         </p>
                     </div>
                     <div className="flex gap-2">
-                        {selectedSales.length > 0 && (
+                        {selectedSales.length > 0 && can('delete-sale') && (
                             <Button
                                 variant="destructive"
                                 onClick={handleBulkDelete}
@@ -660,30 +665,35 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
                                 Delete Selected ({selectedSales.length})
                             </Button>
                         )}
-                        <Button
-                            variant="success"
-                            onClick={() => {
-                                const params = new URLSearchParams();
-                                if (search) params.append('search', search);
-                                if (customer !== 'all') params.append('customer', customer);
-                                if (paymentStatus !== 'all') params.append('payment_status', paymentStatus);
-                                if (startDate) params.append('start_date', startDate);
-                                if (endDate) params.append('end_date', endDate);
-                                if (sortBy) params.append('sort_by', sortBy);
-                                if (sortOrder) params.append('sort_order', sortOrder);
-                                window.location.href = `/sales/download-pdf?${params.toString()}`;
-                            }}
-                        >
-                            <FileText className="mr-2 h-4 w-4" />
-                            Download
-                        </Button>
-                        <Button onClick={() => setIsCreateOpen(true)}>
-                            <Plus className="mr-2 h-4 w-4" />
-                            Add Sale
-                        </Button>
+                        {canDownload && (
+                            <Button
+                                variant="success"
+                                onClick={() => {
+                                    const params = new URLSearchParams();
+                                    if (search) params.append('search', search);
+                                    if (customer !== 'all') params.append('customer', customer);
+                                    if (paymentStatus !== 'all') params.append('payment_status', paymentStatus);
+                                    if (startDate) params.append('start_date', startDate);
+                                    if (endDate) params.append('end_date', endDate);
+                                    if (sortBy) params.append('sort_by', sortBy);
+                                    if (sortOrder) params.append('sort_order', sortOrder);
+                                    window.location.href = `/sales/download-pdf?${params.toString()}`;
+                                }}
+                            >
+                                <FileText className="mr-2 h-4 w-4" />
+                                Download
+                            </Button>
+                        )}
+                        {can('create-sale') && (
+                            <Button onClick={() => setIsCreateOpen(true)}>
+                                <Plus className="mr-2 h-4 w-4" />
+                                Add Sale
+                            </Button>
+                        )}
                     </div>
                 </div>
 
+                {canFilter && (
                 <Card className="dark:border-gray-700 dark:bg-gray-800">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 dark:text-white">
@@ -777,6 +787,7 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
                         </div>
                     </CardContent>
                 </Card>
+                )}
 
                 <Card className="dark:border-gray-700 dark:bg-gray-800">
                     <CardContent>
@@ -811,7 +822,7 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Paid Amount</th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Payment Type</th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Status</th>
-                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Actions</th>
+                                        {hasActionPermission && <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Actions</th>}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -864,6 +875,7 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
                                                         {parseFloat(sale.due_amount.toString()) === 0 ? 'Paid' : parseFloat(sale.paid_amount.toString()) > 0 ? 'Partial' : 'Due'}
                                                     </span>
                                                 </td>
+                                                {hasActionPermission && (
                                                 <td className="p-4">
                                                     <div className="flex gap-2">
                                                         {sale.batch_code && (
@@ -878,29 +890,34 @@ export default function Sales({ sales, accounts = [], groupedAccounts = {}, prod
                                                             </Button>
                                                         )}
 
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            onClick={() => handleEdit(sale)}
-                                                            className="text-indigo-600 hover:text-indigo-800"
-                                                        >
-                                                            <Edit className="h-4 w-4" />
-                                                        </Button>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            onClick={() => handleDelete(sale)}
-                                                            className="text-red-600 hover:text-red-800"
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
+                                                        {can('update-sale') && (
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={() => handleEdit(sale)}
+                                                                className="text-indigo-600 hover:text-indigo-800"
+                                                            >
+                                                                <Edit className="h-4 w-4" />
+                                                            </Button>
+                                                        )}
+                                                        {can('delete-sale') && (
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={() => handleDelete(sale)}
+                                                                className="text-red-600 hover:text-red-800"
+                                                            >
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </Button>
+                                                        )}
                                                     </div>
                                                 </td>
+                                                )}
                                             </tr>
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan={13} className="p-8 text-center text-gray-500 dark:text-gray-400">
+                                            <td colSpan={hasActionPermission ? 13 : 12} className="p-8 text-center text-gray-500 dark:text-gray-400">
                                                 <ShoppingCart className="mx-auto mb-4 h-12 w-12 text-gray-400" />
                                                 No sales found
                                             </td>
