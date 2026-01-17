@@ -21,6 +21,7 @@ import {
     Fuel,
     HandCoins,
     LayoutGrid,
+    MessageSquare,
     Package,
     Settings,
     Shield,
@@ -237,6 +238,15 @@ const mainNavItems = [
             { title: 'Permissions', href: '/permissions', icon: Shield, permission: 'view-permission' },
         ],
     },
+    {
+        title: 'SMS Config',
+        icon: MessageSquare,
+        children: [
+            { title: 'SMS Config', href: '/sms-configs', icon: Settings },
+            { title: 'SMS Template', href: '/sms-templates', icon: FileText },
+            { title: 'SMS Logs', href: '/sms-logs', icon: BarChart3 },
+        ],
+    },
 ];
 
 export function AppSidebar() {
@@ -287,7 +297,9 @@ export function AppSidebar() {
                 <nav className="space-y-1">
                     {mainNavItems.map((item, index) => {
                         if (item.children) {
-                            const visibleChildren = item.children.filter((child) => can(child.permission));
+                            const visibleChildren = item.children.filter((child) => 
+                                child.permission ? can(child.permission) : true
+                            );
                             if (visibleChildren.length === 0) return null;
 
                             return (

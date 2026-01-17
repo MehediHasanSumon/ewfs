@@ -46,6 +46,7 @@ use App\Http\Controllers\BankBookLedgerController;
 use App\Http\Controllers\LoanController;
 use App\Http\Controllers\LiabilityAssetsController;
 use App\Http\Controllers\BalanceSheetController;
+use App\Http\Controllers\SMSConfigController;
 
 Route::get('/', function () {
     return Inertia::render('home');
@@ -385,6 +386,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Balance Sheet routes
     Route::get('balance-sheet', [BalanceSheetController::class, 'index'])->name('balance-sheet.index');
     Route::get('balance-sheet/download-pdf', [BalanceSheetController::class, 'downloadPdf'])->name('balance-sheet.download.pdf');
+    
+    // SMS Config routes
+    Route::get('sms-configs', [SMSConfigController::class, 'index'])->name('sms-configs.index');
+    Route::get('sms-configs/{smsConfig}/edit', [SMSConfigController::class, 'edit'])->name('sms-configs.edit');
+    Route::post('sms-configs', [SMSConfigController::class, 'store'])->name('sms-configs.store');
+    Route::put('sms-configs/{smsConfig}', [SMSConfigController::class, 'update'])->name('sms-configs.update');
+    Route::delete('sms-configs/{smsConfig}', [SMSConfigController::class, 'destroy'])->name('sms-configs.destroy');
+    Route::delete('sms-configs/bulk/delete', [SMSConfigController::class, 'bulkDelete'])->name('sms-configs.bulk.delete');
+    Route::get('sms-configs/download-pdf', [SMSConfigController::class, 'downloadPdf'])->name('sms-configs.download.pdf');
 });
 
 require __DIR__.'/settings.php';
