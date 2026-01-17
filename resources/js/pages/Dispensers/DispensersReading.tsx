@@ -13,6 +13,7 @@ import { type BreadcrumbItem } from '@/types';
 import { Head, router, useForm } from '@inertiajs/react';
 import { Edit, FileText, Plus, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { usePermission } from '@/hooks/usePermission';
 
 interface DispenserReading {
     id: number;
@@ -144,6 +145,13 @@ export default function DispenserReading({
     voucherCategories = [],
     paymentSubTypes = [],
 }: DispenserReadingProps) {
+    const { can } = usePermission();
+    const canCreateCreditSales = can('create-credit-sale');
+    const canCreateSale = can('create-sale');
+    const canCreateVoucher = can('create-voucher');
+    const canCreateOfficePayment = can('create-office-payment');
+    const canCreateDispenserReading = can('create-dispenser-reading');
+
     const [productWiseData, setProductWiseData] = useState<ProductWiseData>({});
     const [totalSalesSum, setTotalSalesSum] = useState(0);
     const [availableShifts, setAvailableShifts] = useState<Shift[]>([]);
@@ -917,23 +925,25 @@ export default function DispenserReading({
                                             readOnly
                                             className="w-full bg-gray-50 pr-10 dark:border-gray-600 dark:bg-gray-600 dark:text-white"
                                         />
-                                        <Button
-                                            type="button"
-                                            variant="secondary"
-                                            size="sm"
-                                            className="absolute top-1/2 right-0.5 h-7 w-7 -translate-y-1/2 p-0"
-                                            onClick={() => {
-                                                setCreditSalesData((prev) => ({
-                                                    ...prev,
-                                                    sale_date:
-                                                        data.transaction_date,
-                                                    shift_id: data.shift_id,
-                                                }));
-                                                setIsCreditSalesOpen(true);
-                                            }}
-                                        >
-                                            <FileText className="h-3.5 w-3.5" />
-                                        </Button>
+                                        {canCreateCreditSales && (
+                                            <Button
+                                                type="button"
+                                                variant="secondary"
+                                                size="sm"
+                                                className="absolute top-1/2 right-0.5 h-7 w-7 -translate-y-1/2 p-0"
+                                                onClick={() => {
+                                                    setCreditSalesData((prev) => ({
+                                                        ...prev,
+                                                        sale_date:
+                                                            data.transaction_date,
+                                                        shift_id: data.shift_id,
+                                                    }));
+                                                    setIsCreditSalesOpen(true);
+                                                }}
+                                            >
+                                                <FileText className="h-3.5 w-3.5" />
+                                            </Button>
+                                        )}
                                     </div>
                                 </div>
                                 <div>
@@ -946,23 +956,25 @@ export default function DispenserReading({
                                             readOnly
                                             className="w-full bg-gray-50 pr-10 dark:border-gray-600 dark:bg-gray-600 dark:text-white"
                                         />
-                                        <Button
-                                            type="button"
-                                            variant="secondary"
-                                            size="sm"
-                                            className="absolute top-1/2 right-0.5 h-7 w-7 -translate-y-1/2 p-0"
-                                            onClick={() => {
-                                                setBankSalesData((prev) => ({
-                                                    ...prev,
-                                                    sale_date:
-                                                        data.transaction_date,
-                                                    shift_id: data.shift_id,
-                                                }));
-                                                setIsBankSalesOpen(true);
-                                            }}
-                                        >
-                                            <FileText className="h-3.5 w-3.5" />
-                                        </Button>
+                                        {canCreateSale && (
+                                            <Button
+                                                type="button"
+                                                variant="secondary"
+                                                size="sm"
+                                                className="absolute top-1/2 right-0.5 h-7 w-7 -translate-y-1/2 p-0"
+                                                onClick={() => {
+                                                    setBankSalesData((prev) => ({
+                                                        ...prev,
+                                                        sale_date:
+                                                            data.transaction_date,
+                                                        shift_id: data.shift_id,
+                                                    }));
+                                                    setIsBankSalesOpen(true);
+                                                }}
+                                            >
+                                                <FileText className="h-3.5 w-3.5" />
+                                            </Button>
+                                        )}
                                     </div>
                                 </div>
                                 <div>
@@ -1056,22 +1068,24 @@ export default function DispenserReading({
                                             readOnly
                                             className="w-full bg-gray-50 pr-10 dark:border-gray-600 dark:bg-gray-600 dark:text-white"
                                         />
-                                        <Button
-                                            type="button"
-                                            variant="secondary"
-                                            size="sm"
-                                            className="absolute top-1/2 right-0.5 h-7 w-7 -translate-y-1/2 p-0"
-                                            onClick={() => {
-                                                setCashReceiveData((prev) => ({
-                                                    ...prev,
-                                                    date: data.transaction_date,
-                                                    shift_id: data.shift_id,
-                                                }));
-                                                setIsCashReceiveOpen(true);
-                                            }}
-                                        >
-                                            <FileText className="h-3.5 w-3.5" />
-                                        </Button>
+                                        {canCreateVoucher && (
+                                            <Button
+                                                type="button"
+                                                variant="secondary"
+                                                size="sm"
+                                                className="absolute top-1/2 right-0.5 h-7 w-7 -translate-y-1/2 p-0"
+                                                onClick={() => {
+                                                    setCashReceiveData((prev) => ({
+                                                        ...prev,
+                                                        date: data.transaction_date,
+                                                        shift_id: data.shift_id,
+                                                    }));
+                                                    setIsCashReceiveOpen(true);
+                                                }}
+                                            >
+                                                <FileText className="h-3.5 w-3.5" />
+                                            </Button>
+                                        )}
                                     </div>
                                 </div>
                                 <div>
@@ -1094,22 +1108,24 @@ export default function DispenserReading({
                                             readOnly
                                             className="w-full bg-gray-50 pr-10 dark:border-gray-600 dark:bg-gray-600 dark:text-white"
                                         />
-                                        <Button
-                                            type="button"
-                                            variant="secondary"
-                                            size="sm"
-                                            className="absolute top-1/2 right-0.5 h-7 w-7 -translate-y-1/2 p-0"
-                                            onClick={() => {
-                                                setCashPaymentData((prev) => ({
-                                                    ...prev,
-                                                    date: data.transaction_date,
-                                                    shift_id: data.shift_id,
-                                                }));
-                                                setIsCashPaymentOpen(true);
-                                            }}
-                                        >
-                                            <FileText className="h-3.5 w-3.5" />
-                                        </Button>
+                                        {canCreateVoucher && (
+                                            <Button
+                                                type="button"
+                                                variant="secondary"
+                                                size="sm"
+                                                className="absolute top-1/2 right-0.5 h-7 w-7 -translate-y-1/2 p-0"
+                                                onClick={() => {
+                                                    setCashPaymentData((prev) => ({
+                                                        ...prev,
+                                                        date: data.transaction_date,
+                                                        shift_id: data.shift_id,
+                                                    }));
+                                                    setIsCashPaymentOpen(true);
+                                                }}
+                                            >
+                                                <FileText className="h-3.5 w-3.5" />
+                                            </Button>
+                                        )}
                                     </div>
                                 </div>
                                 <div>
@@ -1134,24 +1150,26 @@ export default function DispenserReading({
                                             }}
                                             className="w-full pr-10 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                         />
-                                        <Button
-                                            type="button"
-                                            variant="secondary"
-                                            size="sm"
-                                            className="absolute top-1/2 right-0.5 h-7 w-7 -translate-y-1/2 p-0"
-                                            onClick={() => {
-                                                setOfficePaymentData(
-                                                    (prev) => ({
-                                                        ...prev,
-                                                        date: data.transaction_date,
-                                                        shift_id: data.shift_id,
-                                                    }),
-                                                );
-                                                setIsOfficePaymentOpen(true);
-                                            }}
-                                        >
-                                            <FileText className="h-3.5 w-3.5" />
-                                        </Button>
+                                        {canCreateOfficePayment && (
+                                            <Button
+                                                type="button"
+                                                variant="secondary"
+                                                size="sm"
+                                                className="absolute top-1/2 right-0.5 h-7 w-7 -translate-y-1/2 p-0"
+                                                onClick={() => {
+                                                    setOfficePaymentData(
+                                                        (prev) => ({
+                                                            ...prev,
+                                                            date: data.transaction_date,
+                                                            shift_id: data.shift_id,
+                                                        }),
+                                                    );
+                                                    setIsOfficePaymentOpen(true);
+                                                }}
+                                            >
+                                                <FileText className="h-3.5 w-3.5" />
+                                            </Button>
+                                        )}
                                     </div>
                                 </div>
                                 <div>
@@ -1657,15 +1675,17 @@ export default function DispenserReading({
                                 </div>
                             </div>
                             <div className="flex justify-end border-t border-gray-200 pt-6 dark:border-gray-700">
-                                <Button
-                                    type="submit"
-                                    disabled={processing}
-                                    className="rounded-md bg-blue-600 px-6 py-2 font-medium text-white hover:bg-blue-700"
-                                >
-                                    {processing
-                                        ? 'Processing...'
-                                        : 'Close Shift'}
-                                </Button>
+                                {canCreateDispenserReading && (
+                                    <Button
+                                        type="submit"
+                                        disabled={processing}
+                                        className="rounded-md bg-blue-600 px-6 py-2 font-medium text-white hover:bg-blue-700"
+                                    >
+                                        {processing
+                                            ? 'Processing...'
+                                            : 'Close Shift'}
+                                    </Button>
+                                )}
                             </div>
                         </CardContent>
                     </form>

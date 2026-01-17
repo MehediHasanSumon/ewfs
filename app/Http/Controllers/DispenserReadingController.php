@@ -11,7 +11,6 @@ use App\Models\Vehicle;
 use App\Models\Customer;
 use App\Models\IsShiftClose;
 use App\Models\DailyReading;
-use App\Models\OtherProductSale;
 use App\Models\DailyOtherProductSale;
 use App\Models\Stock;
 use App\Models\VoucherCategory;
@@ -108,7 +107,7 @@ class DispenserReadingController extends Controller implements HasMiddleware
             ->unique()
             ->values();
 
-        $closedShifts = IsShiftClose::select('close_date', 'shift_id')->get()->map(function($item) {
+        $closedShifts = IsShiftClose::select('close_date', 'shift_id')->get()->map(function ($item) {
             return [
                 'close_date' => $item->close_date->format('Y-m-d'),
                 'shift_id' => $item->shift_id
@@ -270,7 +269,7 @@ class DispenserReadingController extends Controller implements HasMiddleware
                 foreach ($request->other_product_sales as $sale) {
                     if (isset($sale['quantity']) && $sale['quantity'] > 0) {
                         $product = Product::with('unit')->find($sale['product_id']);
-                        
+
                         DailyOtherProductSale::create([
                             'date' => $request->transaction_date,
                             'shift_id' => $request->shift_id,
