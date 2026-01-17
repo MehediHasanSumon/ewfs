@@ -2,7 +2,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
@@ -10,26 +9,22 @@ import { Head, router } from '@inertiajs/react';
 import { FileText, Filter, X } from 'lucide-react';
 import { useState } from 'react';
 import { numberToWords } from '@/lib/utils';
+import { usePermission } from '@/hooks/usePermission';
 
 interface Purchase {
     date: string;
     invoice_no: string;
     supplier_name: string;
     product_name: string;
+    unit_name?: string;
+    memo_no?: string;
     quantity: number;
     price: number;
     total_amount: number;
 }
 
-interface SupplierGroup {
-    supplier_name: string;
-    purchases: Purchase[];
-    total_quantity: number;
-    total_amount: number;
-}
-
 interface Report {
-    supplier_groups: SupplierGroup[];
+    purchases: Purchase[];
     total_quantity: number;
     total_amount: number;
 }
@@ -50,6 +45,9 @@ interface PurchaseReportDetailsProps {
 }
 
 export default function PurchaseReportDetails({ report, filters = {} }: PurchaseReportDetailsProps) {
+    const { can } = usePermission();
+    const canFilter = can('can-purchase-filter');
+    const canDownload = can('can-purchase-download');
 
     const [startDate, setStartDate] = useState(filters.start_date || '');
     const [endDate, setEndDate] = useState(filters.end_date || '');
@@ -59,7 +57,7 @@ export default function PurchaseReportDetails({ report, filters = {} }: Purchase
     };
 
     const applyFilters = () => {
-        const params: any = {};
+        const params: Record<string, string> = {};
         if (startDate) {
             params.start_date = startDate;
         }
@@ -85,55 +83,59 @@ export default function PurchaseReportDetails({ report, filters = {} }: Purchase
                         <h1 className="text-3xl font-bold dark:text-white">Purchase Report Details</h1>
                         <p className="text-gray-600 dark:text-gray-400">View detailed purchase reports</p>
                     </div>
-                    <Button
-                        variant="success"
-                        onClick={() => {
-                            const params = new URLSearchParams();
-                            if (startDate) params.append('start_date', startDate);
-                            if (endDate) params.append('end_date', endDate);
-                            window.location.href = `/purchase-report-details/download-pdf?${params.toString()}`;
-                        }}
-                    >
-                        <FileText className="mr-2 h-4 w-4" />Download
-                    </Button>
+                    {canDownload && (
+                        <Button
+                            variant="success"
+                            onClick={() => {
+                                const params = new URLSearchParams();
+                                if (startDate) params.append('start_date', startDate);
+                                if (endDate) params.append('end_date', endDate);
+                                window.location.href = `/purchase-report-details/download-pdf?${params.toString()}`;
+                            }}
+                        >
+                            <FileText className="mr-2 h-4 w-4" />Download
+                        </Button>
+                    )}
                 </div>
 
-                <Card className="dark:border-gray-700 dark:bg-gray-800">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2 dark:text-white">
-                            <Filter className="h-5 w-5" />
-                            Filters
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-                            <div>
-                                <Label className="dark:text-gray-200">Start Date</Label>
-                                <Input
-                                    type="date"
-                                    value={startDate}
-                                    onChange={(e) => setStartDate(e.target.value)}
-                                    className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                />
+                {canFilter && (
+                    <Card className="dark:border-gray-700 dark:bg-gray-800">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 dark:text-white">
+                                <Filter className="h-5 w-5" />
+                                Filters
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+                                <div>
+                                    <Label className="dark:text-gray-200">Start Date</Label>
+                                    <Input
+                                        type="date"
+                                        value={startDate}
+                                        onChange={(e) => setStartDate(e.target.value)}
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    />
+                                </div>
+                                <div>
+                                    <Label className="dark:text-gray-200">End Date</Label>
+                                    <Input
+                                        type="date"
+                                        value={endDate}
+                                        onChange={(e) => setEndDate(e.target.value)}
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    />
+                                </div>
+                                <div className="flex items-end gap-2 md:col-span-2">
+                                    <Button onClick={applyFilters} className="px-4">Apply Filters</Button>
+                                    <Button onClick={clearFilters} variant="secondary" className="px-4">
+                                        <X className="mr-2 h-4 w-4" />Clear
+                                    </Button>
+                                </div>
                             </div>
-                            <div>
-                                <Label className="dark:text-gray-200">End Date</Label>
-                                <Input
-                                    type="date"
-                                    value={endDate}
-                                    onChange={(e) => setEndDate(e.target.value)}
-                                    className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                />
-                            </div>
-                            <div className="flex items-end gap-2 md:col-span-2">
-                                <Button onClick={applyFilters} className="px-4">Apply Filters</Button>
-                                <Button onClick={clearFilters} variant="secondary" className="px-4">
-                                    <X className="mr-2 h-4 w-4" />Clear
-                                </Button>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
+                        </CardContent>
+                    </Card>
+                )}
 
                 <div className="space-y-6">
                     {report && report.purchases && report.purchases.length > 0 ? (
@@ -202,7 +204,7 @@ export default function PurchaseReportDetails({ report, filters = {} }: Purchase
                             </CardContent>
                         </Card>
                     )}
-                    
+
                     {report && report.purchases && report.purchases.length > 0 && (
                         <Card className="dark:border-gray-700 dark:bg-gray-800">
                             <CardContent className="p-4">

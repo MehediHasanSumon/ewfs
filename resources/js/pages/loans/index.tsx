@@ -24,6 +24,7 @@ import {
     X,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { usePermission } from '@/hooks/usePermission';
 
 interface Loan {
     id: number;
@@ -66,6 +67,10 @@ interface LoansProps {
 }
 
 export default function Loans({ loans, filters }: LoansProps) {
+    const { can } = usePermission();
+    const canFilter = can('can-loan-filter');
+    const canDownload = can('can-loan-download');
+
     const [search, setSearch] = useState(filters?.search || '');
     const [status, setStatus] = useState(filters?.status || 'all');
     const [sortBy, setSortBy] = useState(filters?.sort_by || 'lender_name');
@@ -157,100 +162,104 @@ export default function Loans({ loans, filters }: LoansProps) {
                         </p>
                     </div>
                     <div className="flex gap-2">
-                        <Button
-                            variant="success"
-                            onClick={() => {
-                                const params = new URLSearchParams();
-                                if (search) params.append('search', search);
-                                if (status !== 'all') params.append('status', status);
-                                if (sortBy) params.append('sort_by', sortBy);
-                                if (sortOrder) params.append('sort_order', sortOrder);
-                                window.location.href = `/loans/download-pdf?${params.toString()}`;
-                            }}
-                        >
-                            <FileText className="mr-2 h-4 w-4" />
-                            Download
-                        </Button>
+                        {canDownload && (
+                            <Button
+                                variant="success"
+                                onClick={() => {
+                                    const params = new URLSearchParams();
+                                    if (search) params.append('search', search);
+                                    if (status !== 'all') params.append('status', status);
+                                    if (sortBy) params.append('sort_by', sortBy);
+                                    if (sortOrder) params.append('sort_order', sortOrder);
+                                    window.location.href = `/loans/download-pdf?${params.toString()}`;
+                                }}
+                            >
+                                <FileText className="mr-2 h-4 w-4" />
+                                Download
+                            </Button>
+                        )}
                     </div>
                 </div>
 
                 {/* Filter Card */}
-                <Card className="dark:border-gray-700 dark:bg-gray-800">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2 dark:text-white">
-                            <Filter className="h-5 w-5" />
-                            Filters
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                            <div>
-                                <Label className="dark:text-gray-200">
-                                    Search
-                                </Label>
-                                <Input
-                                    placeholder="Search loans..."
-                                    value={search}
-                                    onChange={(e) => setSearch(e.target.value)}
-                                    className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                />
+                {canFilter && (
+                    <Card className="dark:border-gray-700 dark:bg-gray-800">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 dark:text-white">
+                                <Filter className="h-5 w-5" />
+                                Filters
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                                <div>
+                                    <Label className="dark:text-gray-200">
+                                        Search
+                                    </Label>
+                                    <Input
+                                        placeholder="Search loans..."
+                                        value={search}
+                                        onChange={(e) => setSearch(e.target.value)}
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    />
+                                </div>
+                                <div>
+                                    <Label className="dark:text-gray-200">
+                                        Status
+                                    </Label>
+                                    <Select
+                                        value={status}
+                                        onValueChange={(value) => {
+                                            setStatus(value);
+                                            router.get(
+                                                '/loans',
+                                                {
+                                                    search: search || undefined,
+                                                    status: value === 'all' ? undefined : value,
+                                                    sort_by: sortBy,
+                                                    sort_order: sortOrder,
+                                                    per_page: perPage,
+                                                },
+                                                { preserveState: true },
+                                            );
+                                        }}
+                                    >
+                                        <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                            <SelectValue placeholder="All status" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">
+                                                All status
+                                            </SelectItem>
+                                            <SelectItem value="active">
+                                                Active
+                                            </SelectItem>
+                                            <SelectItem value="inactive">
+                                                Inactive
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="flex items-end gap-2">
+                                    <Button
+                                        onClick={applyFilters}
+                                        className="px-4"
+                                    >
+                                        Apply Filters
+                                    </Button>
+                                    <Button
+                                        onClick={clearFilters}
+                                        variant="secondary"
+                                        className="px-4"
+                                    >
+                                        <X className="mr-2 h-4 w-4" />
+                                        Clear
+                                    </Button>
+                                </div>
                             </div>
-                            <div>
-                                <Label className="dark:text-gray-200">
-                                    Status
-                                </Label>
-                                <Select
-                                    value={status}
-                                    onValueChange={(value) => {
-                                        setStatus(value);
-                                        router.get(
-                                            '/loans',
-                                            {
-                                                search: search || undefined,
-                                                status: value === 'all' ? undefined : value,
-                                                sort_by: sortBy,
-                                                sort_order: sortOrder,
-                                                per_page: perPage,
-                                            },
-                                            { preserveState: true },
-                                        );
-                                    }}
-                                >
-                                    <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                        <SelectValue placeholder="All status" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">
-                                            All status
-                                        </SelectItem>
-                                        <SelectItem value="active">
-                                            Active
-                                        </SelectItem>
-                                        <SelectItem value="inactive">
-                                            Inactive
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="flex items-end gap-2">
-                                <Button
-                                    onClick={applyFilters}
-                                    className="px-4"
-                                >
-                                    Apply Filters
-                                </Button>
-                                <Button
-                                    onClick={clearFilters}
-                                    variant="secondary"
-                                    className="px-4"
-                                >
-                                    <X className="mr-2 h-4 w-4" />
-                                    Clear
-                                </Button>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
+                        </CardContent>
+                    </Card>
+                )}
 
                 <Card className="dark:border-gray-700 dark:bg-gray-800">
                     <CardContent>

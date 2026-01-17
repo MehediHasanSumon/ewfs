@@ -6,6 +6,7 @@ import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 import { FileText } from 'lucide-react';
 import { numberToWords } from '@/lib/utils';
+import { usePermission } from '@/hooks/usePermission';
 
 interface AccountItem {
     id: number;
@@ -29,6 +30,9 @@ interface LiabilityAssetsProps {
 }
 
 export default function LiabilityAssets({ liabilities = [], assets = [], totalLiabilities = 0, totalAssets = 0 }: LiabilityAssetsProps) {
+    const { can } = usePermission();
+    const canDownload = can('can-account-download');
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Liability and Assets" />
@@ -39,12 +43,14 @@ export default function LiabilityAssets({ liabilities = [], assets = [], totalLi
                         <h1 className="text-3xl font-bold dark:text-white">Liability and Assets</h1>
                         <p className="text-gray-600 dark:text-gray-400">View liability and asset accounts summary</p>
                     </div>
-                    <Button
-                        variant="success"
-                        onClick={() => window.location.href = '/liability-assets/download-pdf'}
-                    >
-                        <FileText className="mr-2 h-4 w-4" />Download
-                    </Button>
+                    {canDownload && (
+                        <Button
+                            variant="success"
+                            onClick={() => window.location.href = '/liability-assets/download-pdf'}
+                        >
+                            <FileText className="mr-2 h-4 w-4" />Download
+                        </Button>
+                    )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

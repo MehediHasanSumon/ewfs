@@ -1,33 +1,33 @@
 Accounts                ---Done
 auth
-BalanceSheet
-BankBookLedger
-CashBookLedger
+BalanceSheet            ---Done
+BankBookLedger          ---Done
+CashBookLedger          ---Done
 Categories              ---Done
 CompanySettings         ---Done
 CreditSales             ---Done
-CustomerDetailsBill
-CustomerLedgerDetails
-CustomerLedgerSummary
+CustomerDetailsBill     ---Done
+CustomerLedgerDetails   ---Done
+CustomerLedgerSummary   ---Done
 Customers               ---Done
-CustomerSummaryBill
-DailyStatement
+CustomerSummaryBill     ---Done
+DailyStatement          ---Done
 Dispensers
 EmpDepartments          ---Done
 EmpDesignations         ---Done
 Employee                ---Done
 EmpTypes                ---Done
-GeneralLedger
+GeneralLedger           ---Done
 Groups                  ---Done
-LiabilityAssets
-loans
+LiabilityAssets         ---Done
+loans                   ---Done
 OfficePayments         ---Done
 PaymentSubTypes        ---Done
 Permissions             ---Done
 ProductRates            ---Done
 Products                ---Done
 Purchases               ---Done
-Reports
+Reports                 ---Done
 Roles                   ---Done
 Sales                   ---Done
 settings

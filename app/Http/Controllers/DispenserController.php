@@ -18,7 +18,8 @@ class DispenserController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('permission:view-dispenser', only: ['index', 'downloadPdf']),
+            new Middleware('permission:view-dispenser', only: ['index']),
+            new Middleware('permission:view-dispenser|can-dispenser-download', only: ['downloadPdf']),
             new Middleware('permission:create-dispenser', only: ['store']),
             new Middleware('permission:update-dispenser', only: ['update']),
             new Middleware('permission:delete-dispenser', only: ['destroy', 'bulkDelete']),

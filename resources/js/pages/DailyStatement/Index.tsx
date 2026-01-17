@@ -10,6 +10,7 @@ import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
 import { ChevronDown, ChevronUp, FileText, Filter, BarChart3, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { usePermission } from '@/hooks/usePermission';
 
 interface ProductSale {
     product_name: string;
@@ -70,6 +71,10 @@ interface DailyStatementProps {
 }
 
 export default function DailyStatement({ productWiseSales = [], cashBankSales = [], creditSales = [], customerWiseSales = [], cashReceived = [], cashPayment = [], customers = [], shifts = [], filters = {} }: DailyStatementProps) {
+    const { can } = usePermission();
+    const canFilter = can('can-account-filter');
+    const canDownload = can('can-account-download');
+
     const [search, setSearch] = useState(filters.search || '');
     const [customerId, setCustomerId] = useState(filters.customer_id || 'all');
     const [shiftId, setShiftId] = useState(filters.shift_id || 'all');
@@ -110,74 +115,78 @@ export default function DailyStatement({ productWiseSales = [], cashBankSales = 
                         <h1 className="text-3xl font-bold dark:text-white">Daily Statement Report</h1>
                         <p className="text-gray-600 dark:text-gray-400">View customer credit sales statements</p>
                     </div>
-                    <Button
-                        variant="success"
-                        onClick={() => {
-                            const params = new URLSearchParams();
-                            params.append('start_date', startDate);
-                            params.append('end_date', endDate);
-                            if (shiftId !== 'all') {
-                                params.append('shift_id', shiftId);
-                            }
-                            window.location.href = `/daily-statement/download-pdf?${params.toString()}`;
-                        }}
-                    >
-                        <FileText className="mr-2 h-4 w-4" />Download
-                    </Button>
+                    {canDownload && (
+                        <Button
+                            variant="success"
+                            onClick={() => {
+                                const params = new URLSearchParams();
+                                params.append('start_date', startDate);
+                                params.append('end_date', endDate);
+                                if (shiftId !== 'all') {
+                                    params.append('shift_id', shiftId);
+                                }
+                                window.location.href = `/daily-statement/download-pdf?${params.toString()}`;
+                            }}
+                        >
+                            <FileText className="mr-2 h-4 w-4" />Download
+                        </Button>
+                    )}
                 </div>
 
-                <Card className="dark:border-gray-700 dark:bg-gray-800">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2 dark:text-white">
-                            <Filter className="h-5 w-5" />
-                            Filters
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
-                            <div>
-                                <Label className="dark:text-gray-200">Start Date</Label>
-                                <Input
-                                    type="date"
-                                    value={startDate}
-                                    onChange={(e) => setStartDate(e.target.value)}
-                                    className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                />
+                {canFilter && (
+                    <Card className="dark:border-gray-700 dark:bg-gray-800">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 dark:text-white">
+                                <Filter className="h-5 w-5" />
+                                Filters
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
+                                <div>
+                                    <Label className="dark:text-gray-200">Start Date</Label>
+                                    <Input
+                                        type="date"
+                                        value={startDate}
+                                        onChange={(e) => setStartDate(e.target.value)}
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    />
+                                </div>
+                                <div>
+                                    <Label className="dark:text-gray-200">End Date</Label>
+                                    <Input
+                                        type="date"
+                                        value={endDate}
+                                        onChange={(e) => setEndDate(e.target.value)}
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    />
+                                </div>
+                                <div>
+                                    <Label className="dark:text-gray-200">Shift</Label>
+                                    <Select value={shiftId} onValueChange={setShiftId}>
+                                        <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                            <SelectValue placeholder="Select Shift" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All Shifts</SelectItem>
+                                            {shifts.map((shift) => (
+                                                <SelectItem key={shift.id} value={shift.id.toString()}>
+                                                    {shift.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="flex items-end gap-2 md:col-span-2">
+                                    <Button onClick={applyFilters} className="px-4">Apply Filters</Button>
+                                    <Button onClick={clearFilters} variant="secondary" className="px-4">
+                                        <X className="mr-2 h-4 w-4" />Clear
+                                    </Button>
+                                </div>
                             </div>
-                            <div>
-                                <Label className="dark:text-gray-200">End Date</Label>
-                                <Input
-                                    type="date"
-                                    value={endDate}
-                                    onChange={(e) => setEndDate(e.target.value)}
-                                    className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                />
-                            </div>
-                            <div>
-                                <Label className="dark:text-gray-200">Shift</Label>
-                                <Select value={shiftId} onValueChange={setShiftId}>
-                                    <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                        <SelectValue placeholder="Select Shift" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All Shifts</SelectItem>
-                                        {shifts.map((shift) => (
-                                            <SelectItem key={shift.id} value={shift.id.toString()}>
-                                                {shift.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="flex items-end gap-2 md:col-span-2">
-                                <Button onClick={applyFilters} className="px-4">Apply Filters</Button>
-                                <Button onClick={clearFilters} variant="secondary" className="px-4">
-                                    <X className="mr-2 h-4 w-4" />Clear
-                                </Button>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
+                        </CardContent>
+                    </Card>
+                )}
 
                 <div className="space-y-6">
                     <Card className="dark:border-gray-700 dark:bg-gray-800">

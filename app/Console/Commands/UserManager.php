@@ -91,7 +91,7 @@ class UserManager extends Command
         foreach ($users as $user) {
             $roles = $user->roles->pluck('name')->join(', ') ?: 'None';
             $permissions = $user->permissions->pluck('name')->join(', ') ?: 'None';
-            
+
             $rows[] = [
                 $user->id,
                 $user->name,
@@ -212,7 +212,7 @@ class UserManager extends Command
     private function viewUserPermissions($user)
     {
         $this->info("📋 Permissions for {$user->name}:");
-        
+
         $rolePermissions = $user->getPermissionsViaRoles();
         $directPermissions = $user->getDirectPermissions();
 
@@ -240,7 +240,7 @@ class UserManager extends Command
     private function assignPermissionToUser($user)
     {
         $permissions = Permission::all()->pluck('name')->toArray();
-        
+
         if (empty($permissions)) {
             $this->warn('No permissions found. Run setup first.');
             return;
@@ -267,7 +267,7 @@ class UserManager extends Command
         }
 
         $selectedPermission = $this->choice('Select permission to revoke', $userPermissions);
-        
+
         $user->revokePermissionTo($selectedPermission);
         $this->info("✅ Permission '{$selectedPermission}' revoked from {$user->name}");
     }
@@ -310,10 +310,10 @@ class UserManager extends Command
 
             // Ensure super-admin role exists
             $superAdminRole = Role::firstOrCreate(['name' => 'super-admin']);
-            
+
             // Assign all permissions to super-admin role
             $superAdminRole->syncPermissions(Permission::all());
-            
+
             // Assign super-admin role to user
             $user->assignRole('super-admin');
 
@@ -321,7 +321,6 @@ class UserManager extends Command
 
             $this->info("✅ Super Admin created successfully: {$user->email}");
             $this->info("👑 User has been granted all permissions via super-admin role");
-
         } catch (\Exception $e) {
             DB::rollBack();
             $this->error("Failed to create super admin: {$e->getMessage()}");
@@ -343,7 +342,7 @@ class UserManager extends Command
         foreach ($roles as $role) {
             $this->info("🔑 {$role->name}");
             $permissions = $role->permissions->pluck('name');
-            
+
             if ($permissions->isEmpty()) {
                 $this->line('  No permissions assigned');
             } else {
@@ -360,7 +359,7 @@ class UserManager extends Command
         $this->info('🔑 Creating New Role');
 
         $roleName = $this->ask('Enter role name');
-        
+
         if (Role::where('name', $roleName)->exists()) {
             $this->error('Role already exists!');
             return;
@@ -379,7 +378,7 @@ class UserManager extends Command
         $this->info('⚡ Creating New Permission');
 
         $permissionName = $this->ask('Enter permission name');
-        
+
         if (Permission::where('name', $permissionName)->exists()) {
             $this->error('Permission already exists!');
             return;
@@ -392,7 +391,7 @@ class UserManager extends Command
     private function assignPermissionsToRole($role)
     {
         $permissions = Permission::all()->pluck('name')->toArray();
-        
+
         if (empty($permissions)) {
             $this->warn('No permissions found.');
             return;
@@ -453,7 +452,6 @@ class UserManager extends Command
                 Permission::firstOrCreate(['name' => "can-{$model}-download"]);
             }
 
-            // Add extra static permissions
             $extraPermissions = [
                 'create-role',
                 'update-role',
@@ -467,6 +465,9 @@ class UserManager extends Command
                 'view-permission',
                 'can-permission-filter',
                 'can-permission-download',
+                'view-dashboard',
+                'view-loan',
+                'view-shift-closed-list'
             ];
 
             foreach ($extraPermissions as $permissionName) {
@@ -478,13 +479,12 @@ class UserManager extends Command
             // Assign all permissions to super-admin
             $superAdminRole = Role::where('name', 'super-admin')->first();
             $superAdminRole->syncPermissions(Permission::all());
-            
+
             $this->info('✅ All permissions assigned to super-admin role');
 
             DB::commit();
 
             $this->info('🎉 Initial setup completed successfully!');
-
         } catch (\Exception $e) {
             DB::rollBack();
             $this->error("Setup failed: {$e->getMessage()}");
@@ -493,7 +493,7 @@ class UserManager extends Command
 
     private function findUser($identifier)
     {
-        $user = is_numeric($identifier) 
+        $user = is_numeric($identifier)
             ? User::find($identifier)
             : User::where('email', $identifier)->first();
 

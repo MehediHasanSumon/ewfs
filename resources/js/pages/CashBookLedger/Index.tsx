@@ -8,6 +8,7 @@ import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
 import { FileText, Filter, X } from 'lucide-react';
 import { useState } from 'react';
+import { usePermission } from '@/hooks/usePermission';
 
 interface Account {
     id: number;
@@ -51,6 +52,10 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function CashBookLedger({ ledgers, filters }: Props) {
+    const { can } = usePermission();
+    const canFilter = can('can-account-filter');
+    const canDownload = can('can-account-download');
+
     const [startDate, setStartDate] = useState(
         filters?.start_date || new Date().toISOString().split('T')[0],
     );
@@ -87,7 +92,7 @@ export default function CashBookLedger({ ledgers, filters }: Props) {
                             View cash account transactions and balances
                         </p>
                     </div>
-                    {ledgers.length > 0 && (
+                    {ledgers.length > 0 && canDownload && (
                         <Button
                             variant="success"
                             onClick={() => {
@@ -105,55 +110,57 @@ export default function CashBookLedger({ ledgers, filters }: Props) {
                 </div>
 
                 {/* Filter Card */}
-                <Card className="dark:border-gray-700 dark:bg-gray-800">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2 dark:text-white">
-                            <Filter className="h-5 w-5" />
-                            Filters
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-                            <div>
-                                <Label className="dark:text-gray-200">
-                                    Start Date
-                                </Label>
-                                <Input
-                                    type="date"
-                                    value={startDate}
-                                    onChange={(e) =>
-                                        setStartDate(e.target.value)
-                                    }
-                                    className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                />
+                {canFilter && (
+                    <Card className="dark:border-gray-700 dark:bg-gray-800">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 dark:text-white">
+                                <Filter className="h-5 w-5" />
+                                Filters
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+                                <div>
+                                    <Label className="dark:text-gray-200">
+                                        Start Date
+                                    </Label>
+                                    <Input
+                                        type="date"
+                                        value={startDate}
+                                        onChange={(e) =>
+                                            setStartDate(e.target.value)
+                                        }
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    />
+                                </div>
+                                <div>
+                                    <Label className="dark:text-gray-200">
+                                        End Date
+                                    </Label>
+                                    <Input
+                                        type="date"
+                                        value={endDate}
+                                        onChange={(e) => setEndDate(e.target.value)}
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    />
+                                </div>
+                                <div className="flex items-end gap-2 md:col-span-2">
+                                    <Button onClick={applyFilters} className="px-4">
+                                        Apply Filters
+                                    </Button>
+                                    <Button
+                                        onClick={clearFilters}
+                                        variant="secondary"
+                                        className="px-4"
+                                    >
+                                        <X className="mr-2 h-4 w-4" />
+                                        Clear
+                                    </Button>
+                                </div>
                             </div>
-                            <div>
-                                <Label className="dark:text-gray-200">
-                                    End Date
-                                </Label>
-                                <Input
-                                    type="date"
-                                    value={endDate}
-                                    onChange={(e) => setEndDate(e.target.value)}
-                                    className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                />
-                            </div>
-                            <div className="flex items-end gap-2 md:col-span-2">
-                                <Button onClick={applyFilters} className="px-4">
-                                    Apply Filters
-                                </Button>
-                                <Button
-                                    onClick={clearFilters}
-                                    variant="secondary"
-                                    className="px-4"
-                                >
-                                    <X className="mr-2 h-4 w-4" />
-                                    Clear
-                                </Button>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
+                        </CardContent>
+                    </Card>
+                )}
 
                 {ledgers.length > 0 ? (
                     <div className="space-y-6">

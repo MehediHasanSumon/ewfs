@@ -12,6 +12,7 @@ import { type BreadcrumbItem } from '@/types';
 import { Head, router, useForm } from '@inertiajs/react';
 import { ChevronDown, ChevronUp, Edit, FileText, Filter, Fuel, Plus, Trash2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { usePermission } from '@/hooks/usePermission';
 
 interface Dispenser {
     id: number;
@@ -65,6 +66,11 @@ interface DispensersProps {
 }
 
 export default function Dispensers({ dispensers, products, filters }: DispensersProps) {
+    const { can } = usePermission();
+    const canFilter = can('can-dispenser-filter');
+    const canDownload = can('can-dispenser-download');
+    const hasActionPermission = can('update-dispenser') || can('delete-dispenser');
+
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editingDispenser, setEditingDispenser] = useState<Dispenser | null>(null);
     const [deletingDispenser, setDeletingDispenser] = useState<Dispenser | null>(null);
@@ -233,7 +239,7 @@ export default function Dispensers({ dispensers, products, filters }: Dispensers
                         <p className="text-gray-600 dark:text-gray-400">Manage fuel dispensers</p>
                     </div>
                     <div className="flex gap-2">
-                        {selectedDispensers.length > 0 && (
+                        {selectedDispensers.length > 0 && can('delete-dispenser') && (
                             <Button
                                 variant="destructive"
                                 onClick={handleBulkDelete}
@@ -242,106 +248,112 @@ export default function Dispensers({ dispensers, products, filters }: Dispensers
                                 Delete Selected ({selectedDispensers.length})
                             </Button>
                         )}
-                        <Button
-                            variant="success"
-                            onClick={() => {
-                                const params = new URLSearchParams();
-                                if (search) params.append('search', search);
-                                if (status !== 'all') params.append('status', status);
-                                if (productId) params.append('product_id', productId);
-                                if (startDate) params.append('start_date', startDate);
-                                if (endDate) params.append('end_date', endDate);
-                                if (sortBy) params.append('sort_by', sortBy);
-                                if (sortOrder) params.append('sort_order', sortOrder);
-                                window.location.href = `/dispensers/download-pdf?${params.toString()}`;
-                            }}
-                        >
-                            <FileText className="mr-2 h-4 w-4" />
-                            Download
-                        </Button>
-                        <Button onClick={() => setIsCreateOpen(true)}>
-                            <Plus className="mr-2 h-4 w-4" />
-                            Add Dispenser
-                        </Button>
+                        {canDownload && (
+                            <Button
+                                variant="success"
+                                onClick={() => {
+                                    const params = new URLSearchParams();
+                                    if (search) params.append('search', search);
+                                    if (status !== 'all') params.append('status', status);
+                                    if (productId) params.append('product_id', productId);
+                                    if (startDate) params.append('start_date', startDate);
+                                    if (endDate) params.append('end_date', endDate);
+                                    if (sortBy) params.append('sort_by', sortBy);
+                                    if (sortOrder) params.append('sort_order', sortOrder);
+                                    window.location.href = `/dispensers/download-pdf?${params.toString()}`;
+                                }}
+                            >
+                                <FileText className="mr-2 h-4 w-4" />
+                                Download
+                            </Button>
+                        )}
+                        {can('create-dispenser') && (
+                            <Button onClick={() => setIsCreateOpen(true)}>
+                                <Plus className="mr-2 h-4 w-4" />
+                                Add Dispenser
+                            </Button>
+                        )}
                     </div>
                 </div>
 
-                <Card className="dark:border-gray-700 dark:bg-gray-800">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2 dark:text-white">
-                            <Filter className="h-5 w-5" />
-                            Filters
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-6">
-                            <div>
-                                <Label className="dark:text-gray-200">Search</Label>
-                                <Input
-                                    placeholder="Search dispensers..."
-                                    value={search}
-                                    onChange={(e) => setSearch(e.target.value)}
-                                    className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                />
+                {canFilter && (
+                    <Card className="dark:border-gray-700 dark:bg-gray-800">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 dark:text-white">
+                                <Filter className="h-5 w-5" />
+                                Filters
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-6">
+                                <div>
+                                    <Label className="dark:text-gray-200">Search</Label>
+                                    <Input
+                                        placeholder="Search dispensers..."
+                                        value={search}
+                                        onChange={(e) => setSearch(e.target.value)}
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    />
+                                </div>
+                                <div>
+                                    <Label className="dark:text-gray-200">Status</Label>
+                                    <Select value={status} onValueChange={setStatus}>
+                                        <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                            <SelectValue placeholder="All status" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All status</SelectItem>
+                                            <SelectItem value="true">Active</SelectItem>
+                                            <SelectItem value="false">Disabled</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div>
+                                    <Label className="dark:text-gray-200">Product</Label>
+                                    <Select value={productId} onValueChange={setProductId}>
+                                        <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                            <SelectValue placeholder="All products" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {products.map((product) => (
+                                                <SelectItem key={product.id} value={product.id.toString()}>
+                                                    {product.product_name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div>
+                                    <Label className="dark:text-gray-200">Start Date</Label>
+                                    <Input
+                                        type="date"
+                                        value={startDate}
+                                        onChange={(e) => setStartDate(e.target.value)}
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    />
+                                </div>
+                                <div>
+                                    <Label className="dark:text-gray-200">End Date</Label>
+                                    <Input
+                                        type="date"
+                                        value={endDate}
+                                        onChange={(e) => setEndDate(e.target.value)}
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    />
+                                </div>
+                                <div className="flex items-end gap-2">
+                                    <Button onClick={applyFilters} className="px-4">
+                                        Apply Filters
+                                    </Button>
+                                    <Button onClick={clearFilters} variant="secondary" className="px-4">
+                                        <X className="mr-2 h-4 w-4" />
+                                        Clear
+                                    </Button>
+                                </div>
                             </div>
-                            <div>
-                                <Label className="dark:text-gray-200">Status</Label>
-                                <Select value={status} onValueChange={setStatus}>
-                                    <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                        <SelectValue placeholder="All status" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All status</SelectItem>
-                                        <SelectItem value="true">Active</SelectItem>
-                                        <SelectItem value="false">Disabled</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div>
-                                <Label className="dark:text-gray-200">Product</Label>
-                                <Select value={productId} onValueChange={setProductId}>
-                                    <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                        <SelectValue placeholder="All products" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {products.map((product) => (
-                                            <SelectItem key={product.id} value={product.id.toString()}>
-                                                {product.product_name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div>
-                                <Label className="dark:text-gray-200">Start Date</Label>
-                                <Input
-                                    type="date"
-                                    value={startDate}
-                                    onChange={(e) => setStartDate(e.target.value)}
-                                    className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                />
-                            </div>
-                            <div>
-                                <Label className="dark:text-gray-200">End Date</Label>
-                                <Input
-                                    type="date"
-                                    value={endDate}
-                                    onChange={(e) => setEndDate(e.target.value)}
-                                    className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                />
-                            </div>
-                            <div className="flex items-end gap-2">
-                                <Button onClick={applyFilters} className="px-4">
-                                    Apply Filters
-                                </Button>
-                                <Button onClick={clearFilters} variant="secondary" className="px-4">
-                                    <X className="mr-2 h-4 w-4" />
-                                    Clear
-                                </Button>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
+                        </CardContent>
+                    </Card>
+                )}
 
                 <Card className="dark:border-gray-700 dark:bg-gray-800">
                     <CardContent>
@@ -361,7 +373,9 @@ export default function Dispensers({ dispensers, products, filters }: Dispensers
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Dispenser Items Rate</th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Dispenser Readings</th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Status</th>
-                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Actions</th>
+                                        {hasActionPermission && (
+                                            <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Actions</th>
+                                        )}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -378,30 +392,36 @@ export default function Dispensers({ dispensers, products, filters }: Dispensers
                                                     {dispenser.status ? 'Active' : 'Disabled'}
                                                 </span>
                                             </td>
-                                            <td className="p-4">
-                                                <div className="flex gap-2">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={() => handleEdit(dispenser)}
-                                                        className="text-indigo-600 hover:text-indigo-800"
-                                                    >
-                                                        <Edit className="h-4 w-4" />
-                                                    </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={() => handleDelete(dispenser)}
-                                                        className="text-red-600 hover:text-red-800"
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                </div>
-                                            </td>
+                                            {hasActionPermission && (
+                                                <td className="p-4">
+                                                    <div className="flex gap-2">
+                                                        {can('update-dispenser') && (
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={() => handleEdit(dispenser)}
+                                                                className="text-indigo-600 hover:text-indigo-800"
+                                                            >
+                                                                <Edit className="h-4 w-4" />
+                                                            </Button>
+                                                        )}
+                                                        {can('delete-dispenser') && (
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={() => handleDelete(dispenser)}
+                                                                className="text-red-600 hover:text-red-800"
+                                                            >
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                            )}
                                         </tr>
                                     )) : (
                                         <tr>
-                                            <td colSpan={8} className="p-8 text-center text-gray-500 dark:text-gray-400">
+                                            <td colSpan={hasActionPermission ? 8 : 7} className="p-8 text-center text-gray-500 dark:text-gray-400">
                                                 <Fuel className="mx-auto mb-4 h-12 w-12 text-gray-400" />
                                                 No dispensers found
                                             </td>

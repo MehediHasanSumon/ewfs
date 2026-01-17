@@ -17,7 +17,8 @@ class LoanController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('permission:view-account', only: ['index', 'show', 'statement', 'downloadStatementPdf', 'downloadLoansPdf', 'downloadPaymentsPdf']),
+            new Middleware('permission:view-loan', only: ['index', 'show', 'statement']),
+            new Middleware('permission:view-loan|can-loan-download', only: ['downloadStatementPdf', 'downloadLoansPdf', 'downloadPaymentsPdf']),
         ];
     }
     public function index(Request $request): Response

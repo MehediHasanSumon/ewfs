@@ -16,7 +16,8 @@ class CustomerSummaryBillController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('permission:view-customer', only: ['index', 'downloadPdf']),
+            new Middleware('permission:view-customer', only: ['index']),
+            new Middleware('permission:view-customer|can-customer-download', only: ['downloadPdf']),
         ];
     }
     public function index(Request $request)

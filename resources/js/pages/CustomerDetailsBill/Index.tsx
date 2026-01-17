@@ -10,6 +10,7 @@ import { Head, router } from '@inertiajs/react';
 import { FileText, Filter, X } from 'lucide-react';
 import { useState } from 'react';
 import { numberToWords } from '@/lib/utils';
+import { usePermission } from '@/hooks/usePermission';
 
 interface Sale {
     sale_date: string;
@@ -59,6 +60,10 @@ interface CustomerDetailsBillProps {
 }
 
 export default function CustomerDetailsBill({ bills = [], customers = [], filters = {} }: CustomerDetailsBillProps) {
+    const { can } = usePermission();
+    const canFilter = can('can-customer-filter');
+    const canDownload = can('can-customer-download');
+
     const [customerId, setCustomerId] = useState(filters.customer_id || '');
     const [startDate, setStartDate] = useState(filters.start_date || new Date().toISOString().split('T')[0]);
     const [endDate, setEndDate] = useState(filters.end_date || new Date().toISOString().split('T')[0]);
@@ -90,74 +95,78 @@ export default function CustomerDetailsBill({ bills = [], customers = [], filter
                         <h1 className="text-3xl font-bold dark:text-white">Customer Details Bill</h1>
                         <p className="text-gray-600 dark:text-gray-400">View detailed customer credit sales</p>
                     </div>
-                    <Button
-                        variant="success"
-                        onClick={() => {
-                            const params = new URLSearchParams();
-                            params.append('start_date', startDate);
-                            params.append('end_date', endDate);
-                            if (customerId) {
-                                params.append('customer_id', customerId);
-                            }
-                            window.location.href = `/customer-details-bill/download-pdf?${params.toString()}`;
-                        }}
-                    >
-                        <FileText className="mr-2 h-4 w-4" />Download
-                    </Button>
+                    {canDownload && (
+                        <Button
+                            variant="success"
+                            onClick={() => {
+                                const params = new URLSearchParams();
+                                params.append('start_date', startDate);
+                                params.append('end_date', endDate);
+                                if (customerId) {
+                                    params.append('customer_id', customerId);
+                                }
+                                window.location.href = `/customer-details-bill/download-pdf?${params.toString()}`;
+                            }}
+                        >
+                            <FileText className="mr-2 h-4 w-4" />Download
+                        </Button>
+                    )}
                 </div>
 
-                <Card className="dark:border-gray-700 dark:bg-gray-800">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2 dark:text-white">
-                            <Filter className="h-5 w-5" />
-                            Filters
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
-                            <div>
-                                <Label className="dark:text-gray-200">Customer</Label>
-                                <Select value={customerId} onValueChange={setCustomerId}>
-                                    <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                        <SelectValue placeholder="Select customer" />
-                                    </SelectTrigger>
-                                    <SelectContent>
+                {canFilter && (
+                    <Card className="dark:border-gray-700 dark:bg-gray-800">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 dark:text-white">
+                                <Filter className="h-5 w-5" />
+                                Filters
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
+                                <div>
+                                    <Label className="dark:text-gray-200">Customer</Label>
+                                    <Select value={customerId} onValueChange={setCustomerId}>
+                                        <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                            <SelectValue placeholder="Select customer" />
+                                        </SelectTrigger>
+                                        <SelectContent>
 
-                                        {customers.map((customer) => (
-                                            <SelectItem key={customer.id} value={customer.id.toString()}>
-                                                {customer.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                            {customers.map((customer) => (
+                                                <SelectItem key={customer.id} value={customer.id.toString()}>
+                                                    {customer.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div>
+                                    <Label className="dark:text-gray-200">Start Date</Label>
+                                    <Input
+                                        type="date"
+                                        value={startDate}
+                                        onChange={(e) => setStartDate(e.target.value)}
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    />
+                                </div>
+                                <div>
+                                    <Label className="dark:text-gray-200">End Date</Label>
+                                    <Input
+                                        type="date"
+                                        value={endDate}
+                                        onChange={(e) => setEndDate(e.target.value)}
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    />
+                                </div>
+                                <div className="flex items-end gap-2 md:col-span-2">
+                                    <Button onClick={applyFilters} className="px-4">Apply Filters</Button>
+                                    <Button onClick={clearFilters} variant="secondary" className="px-4">
+                                        <X className="mr-2 h-4 w-4" />Clear
+                                    </Button>
+                                </div>
                             </div>
-                            <div>
-                                <Label className="dark:text-gray-200">Start Date</Label>
-                                <Input
-                                    type="date"
-                                    value={startDate}
-                                    onChange={(e) => setStartDate(e.target.value)}
-                                    className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                />
-                            </div>
-                            <div>
-                                <Label className="dark:text-gray-200">End Date</Label>
-                                <Input
-                                    type="date"
-                                    value={endDate}
-                                    onChange={(e) => setEndDate(e.target.value)}
-                                    className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                />
-                            </div>
-                            <div className="flex items-end gap-2 md:col-span-2">
-                                <Button onClick={applyFilters} className="px-4">Apply Filters</Button>
-                                <Button onClick={clearFilters} variant="secondary" className="px-4">
-                                    <X className="mr-2 h-4 w-4" />Clear
-                                </Button>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
+                        </CardContent>
+                    </Card>
+                )}
 
                 <div className="space-y-6">
                     {bills.length > 0 ? (

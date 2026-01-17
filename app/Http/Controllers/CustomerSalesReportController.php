@@ -15,7 +15,8 @@ class CustomerSalesReportController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('permission:view-sale', only: ['index', 'downloadPdf']),
+            new Middleware('permission:view-sale', only: ['index']),
+            new Middleware('permission:view-sale|can-sale-download', only: ['downloadPdf']),
         ];
     }
     public function index(Request $request)

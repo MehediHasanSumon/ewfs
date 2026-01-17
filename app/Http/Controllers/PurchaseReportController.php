@@ -15,7 +15,8 @@ class PurchaseReportController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('permission:view-purchase', only: ['index', 'downloadPdf']),
+            new Middleware('permission:view-purchase', only: ['index']),
+            new Middleware('permission:view-purchase|can-purchase-download', only: ['downloadPdf']),
         ];
     }
     public function index(Request $request)

@@ -17,7 +17,8 @@ class DailyStatementController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('permission:view-account', only: ['index', 'downloadPdf']),
+            new Middleware('permission:view-account', only: ['index']),
+            new Middleware('permission:view-account|can-account-download', only: ['downloadPdf']),
         ];
     }
     public function index(Request $request)

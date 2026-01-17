@@ -8,6 +8,7 @@ import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
 import { FileText, Filter, X } from 'lucide-react';
 import { useState } from 'react';
+import { usePermission } from '@/hooks/usePermission';
 
 interface BalanceSheetData {
     assets: {
@@ -80,6 +81,10 @@ interface BalanceSheetProps {
 }
 
 export default function BalanceSheet({ data, filters = {} }: BalanceSheetProps) {
+    const { can } = usePermission();
+    const canFilter = can('can-account-filter');
+    const canDownload = can('can-account-download');
+
     const [date, setDate] = useState(filters.date || new Date().toISOString().split('T')[0]);
     const [startDate, setStartDate] = useState(filters.start_date || new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0]);
     const [endDate, setEndDate] = useState(filters.end_date || new Date(Date.now() + 24*60*60*1000).toISOString().split('T')[0]);
@@ -108,55 +113,59 @@ export default function BalanceSheet({ data, filters = {} }: BalanceSheetProps) 
                         <h1 className="text-3xl font-bold dark:text-white">Balance Sheet & Financial Notes</h1>
                         <p className="text-gray-600 dark:text-gray-400">View company's financial position with detailed notes</p>
                     </div>
-                    <Button
-                        variant="success"
-                        onClick={() => {
-                            const params = new URLSearchParams();
-                            params.append('start_date', startDate);
-                            params.append('end_date', endDate);
-                            window.location.href = `/balance-sheet/download-pdf?${params.toString()}`;
-                        }}
-                    >
-                        <FileText className="mr-2 h-4 w-4" />Download
-                    </Button>
+                    {canDownload && (
+                        <Button
+                            variant="success"
+                            onClick={() => {
+                                const params = new URLSearchParams();
+                                params.append('start_date', startDate);
+                                params.append('end_date', endDate);
+                                window.location.href = `/balance-sheet/download-pdf?${params.toString()}`;
+                            }}
+                        >
+                            <FileText className="mr-2 h-4 w-4" />Download
+                        </Button>
+                    )}
                 </div>
 
-                <Card className="dark:border-gray-700 dark:bg-gray-800">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2 dark:text-white">
-                            <Filter className="h-5 w-5" />
-                            Filters
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-                            <div>
-                                <Label className="dark:text-gray-200">Start Date</Label>
-                                <Input
-                                    type="date"
-                                    value={startDate}
-                                    onChange={(e) => setStartDate(e.target.value)}
-                                    className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                />
+                {canFilter && (
+                    <Card className="dark:border-gray-700 dark:bg-gray-800">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 dark:text-white">
+                                <Filter className="h-5 w-5" />
+                                Filters
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+                                <div>
+                                    <Label className="dark:text-gray-200">Start Date</Label>
+                                    <Input
+                                        type="date"
+                                        value={startDate}
+                                        onChange={(e) => setStartDate(e.target.value)}
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    />
+                                </div>
+                                <div>
+                                    <Label className="dark:text-gray-200">End Date</Label>
+                                    <Input
+                                        type="date"
+                                        value={endDate}
+                                        onChange={(e) => setEndDate(e.target.value)}
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    />
+                                </div>
+                                <div className="flex items-end gap-2 md:col-span-2">
+                                    <Button onClick={applyFilters} className="px-4">Apply Filters</Button>
+                                    <Button onClick={clearFilters} variant="secondary" className="px-4">
+                                        <X className="mr-2 h-4 w-4" />Clear
+                                    </Button>
+                                </div>
                             </div>
-                            <div>
-                                <Label className="dark:text-gray-200">End Date</Label>
-                                <Input
-                                    type="date"
-                                    value={endDate}
-                                    onChange={(e) => setEndDate(e.target.value)}
-                                    className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                />
-                            </div>
-                            <div className="flex items-end gap-2 md:col-span-2">
-                                <Button onClick={applyFilters} className="px-4">Apply Filters</Button>
-                                <Button onClick={clearFilters} variant="secondary" className="px-4">
-                                    <X className="mr-2 h-4 w-4" />Clear
-                                </Button>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
+                        </CardContent>
+                    </Card>
+                )}
 
                 {/* Purchase Details */}
                 <Card className="dark:border-gray-700 dark:bg-gray-800">

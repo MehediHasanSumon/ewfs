@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { FileText, Filter, X } from 'lucide-react';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
+import { usePermission } from '@/hooks/usePermission';
 
 interface Account {
     id: number;
@@ -48,6 +49,10 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function GeneralLedger({ accounts, selectedAccount, transactions, currentBalance, filters }: Props) {
+    const { can } = usePermission();
+    const canFilter = can('can-account-filter');
+    const canDownload = can('can-account-download');
+
     const [accountId, setAccountId] = useState(filters?.account_id || '');
     const [startDate, setStartDate] = useState(filters?.start_date || new Date().toISOString().split('T')[0]);
     const [endDate, setEndDate] = useState(filters?.end_date || new Date().toISOString().split('T')[0]);
@@ -84,7 +89,7 @@ export default function GeneralLedger({ accounts, selectedAccount, transactions,
                             View account transactions and balances
                         </p>
                     </div>
-                    {selectedAccount && (
+                    {selectedAccount && canDownload && (
                         <Button
                             variant="success"
                             onClick={() => {
@@ -102,64 +107,66 @@ export default function GeneralLedger({ accounts, selectedAccount, transactions,
                 </div>
 
                 {/* Filter Card */}
-                <Card className="dark:border-gray-700 dark:bg-gray-800">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2 dark:text-white">
-                            <Filter className="h-5 w-5" />
-                            Filters
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
-                            <div>
-                                <Label className="dark:text-gray-200">Account</Label>
-                                <Select value={accountId} onValueChange={setAccountId}>
-                                    <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                        <SelectValue placeholder="Select account" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {accounts.map((account) => (
-                                            <SelectItem key={account.id} value={account.id.toString()}>
-                                                {account.name} ({account.ac_number})
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                {canFilter && (
+                    <Card className="dark:border-gray-700 dark:bg-gray-800">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 dark:text-white">
+                                <Filter className="h-5 w-5" />
+                                Filters
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
+                                <div>
+                                    <Label className="dark:text-gray-200">Account</Label>
+                                    <Select value={accountId} onValueChange={setAccountId}>
+                                        <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                            <SelectValue placeholder="Select account" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {accounts.map((account) => (
+                                                <SelectItem key={account.id} value={account.id.toString()}>
+                                                    {account.name} ({account.ac_number})
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div>
+                                    <Label className="dark:text-gray-200">Start Date</Label>
+                                    <Input
+                                        type="date"
+                                        value={startDate}
+                                        onChange={(e) => setStartDate(e.target.value)}
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    />
+                                </div>
+                                <div>
+                                    <Label className="dark:text-gray-200">End Date</Label>
+                                    <Input
+                                        type="date"
+                                        value={endDate}
+                                        onChange={(e) => setEndDate(e.target.value)}
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    />
+                                </div>
+                                <div className="flex items-end gap-2 md:col-span-2">
+                                    <Button onClick={applyFilters} className="px-4">
+                                        Apply Filters
+                                    </Button>
+                                    <Button
+                                        onClick={clearFilters}
+                                        variant="secondary"
+                                        className="px-4"
+                                    >
+                                        <X className="mr-2 h-4 w-4" />
+                                        Clear
+                                    </Button>
+                                </div>
                             </div>
-                            <div>
-                                <Label className="dark:text-gray-200">Start Date</Label>
-                                <Input
-                                    type="date"
-                                    value={startDate}
-                                    onChange={(e) => setStartDate(e.target.value)}
-                                    className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                />
-                            </div>
-                            <div>
-                                <Label className="dark:text-gray-200">End Date</Label>
-                                <Input
-                                    type="date"
-                                    value={endDate}
-                                    onChange={(e) => setEndDate(e.target.value)}
-                                    className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                />
-                            </div>
-                            <div className="flex items-end gap-2 md:col-span-2">
-                                <Button onClick={applyFilters} className="px-4">
-                                    Apply Filters
-                                </Button>
-                                <Button
-                                    onClick={clearFilters}
-                                    variant="secondary"
-                                    className="px-4"
-                                >
-                                    <X className="mr-2 h-4 w-4" />
-                                    Clear
-                                </Button>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
+                        </CardContent>
+                    </Card>
+                )}
 
                 {selectedAccount ? (
                     <div className="space-y-6">
