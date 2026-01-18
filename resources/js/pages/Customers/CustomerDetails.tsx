@@ -492,26 +492,18 @@ export default function CustomerDetails({ customer, recentPayments, recentSales,
                 title="Send SMS"
                 onSubmit={(e) => {
                     e.preventDefault();
-                    console.log('SMS Data:', {
-                        phone_number: phoneNumber,
-                        message_type: messageType,
-                        template_id: selectedTemplate,
-                        custom_message: customMessage,
-                    });
                     setProcessing(true);
                     router.post(`/customers/${customer.id}/send-sms`, {
                         phone_number: phoneNumber,
                         message_type: messageType,
-                        template_id: selectedTemplate,
-                        custom_message: customMessage,
+                        ...(messageType === 'template' ? { template_id: selectedTemplate } : {}),
+                        ...(messageType === 'custom' ? { custom_message: customMessage } : {}),
                     }, {
                         onSuccess: () => {
-                            console.log('SMS sent successfully');
                             setIsSMSModalOpen(false);
                             setProcessing(false);
                         },
                         onError: (errors) => {
-                            console.log('SMS send error:', errors);
                             setProcessing(false);
                         }
                     });

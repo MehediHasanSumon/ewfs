@@ -606,7 +606,7 @@ class CustomerController extends Controller implements HasMiddleware
             'phone_number' => 'required|string',
             'message_type' => 'required|in:template,custom',
             'template_id' => 'required_if:message_type,template|exists:sms_templates,id',
-            'custom_message' => 'required_if:message_type,custom|string|nullable',
+            'custom_message' => 'required_if:message_type,custom|string',
         ]);
 
         // Get SMS settings
