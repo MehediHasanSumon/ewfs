@@ -242,9 +242,9 @@ const mainNavItems = [
         title: 'SMS Config',
         icon: MessageSquare,
         children: [
-            { title: 'SMS Config', href: '/sms-configs', icon: Settings },
-            { title: 'SMS Template', href: '/sms-templates', icon: FileText },
-            { title: 'SMS Logs', href: '/sms-logs', icon: BarChart3 },
+            { title: 'SMS Config', href: '/sms-configs', icon: Settings, permission: 'view-s-m-s-setting' },
+            { title: 'SMS Template', href: '/sms-templates', icon: FileText, permission: 'view-s-m-s-template' },
+            { title: 'SMS Logs', href: '/sms-logs', icon: BarChart3, permission: 'view-s-m-s-log' },
         ],
     },
 ];

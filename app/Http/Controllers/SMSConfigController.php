@@ -70,7 +70,7 @@ class SMSConfigController extends Controller implements HasMiddleware
             ];
         });
 
-        return Inertia::render('SMSConfig', [
+        return Inertia::render('SMS/SMSConfig', [
             'configs' => $configs,
             'filters' => $request->only(['search', 'status', 'start_date', 'end_date', 'sort_by', 'sort_order', 'per_page'])
         ]);

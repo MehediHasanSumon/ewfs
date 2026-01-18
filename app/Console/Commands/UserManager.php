@@ -467,7 +467,13 @@ class UserManager extends Command
                 'can-permission-download',
                 'view-dashboard',
                 'view-loan',
-                'view-shift-closed-list'
+                'view-shift-closed-list',
+                'create-s-m-s-template',
+                'update-s-m-s-template',
+                'delete-s-m-s-template',
+                'view-s-m-s-template',
+                'can-s-m-s-template-filter',
+                'can-s-m-s-template-download'
             ];
 
             foreach ($extraPermissions as $permissionName) {

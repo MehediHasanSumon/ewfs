@@ -22,5 +22,6 @@ class DatabaseSeeder extends Seeder
         $this->call(AccountSeeder::class);
         $this->call(VoucherCategorySeeder::class);
         $this->call(PaymentSubTypeSeeder::class);
+        $this->call(SMSTemplateSeeder::class);
     }
 }

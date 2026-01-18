@@ -9,15 +9,14 @@ class SMSTemplate extends Model
     protected $table = 'sms_templates';
     
     protected $fillable = [
-        'name',
-        'content',
-        'variables',
-        'is_active'
+        'title',
+        'type',
+        'message',
+        'status'
     ];
     
     protected $casts = [
-        'variables' => 'array',
-        'is_active' => 'boolean'
+        'status' => 'boolean'
     ];
     
     public function smsLogs()

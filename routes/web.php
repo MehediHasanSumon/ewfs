@@ -47,6 +47,8 @@ use App\Http\Controllers\LoanController;
 use App\Http\Controllers\LiabilityAssetsController;
 use App\Http\Controllers\BalanceSheetController;
 use App\Http\Controllers\SMSConfigController;
+use App\Http\Controllers\SMSTemplateController;
+use App\Http\Controllers\SMSLogController;
 
 Route::get('/', function () {
     return Inertia::render('home');
@@ -395,6 +397,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('sms-configs/{smsConfig}', [SMSConfigController::class, 'destroy'])->name('sms-configs.destroy');
     Route::delete('sms-configs/bulk/delete', [SMSConfigController::class, 'bulkDelete'])->name('sms-configs.bulk.delete');
     Route::get('sms-configs/download-pdf', [SMSConfigController::class, 'downloadPdf'])->name('sms-configs.download.pdf');
+    
+    // SMS Template routes
+    Route::get('sms-templates', [SMSTemplateController::class, 'index'])->name('sms-templates.index');
+    Route::get('sms-templates/{smsTemplate}/edit', [SMSTemplateController::class, 'edit'])->name('sms-templates.edit');
+    Route::post('sms-templates', [SMSTemplateController::class, 'store'])->name('sms-templates.store');
+    Route::put('sms-templates/{smsTemplate}', [SMSTemplateController::class, 'update'])->name('sms-templates.update');
+    Route::delete('sms-templates/{smsTemplate}', [SMSTemplateController::class, 'destroy'])->name('sms-templates.destroy');
+    Route::delete('sms-templates/bulk/delete', [SMSTemplateController::class, 'bulkDelete'])->name('sms-templates.bulk.delete');
+    Route::get('sms-templates/download-pdf', [SMSTemplateController::class, 'downloadPdf'])->name('sms-templates.download.pdf');
+    
+    // SMS Log routes
+    Route::get('sms-logs', [SMSLogController::class, 'index'])->name('sms-logs.index');
+    Route::delete('sms-logs/{smsLog}', [SMSLogController::class, 'destroy'])->name('sms-logs.destroy');
+    Route::delete('sms-logs/bulk/delete', [SMSLogController::class, 'bulkDelete'])->name('sms-logs.bulk.delete');
 });
 
 require __DIR__.'/settings.php';
