@@ -502,6 +502,11 @@ export default function CustomerDetails({ customer, recentPayments, recentSales,
                         onSuccess: () => {
                             setIsSMSModalOpen(false);
                             setProcessing(false);
+                            // Reset form
+                            setMessageType('template');
+                            setSelectedTemplate('');
+                            setCustomMessage('');
+                            setPhoneNumber(customer.mobile || '');
                         },
                         onError: (errors) => {
                             setProcessing(false);
