@@ -8,6 +8,9 @@ use App\Models\Group;
 use App\Models\Vehicle;
 use App\Models\Product;
 use App\Models\CompanySetting;
+use App\Models\SMSTemplate;
+use App\Models\SMSSetting;
+use App\Models\SMSLog;
 use App\Helpers\AccountHelper;
 use App\Helpers\CustomerHelper;
 use App\Models\CreditSale;
@@ -28,6 +31,7 @@ class CustomerController extends Controller implements HasMiddleware
             new Middleware('permission:create-customer', only: ['store']),
             new Middleware('permission:update-customer', only: ['update']),
             new Middleware('permission:delete-customer', only: ['destroy', 'bulkDelete']),
+            new Middleware('permission:view-customer', only: ['sendSMS']),
         ];
     }
     public function index(Request $request)
@@ -99,7 +103,6 @@ class CustomerController extends Controller implements HasMiddleware
         $groups = Group::where('status', true)->get(['id', 'code', 'name']);
         $products = Product::where('status', 1)->get(['id', 'product_name as name']);
 
-        // Get last customer's group for auto selection
         $lastCustomerGroup = null;
         $lastCustomer = Customer::with('account.group')->latest()->first();
         if ($lastCustomer && $lastCustomer->account && $lastCustomer->account->group) {
@@ -264,6 +267,10 @@ class CustomerController extends Controller implements HasMiddleware
 
         $currentDue = $totalSales - $totalPaid;
 
+        $smsTemplates = SMSTemplate::where('status', true)
+            ->select('id', 'title', 'type', 'message')
+            ->get();
+
         return Inertia::render('Customers/CustomerDetails', [
             'customer' => [
                 'id' => $customer->id,
@@ -290,7 +297,8 @@ class CustomerController extends Controller implements HasMiddleware
             'salesCount' => $salesCount,
             'totalPaid' => $totalPaid,
             'paymentCount' => $paymentCount,
-            'currentDue' => $currentDue
+            'currentDue' => $currentDue,
+            'smsTemplates' => $smsTemplates
         ]);
     }
 
@@ -590,5 +598,122 @@ class CustomerController extends Controller implements HasMiddleware
 
         $pdf = Pdf::loadView('pdf.customer-payments', compact('customer', 'payments', 'companySetting'));
         return $pdf->stream('customer-payments.pdf');
+    }
+
+    public function sendSMS(Request $request, Customer $customer)
+    {
+        $request->validate([
+            'phone_number' => 'required|string',
+            'message_type' => 'required|in:template,custom',
+            'template_id' => 'required_if:message_type,template|exists:sms_templates,id',
+            'custom_message' => 'required_if:message_type,custom|string|nullable',
+        ]);
+
+        // Get SMS settings
+        $smsSetting = SMSSetting::where('status', true)->first();
+        if (!$smsSetting) {
+            return redirect()->back()->with('error', 'SMS configuration not found.');
+        }
+
+        // Prepare message
+        $message = '';
+        $templateId = null;
+
+        if ($request->message_type === 'template') {
+            $template = SMSTemplate::find($request->template_id);
+            if (!$template) {
+                return redirect()->back()->with('error', 'SMS template not found.');
+            }
+            $message = $template->message;
+            $templateId = $template->id;
+        } else {
+            $message = $request->custom_message;
+        }
+
+        // Replace variables with actual data
+        $message = $this->replaceVariables($message, $customer);
+
+        // Send SMS
+        $response = $this->sendSMSAPI($smsSetting, $request->phone_number, $message);
+
+        // Log SMS
+        SMSLog::create([
+            'phone_number' => $request->phone_number,
+            'message' => $message,
+            'sms_template_id' => $templateId,
+            'sms_setting_id' => $smsSetting->id,
+            'status' => $response['success'] ? 'sent' : 'failed',
+            'response' => json_encode($response),
+            'sent_at' => $response['success'] ? now() : null,
+            'error_message' => $response['success'] ? null : $response['message'],
+        ]);
+
+        if ($response['success']) {
+            return redirect()->back()->with('success', 'SMS sent successfully.');
+        } else {
+            return redirect()->back()->with('error', 'Failed to send SMS: ' . $response['message']);
+        }
+    }
+
+    private function replaceVariables($message, $customer)
+    {
+        $variables = [
+            '{{customer_name}}' => $customer->name,
+            '{{account_number}}' => $customer->account->ac_number ?? 'N/A',
+            '{{customer_mobile}}' => $customer->mobile ?? 'N/A',
+            '{{customer_email}}' => $customer->email ?? 'N/A',
+            '{{security_deposit}}' => number_format($customer->security_deposit ?? 0),
+            '{{total_cradit}}' => number_format($customer->credit_limit ?? 0),
+        ];
+
+        // Calculate dynamic values
+        $totalSales = CreditSale::where('customer_id', $customer->id)->sum('total_amount');
+        $totalPaid = 0;
+        if ($customer->account) {
+            $totalPaid = Voucher::join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+                ->where('vouchers.voucher_type', 'Receipt')
+                ->where('vouchers.from_account_id', $customer->account->id)
+                ->sum('transactions.amount');
+        }
+        $currentDue = $totalSales - $totalPaid;
+
+        $variables['{{total_payment}}'] = number_format($totalPaid);
+        $variables['{{total_due}}'] = number_format($currentDue);
+
+        return str_replace(array_keys($variables), array_values($variables), $message);
+    }
+
+    private function sendSMSAPI($smsSetting, $phoneNumber, $message)
+    {
+        $data = [
+            'api_key' => $smsSetting->api_key,
+            'senderid' => $smsSetting->sender_id,
+            'number' => $phoneNumber,
+            'message' => $message
+        ];
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $smsSetting->url);
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error = curl_error($ch);
+        curl_close($ch);
+
+        if ($error) {
+            return ['success' => false, 'message' => 'cURL Error: ' . $error];
+        }
+
+        if ($httpCode !== 200) {
+            return ['success' => false, 'message' => 'HTTP Error: ' . $httpCode];
+        }
+
+        // Assuming successful response
+        return ['success' => true, 'message' => 'SMS sent successfully', 'response' => $response];
     }
 }

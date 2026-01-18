@@ -222,6 +222,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('customers/{customer}/statement', [CustomerController::class, 'statement'])->name('customers.statement');
     Route::get('customers/{customer}/sales-pdf', [CustomerController::class, 'downloadSalesPdf'])->name('customers.sales.pdf');
     Route::get('customers/{customer}/payments-pdf', [CustomerController::class, 'downloadPaymentsPdf'])->name('customers.payments.pdf');
+    Route::post('customers/{customer}/send-sms', [CustomerController::class, 'sendSMS'])->name('customers.send.sms');
     Route::put('customers/{customer}', [CustomerController::class, 'update'])->name('customers.update');
     Route::delete('customers/{customer}', [CustomerController::class, 'destroy'])->name('customers.destroy');
     

@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DeleteModal } from '@/components/ui/delete-modal';
+import { FormModal } from '@/components/ui/form-modal';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Pagination } from '@/components/ui/pagination';
@@ -18,6 +19,7 @@ import { Head, router } from '@inertiajs/react';
 import {
     ChevronDown,
     ChevronUp,
+    Eye,
     Filter,
     MessageSquare,
     Trash2,
@@ -73,6 +75,7 @@ interface SMSLogsProps {
 export default function SMSLogs({ logs, filters }: SMSLogsProps) {
     const { can } = usePermission();
     const [deletingLog, setDeletingLog] = useState<SMSLog | null>(null);
+    const [viewingLog, setViewingLog] = useState<SMSLog | null>(null);
     const [selectedLogs, setSelectedLogs] = useState<number[]>([]);
     const [isBulkDeleting, setIsBulkDeleting] = useState(false);
     const [search, setSearch] = useState(filters?.search || '');
@@ -378,6 +381,11 @@ export default function SMSLogs({ logs, filters }: SMSLogsProps) {
                                             Actions
                                         </th>
                                         )}
+                                        {!can('delete-s-m-s-log') && (
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
+                                            Actions
+                                        </th>
+                                        )}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -417,13 +425,35 @@ export default function SMSLogs({ logs, filters }: SMSLogsProps) {
                                                 </td>
                                                 {can('delete-s-m-s-log') && (
                                                 <td className="p-4">
+                                                    <div className="flex gap-2">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => setViewingLog(log)}
+                                                            className="text-blue-600 hover:text-blue-800"
+                                                        >
+                                                            <Eye className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => handleDelete(log)}
+                                                            className="text-red-600 hover:text-red-800"
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                </td>
+                                                )}
+                                                {!can('delete-s-m-s-log') && (
+                                                <td className="p-4">
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"
-                                                        onClick={() => handleDelete(log)}
-                                                        className="text-red-600 hover:text-red-800"
+                                                        onClick={() => setViewingLog(log)}
+                                                        className="text-blue-600 hover:text-blue-800"
                                                     >
-                                                        <Trash2 className="h-4 w-4" />
+                                                        <Eye className="h-4 w-4" />
                                                     </Button>
                                                 </td>
                                                 )}
@@ -432,7 +462,7 @@ export default function SMSLogs({ logs, filters }: SMSLogsProps) {
                                     ) : (
                                         <tr>
                                             <td
-                                                colSpan={can('delete-s-m-s-log') ? 7 : 6}
+                                                colSpan={7}
                                                 className="p-8 text-center text-gray-500 dark:text-gray-400"
                                             >
                                                 <MessageSquare className="mx-auto mb-4 h-12 w-12 text-gray-400" />
@@ -487,6 +517,93 @@ export default function SMSLogs({ logs, filters }: SMSLogsProps) {
                     title="Delete Selected Logs"
                     message={`Are you sure you want to delete ${selectedLogs.length} selected SMS logs? This action cannot be undone.`}
                 />
+
+                {/* View SMS Log Modal */}
+                <FormModal
+                    isOpen={!!viewingLog}
+                    onClose={() => setViewingLog(null)}
+                    title="SMS Log Details"
+                    onSubmit={(e) => { e.preventDefault(); setViewingLog(null); }}
+                    processing={false}
+                    submitText="Close"
+                >
+                    {viewingLog && (
+                        <>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                    Phone Number
+                                </label>
+                                <p className="text-sm text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 p-2 rounded">
+                                    {viewingLog.phone_number}
+                                </p>
+                            </div>
+                            
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                    Message
+                                </label>
+                                <p className="text-sm text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 p-3 rounded whitespace-pre-wrap">
+                                    {viewingLog.message}
+                                </p>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Template
+                                    </label>
+                                    <p className="text-sm text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 p-2 rounded">
+                                        {viewingLog.template || 'Custom Message'}
+                                    </p>
+                                </div>
+                                
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Status
+                                    </label>
+                                    <span className={`inline-block px-3 py-1 rounded text-xs font-medium ${
+                                        viewingLog.status === 'sent'
+                                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                            : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                                    }`}>
+                                        {viewingLog.status === 'sent' ? 'Sent' : 'Failed'}
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Sender ID
+                                    </label>
+                                    <p className="text-sm text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 p-2 rounded">
+                                        {viewingLog.sender_id || 'N/A'}
+                                    </p>
+                                </div>
+                                
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Sent At
+                                    </label>
+                                    <p className="text-sm text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 p-2 rounded">
+                                        {viewingLog.sent_at || viewingLog.created_at}
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            {viewingLog.error_message && (
+                                <div>
+                                    <label className="block text-sm font-medium text-red-700 dark:text-red-300 mb-1">
+                                        Error Message
+                                    </label>
+                                    <p className="text-sm text-red-900 dark:text-red-200 bg-red-50 dark:bg-red-900/20 p-3 rounded">
+                                        {viewingLog.error_message}
+                                    </p>
+                                </div>
+                            )}
+                        </>
+                    )}
+                </FormModal>
             </div>
         </AppLayout>
     );

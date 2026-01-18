@@ -3,7 +3,18 @@ import AppLayout from '@/layouts/app-layout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, FileText, DollarSign, CreditCard, Banknote, ChevronDown, ChevronUp } from 'lucide-react';
+import { FormModal } from '@/components/ui/form-modal';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { ArrowLeft, FileText, DollarSign, CreditCard, Banknote, ChevronDown, ChevronUp, MessageSquare } from 'lucide-react';
 import { useState } from 'react';
 
 interface Customer {
@@ -69,10 +80,22 @@ interface CustomerDetailsProps {
     totalPaid: number;
     paymentCount: number;
     currentDue: number;
+    smsTemplates: Array<{
+        id: number;
+        title: string;
+        type: string;
+        message: string;
+    }>;
 }
 
-export default function CustomerDetails({ customer, recentPayments, recentSales, totalSales, salesCount, totalPaid, paymentCount, currentDue }: CustomerDetailsProps) {
+export default function CustomerDetails({ customer, recentPayments, recentSales, totalSales, salesCount, totalPaid, paymentCount, currentDue, smsTemplates = [] }: CustomerDetailsProps) {
     const [isVehicleOpen, setIsVehicleOpen] = useState(false);
+    const [isSMSModalOpen, setIsSMSModalOpen] = useState(false);
+    const [messageType, setMessageType] = useState('template');
+    const [selectedTemplate, setSelectedTemplate] = useState('');
+    const [customMessage, setCustomMessage] = useState('');
+    const [phoneNumber, setPhoneNumber] = useState(customer.mobile || '');
+    const [processing, setProcessing] = useState(false);
     
     return (
         <AppLayout>
@@ -99,6 +122,13 @@ export default function CustomerDetails({ customer, recentPayments, recentSales,
                         >
                             <FileText className="mr-2 h-4 w-4" />
                             Statement
+                        </Button>
+                        <Button
+                            onClick={() => setIsSMSModalOpen(true)}
+                            className="bg-blue-600 hover:bg-blue-700 text-white"
+                        >
+                            <MessageSquare className="mr-2 h-4 w-4" />
+                            Send SMS
                         </Button>
                         <Button
                             variant="secondary"
@@ -454,6 +484,132 @@ export default function CustomerDetails({ customer, recentPayments, recentSales,
                 {/* Design your page here */}
                 
             </div>
+            
+            {/* SMS Modal */}
+            <FormModal
+                isOpen={isSMSModalOpen}
+                onClose={() => setIsSMSModalOpen(false)}
+                title="Send SMS"
+                onSubmit={(e) => {
+                    e.preventDefault();
+                    console.log('SMS Data:', {
+                        phone_number: phoneNumber,
+                        message_type: messageType,
+                        template_id: selectedTemplate,
+                        custom_message: customMessage,
+                    });
+                    setProcessing(true);
+                    router.post(`/customers/${customer.id}/send-sms`, {
+                        phone_number: phoneNumber,
+                        message_type: messageType,
+                        template_id: selectedTemplate,
+                        custom_message: customMessage,
+                    }, {
+                        onSuccess: () => {
+                            console.log('SMS sent successfully');
+                            setIsSMSModalOpen(false);
+                            setProcessing(false);
+                        },
+                        onError: (errors) => {
+                            console.log('SMS send error:', errors);
+                            setProcessing(false);
+                        }
+                    });
+                }}
+                processing={processing}
+                submitText="Send SMS"
+            >
+                <div>
+                    <Label className="dark:text-gray-200">Customer</Label>
+                    <Input
+                        value={customer.name}
+                        readOnly
+                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white bg-gray-50"
+                    />
+                </div>
+                <div>
+                    <Label className="dark:text-gray-200">Phone Number</Label>
+                    <Input
+                        value={phoneNumber}
+                        onChange={(e) => setPhoneNumber(e.target.value)}
+                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        placeholder="Enter phone number"
+                    />
+                </div>
+                <div>
+                    <Label className="dark:text-gray-200">Message Type</Label>
+                    <Select value={messageType} onValueChange={setMessageType}>
+                        <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="template">Use SMS Template</SelectItem>
+                            <SelectItem value="custom">Custom SMS</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+                {messageType === 'template' && (
+                    <div>
+                        <Label className="dark:text-gray-200">Select SMS Template</Label>
+                        <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
+                            <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                <SelectValue placeholder="Choose a template" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {smsTemplates.map((template) => (
+                                    <SelectItem key={template.id} value={template.id.toString()}>
+                                        {template.title}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                )}
+                {messageType === 'custom' && (
+                    <div>
+                        <Label className="dark:text-gray-200">Custom Message</Label>
+                        <Textarea
+                            id="custom-message"
+                            value={customMessage}
+                            onChange={(e) => setCustomMessage(e.target.value)}
+                            rows={4}
+                            className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                            placeholder="Enter your custom SMS message..."
+                        />
+                        <div className="mt-2">
+                            <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                                Click variables to insert:
+                            </div>
+                            <div className="flex flex-wrap gap-1">
+                                {[
+                                    'customer_name', 'total_payment', 'total_due', 'account_number',
+                                    'customer_mobile', 'customer_email', 'total_cradit', 'security_deposit'
+                                ].map((variable) => (
+                                    <button
+                                        key={variable}
+                                        type="button"
+                                        onClick={() => {
+                                            const textarea = document.getElementById('custom-message') as HTMLTextAreaElement;
+                                            const cursorPos = textarea.selectionStart;
+                                            const textBefore = customMessage.substring(0, cursorPos);
+                                            const textAfter = customMessage.substring(cursorPos);
+                                            const newText = textBefore + `{{${variable}}}` + textAfter;
+                                            setCustomMessage(newText);
+                                            setTimeout(() => {
+                                                textarea.focus();
+                                                textarea.setSelectionRange(cursorPos + variable.length + 4, cursorPos + variable.length + 4);
+                                            }, 0);
+                                        }}
+                                        className="px-2 py-1 text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors cursor-pointer"
+                                    >
+                                        {variable}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </FormModal>
         </AppLayout>
     );
 }
