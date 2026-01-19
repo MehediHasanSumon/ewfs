@@ -49,6 +49,7 @@ use App\Http\Controllers\BalanceSheetController;
 use App\Http\Controllers\SMSConfigController;
 use App\Http\Controllers\SMSTemplateController;
 use App\Http\Controllers\SMSLogController;
+use App\Http\Controllers\DashboardController;
 
 Route::get('/', function () {
     return Inertia::render('home');
@@ -67,9 +68,7 @@ Route::get('/contact', function () {
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('dashboard', function () {
-        return Inertia::render('dashboard');
-    })->name('dashboard');
+    Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
     
     // Permission routes
     Route::get('permissions', [PermissionController::class, 'index'])->name('permissions.index');
