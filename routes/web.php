@@ -69,6 +69,7 @@ Route::get('/contact', function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('dashboard/chart-data', [DashboardController::class, 'getChartData'])->name('dashboard.chart.data');
     
     // Permission routes
     Route::get('permissions', [PermissionController::class, 'index'])->name('permissions.index');
