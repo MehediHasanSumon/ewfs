@@ -8,7 +8,7 @@ use App\Models\Sale;
 use App\Models\Purchase;
 use App\Models\Product;
 use App\Models\Stock;
-use App\Models\OfficePayment;
+use App\Models\Voucher;
 use App\Models\CreditSale;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -18,10 +18,10 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        // Cash in Hand - Cash account balance
-        $cashInHand = Account::where('name', 'LIKE', '%cash%')
-            ->orWhere('name', 'LIKE', '%Cash%')
-            ->sum('total_amount');
+        // Cash in Hand - Office payments with cash type
+        $cashInHand = \App\Models\OfficePayment::join('transactions', 'office_payments.transaction_id', '=', 'transactions.id')
+            ->where('office_payments.type', 'cash')
+            ->sum('transactions.amount');
 
         // Outstanding Balance - Total due amounts from credit sales
         $outstandingBalance = CreditSale::sum('due_amount');
@@ -30,9 +30,12 @@ class DashboardController extends Controller
         $cashSale = Sale::whereDate('sale_date', today())
             ->sum('total_amount');
 
-        // Office Expenses - Today's office payments
-        $officeExpenses = OfficePayment::whereDate('date', today())
-            ->join('transactions', 'office_payments.transaction_id', '=', 'transactions.id')
+        // Office Expenses - Today's admin expenses from vouchers
+        $officeExpenses = Voucher::join('transactions', 'vouchers.transaction_id', '=', 'transactions.id')
+            ->join('payment_sub_types', 'vouchers.payment_sub_type_id', '=', 'payment_sub_types.id')
+            ->whereDate('vouchers.date', today())
+            ->where('vouchers.voucher_type', 'Payment')
+            ->whereIn('payment_sub_types.type', ['payment'])
             ->sum('transactions.amount');
 
         // Monthly Sales Data (last 6 months) - Combined sales and credit_sales
