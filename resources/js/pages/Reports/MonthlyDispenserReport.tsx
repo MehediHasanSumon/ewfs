@@ -16,8 +16,6 @@ import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
 import {
-    ChevronDown,
-    ChevronUp,
     FileText,
     Filter,
     BarChart3,
@@ -25,7 +23,6 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import React from 'react';
-import { usePermission } from '@/hooks/usePermission';
 
 interface ProductSale {
     product_id: number;
@@ -49,16 +46,6 @@ interface DispenserReading {
     purchase: number;
     cash_in_hand: number; // amount - credit_sale - bank_sale
     total_balance: number; // amount - credit_sale - bank_sale - expenses - purchase
-}
-
-interface Product {
-    id: number;
-    product_name: string;
-}
-
-interface Dispenser {
-    id: number;
-    dispenser_name: string;
 }
 
 interface Product {
@@ -94,6 +81,7 @@ interface MonthlyDispenserReportProps {
     products: Product[]; // Dynamic products list
     filters: {
         search?: string;
+        product_id?: string;
         start_date?: string;
         end_date?: string;
         sort_by?: string;
@@ -102,20 +90,17 @@ interface MonthlyDispenserReportProps {
     };
 }
 
-export default function MonthlyDispenserReport({ 
-    readings, 
-    products = [], 
-    filters 
+export default function MonthlyDispenserReport({
+    readings,
+    products = [],
+    filters
 }: MonthlyDispenserReportProps) {
-    const { can } = usePermission();
-    const canFilter = can('can-monthly-dispenser-report-filter');
-    const canDownload = can('can-monthly-dispenser-report-download');
-    
+
+
     const [search, setSearch] = useState(filters?.search || '');
+    const [productId, setProductId] = useState(filters?.product_id || 'all');
     const [startDate, setStartDate] = useState(filters?.start_date || '');
     const [endDate, setEndDate] = useState(filters?.end_date || '');
-    const [sortBy, setSortBy] = useState(filters?.sort_by || 'date');
-    const [sortOrder, setSortOrder] = useState(filters?.sort_order || 'desc');
     const [perPage, setPerPage] = useState(filters?.per_page || 10);
 
     // Calculate total columns: 3 base + (products * 3) + 9 fixed = 12 + (products * 3)
@@ -126,12 +111,9 @@ export default function MonthlyDispenserReport({
             '/reports/monthly-dispenser-report',
             {
                 search: search || undefined,
-                dispenser_id: dispenserId === 'all' ? undefined : dispenserId,
                 product_id: productId === 'all' ? undefined : productId,
                 start_date: startDate || undefined,
                 end_date: endDate || undefined,
-                sort_by: sortBy,
-                sort_order: sortOrder,
                 per_page: perPage,
             },
             { preserveState: true },
@@ -140,53 +122,28 @@ export default function MonthlyDispenserReport({
 
     const clearFilters = () => {
         setSearch('');
-        setDispenserId('all');
         setProductId('all');
         setStartDate('');
         setEndDate('');
         router.get(
             '/reports/monthly-dispenser-report',
             {
-                sort_by: sortBy,
-                sort_order: sortOrder,
                 per_page: perPage,
             },
             { preserveState: true },
         );
     };
 
-    const handleSort = (column: string) => {
-        const newOrder =
-            sortBy === column && sortOrder === 'asc' ? 'desc' : 'asc';
-        setSortBy(column);
-        setSortOrder(newOrder);
-        router.get(
-            '/reports/monthly-dispenser-report',
-            {
-                search: search || undefined,
-                dispenser_id: dispenserId === 'all' ? undefined : dispenserId,
-                product_id: productId === 'all' ? undefined : productId,
-                start_date: startDate || undefined,
-                end_date: endDate || undefined,
-                sort_by: column,
-                sort_order: newOrder,
-                per_page: perPage,
-            },
-            { preserveState: true },
-        );
-    };
+
 
     const handlePageChange = (page: number) => {
         router.get(
             '/reports/monthly-dispenser-report',
             {
                 search: search || undefined,
-                dispenser_id: dispenserId === 'all' ? undefined : dispenserId,
                 product_id: productId === 'all' ? undefined : productId,
                 start_date: startDate || undefined,
                 end_date: endDate || undefined,
-                sort_by: sortBy,
-                sort_order: sortOrder,
                 per_page: perPage,
                 page,
             },
@@ -218,176 +175,142 @@ export default function MonthlyDispenserReport({
                         </p>
                     </div>
                     <div className="flex gap-2">
-                        {canDownload && (
-                            <Button
-                                variant="success"
-                                onClick={() => {
-                                    const params = new URLSearchParams();
-                                    if (search) params.append('search', search);
-                                    if (dispenserId !== 'all') params.append('dispenser_id', dispenserId);
-                                    if (productId !== 'all') params.append('product_id', productId);
-                                    if (startDate) params.append('start_date', startDate);
-                                    if (endDate) params.append('end_date', endDate);
-                                    if (sortBy) params.append('sort_by', sortBy);
-                                    if (sortOrder) params.append('sort_order', sortOrder);
-                                    window.location.href = `/reports/monthly-dispenser-report/download-pdf?${params.toString()}`;
-                                }}
-                            >
-                                <FileText className="mr-2 h-4 w-4" />
-                                Download PDF
-                            </Button>
-                        )}
+                        <Button
+                            variant="success"
+                            onClick={() => {
+                                const params = new URLSearchParams();
+                                if (search) params.append('search', search);
+                                if (productId !== 'all') params.append('product_id', productId);
+                                if (startDate) params.append('start_date', startDate);
+                                if (endDate) params.append('end_date', endDate);
+                                window.location.href = `/reports/monthly-dispenser-report/download-pdf?${params.toString()}`;
+                            }}
+                        >
+                            <FileText className="mr-2 h-4 w-4" />
+                            Download PDF
+                        </Button>
                     </div>
                 </div>
 
                 {/* Filter Card */}
-                {canFilter && (
-                    <Card className="dark:border-gray-700 dark:bg-gray-800">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 dark:text-white">
-                                <Filter className="h-5 w-5" />
-                                Filters
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="grid grid-cols-1 gap-4 md:grid-cols-6">
-                                <div>
-                                    <Label className="dark:text-gray-200">
-                                        Search
-                                    </Label>
-                                    <Input
-                                        placeholder="Search dispensers, products..."
-                                        value={search}
-                                        onChange={(e) => setSearch(e.target.value)}
-                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                    />
-                                </div>
-                                <div>
-                                    <Label className="dark:text-gray-200">
-                                        Dispenser
-                                    </Label>
-                                    <Select
-                                        value={dispenserId}
-                                        onValueChange={(value) => {
-                                            setDispenserId(value);
-                                            router.get(
-                                                '/reports/monthly-dispenser-report',
-                                                {
-                                                    search: search || undefined,
-                                                    dispenser_id: value === 'all' ? undefined : value,
-                                                    product_id: productId === 'all' ? undefined : productId,
-                                                    start_date: startDate || undefined,
-                                                    end_date: endDate || undefined,
-                                                    sort_by: sortBy,
-                                                    sort_order: sortOrder,
-                                                    per_page: perPage,
-                                                },
-                                                { preserveState: true },
-                                            );
-                                        }}
-                                    >
-                                        <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                            <SelectValue placeholder="All dispensers" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="all">
-                                                All dispensers
-                                            </SelectItem>
-                                            {dispensers.map((dispenser) => (
-                                                <SelectItem
-                                                    key={dispenser.id}
-                                                    value={dispenser.id.toString()}
-                                                >
-                                                    {dispenser.dispenser_name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div>
-                                    <Label className="dark:text-gray-200">
-                                        Product
-                                    </Label>
-                                    <Select
-                                        value={productId}
-                                        onValueChange={(value) => {
-                                            setProductId(value);
-                                            router.get(
-                                                '/reports/monthly-dispenser-report',
-                                                {
-                                                    search: search || undefined,
-                                                    dispenser_id: dispenserId === 'all' ? undefined : dispenserId,
-                                                    product_id: value === 'all' ? undefined : value,
-                                                    start_date: startDate || undefined,
-                                                    end_date: endDate || undefined,
-                                                    sort_by: sortBy,
-                                                    sort_order: sortOrder,
-                                                    per_page: perPage,
-                                                },
-                                                { preserveState: true },
-                                            );
-                                        }}
-                                    >
-                                        <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                            <SelectValue placeholder="All products" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="all">
-                                                All products
-                                            </SelectItem>
-                                            {products.map((product) => (
-                                                <SelectItem
-                                                    key={product.id}
-                                                    value={product.id.toString()}
-                                                >
-                                                    {product.product_name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div>
-                                    <Label className="dark:text-gray-200">
-                                        Start Date
-                                    </Label>
-                                    <Input
-                                        type="date"
-                                        value={startDate}
-                                        onChange={(e) => setStartDate(e.target.value)}
-                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                    />
-                                </div>
-                                <div>
-                                    <Label className="dark:text-gray-200">
-                                        End Date
-                                    </Label>
-                                    <Input
-                                        type="date"
-                                        value={endDate}
-                                        onChange={(e) => setEndDate(e.target.value)}
-                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                    />
-                                </div>
-                                <div className="flex items-end gap-2">
-                                    <Button
-                                        onClick={applyFilters}
-                                        className="px-4"
-                                    >
-                                        Apply Filters
-                                    </Button>
-                                    <Button
-                                        onClick={clearFilters}
-                                        variant="secondary"
-                                        className="px-4"
-                                    >
-                                        <X className="mr-2 h-4 w-4" />
-                                        Clear
-                                    </Button>
-                                </div>
+                <Card className="dark:border-gray-700 dark:bg-gray-800">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 dark:text-white">
+                            <Filter className="h-5 w-5" />
+                            Filters
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-6">
+                            <div>
+                                <Label className="dark:text-gray-200">
+                                    Search
+                                </Label>
+                                <Input
+                                    placeholder="Search..."
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
+                                    className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                />
                             </div>
-                        </CardContent>
-                    </Card>
-                )}
+                            <div>
+                                <Label className="dark:text-gray-200">
+                                    Product
+                                </Label>
+                                <Select
+                                    value={productId}
+                                    onValueChange={(value) => {
+                                        setProductId(value);
+                                        router.get(
+                                            '/reports/monthly-dispenser-report',
+                                            {
+                                                search: search || undefined,
+                                                product_id: value === 'all' ? undefined : value,
+                                                start_date: startDate || undefined,
+                                                end_date: endDate || undefined,
+                                                per_page: perPage,
+                                            },
+                                            { preserveState: true },
+                                        );
+                                    }}
+                                >
+                                    <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                        <SelectValue placeholder="All products" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">
+                                            All products
+                                        </SelectItem>
+                                        {products.map((product) => (
+                                            <SelectItem
+                                                key={product.id}
+                                                value={product.id.toString()}
+                                            >
+                                                {product.product_name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div>
+                                <Label className="dark:text-gray-200">
+                                    Shift
+                                </Label>
+                                <Select
+                                    value="all"
+                                    onValueChange={() => { }}
+                                >
+                                    <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                        <SelectValue placeholder="All shifts" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">
+                                            All shifts
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div>
+                                <Label className="dark:text-gray-200">
+                                    Start Date
+                                </Label>
+                                <Input
+                                    type="date"
+                                    value={startDate}
+                                    onChange={(e) => setStartDate(e.target.value)}
+                                    className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                />
+                            </div>
+                            <div>
+                                <Label className="dark:text-gray-200">
+                                    End Date
+                                </Label>
+                                <Input
+                                    type="date"
+                                    value={endDate}
+                                    onChange={(e) => setEndDate(e.target.value)}
+                                    className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                />
+                            </div>
+                            <div className="flex items-end gap-2">
+                                <Button
+                                    onClick={applyFilters}
+                                    className="px-4"
+                                >
+                                    Apply Filters
+                                </Button>
+                                <Button
+                                    onClick={clearFilters}
+                                    variant="secondary"
+                                    className="px-4"
+                                >
+                                    <X className="mr-2 h-4 w-4" />
+                                    Clear
+                                </Button>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
 
                 <Card className="dark:border-gray-700 dark:bg-gray-800">
                     <CardContent>
@@ -400,7 +323,7 @@ export default function MonthlyDispenserReport({
                                         <th rowSpan={2} className="border border-gray-300 p-3 text-[12px] font-semibold dark:text-gray-200 min-w-[100px]">Date</th>
                                         <th rowSpan={2} className="border border-gray-300 p-3 text-[12px] font-semibold dark:text-gray-200 min-w-[80px]">Shift</th>
                                         {/* Dynamic Product Headers */}
-                                        {products.map((product, index) => (
+                                        {products.map((product) => (
                                             <th key={product.id} colSpan={3} className="border border-gray-300 p-3 text-[12px] font-semibold dark:text-gray-200">
                                                 {product.product_name}
                                             </th>
@@ -439,7 +362,7 @@ export default function MonthlyDispenserReport({
                                                 const totalSale = productSale?.total_sale || 0;
                                                 const price = productSale?.price || 0;
                                                 const amount = productSale?.amount || 0;
-                                                
+
                                                 return (
                                                     <React.Fragment key={`data-${product.id}`}>
                                                         <td className="border border-gray-300 p-2 text-[12px] text-right dark:text-gray-300">{Number(totalSale).toFixed(2)}</td>
@@ -487,12 +410,9 @@ export default function MonthlyDispenserReport({
                                     '/reports/monthly-dispenser-report',
                                     {
                                         search: search || undefined,
-                                        dispenser_id: dispenserId === 'all' ? undefined : dispenserId,
                                         product_id: productId === 'all' ? undefined : productId,
                                         start_date: startDate || undefined,
                                         end_date: endDate || undefined,
-                                        sort_by: sortBy,
-                                        sort_order: sortOrder,
                                         per_page: newPerPage,
                                     },
                                     { preserveState: true },
