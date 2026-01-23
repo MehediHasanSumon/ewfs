@@ -50,6 +50,7 @@ use App\Http\Controllers\SMSConfigController;
 use App\Http\Controllers\SMSTemplateController;
 use App\Http\Controllers\SMSLogController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\MonthlyDispenserReportController;
 
 Route::get('/', function () {
     return Inertia::render('home');
@@ -412,6 +413,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('sms-logs', [SMSLogController::class, 'index'])->name('sms-logs.index');
     Route::delete('sms-logs/{smsLog}', [SMSLogController::class, 'destroy'])->name('sms-logs.destroy');
     Route::delete('sms-logs/bulk/delete', [SMSLogController::class, 'bulkDelete'])->name('sms-logs.bulk.delete');
+    
+    // Monthly Dispenser Report routes
+    Route::get('reports/monthly-dispenser-report', [MonthlyDispenserReportController::class, 'index'])->name('monthly-dispenser-report.index');
+    Route::get('reports/monthly-dispenser-report/download-pdf', [MonthlyDispenserReportController::class, 'downloadPdf'])->name('monthly-dispenser-report.download.pdf');
 });
 
 require __DIR__.'/settings.php';

@@ -81,7 +81,31 @@ class ShiftClosedListController extends Controller implements HasMiddleware
         $shiftClosed->daily_reading = DB::table('daily_readings')
             ->where('shift_id', $shiftClosed->shift_id)
             ->whereDate('created_at', $shiftClosed->close_date)
+            ->select(
+                'credit_sales',
+                'bank_sales', 
+                'cash_sales',
+                'credit_sales_other',
+                'bank_sales_other',
+                'cash_sales_other',
+                'cash_receive',
+                'bank_receive',
+                'total_cash',
+                'cash_payment',
+                'bank_payment',
+                'office_payment',
+                'final_due_amount'
+            )
             ->first();
+            
+        // Ensure all fields have default values if null
+        if ($shiftClosed->daily_reading) {
+            $shiftClosed->daily_reading->credit_sales_other = $shiftClosed->daily_reading->credit_sales_other ?? '0.00';
+            $shiftClosed->daily_reading->bank_sales_other = $shiftClosed->daily_reading->bank_sales_other ?? '0.00';
+            $shiftClosed->daily_reading->cash_sales_other = $shiftClosed->daily_reading->cash_sales_other ?? '0.00';
+            $shiftClosed->daily_reading->cash_receive = $shiftClosed->daily_reading->cash_receive ?? '0.00';
+            $shiftClosed->daily_reading->bank_receive = $shiftClosed->daily_reading->bank_receive ?? '0.00';
+        }
             
         $shiftClosed->dispenser_readings = DB::table('dispenser_readings')
             ->join('dispensers', 'dispenser_readings.dispenser_id', '=', 'dispensers.id')
@@ -228,6 +252,21 @@ class ShiftClosedListController extends Controller implements HasMiddleware
             $item->daily_reading = DB::table('daily_readings')
                 ->where('shift_id', $item->shift_id)
                 ->whereDate('created_at', $item->close_date)
+                ->select(
+                    'credit_sales',
+                    'bank_sales', 
+                    'cash_sales',
+                    'credit_sales_other',
+                    'bank_sales_other',
+                    'cash_sales_other',
+                    'cash_receive',
+                    'bank_receive',
+                    'total_cash',
+                    'cash_payment',
+                    'bank_payment',
+                    'office_payment',
+                    'final_due_amount'
+                )
                 ->first();
             return $item;
         });
@@ -245,7 +284,31 @@ class ShiftClosedListController extends Controller implements HasMiddleware
         $shiftClosed->daily_reading = DB::table('daily_readings')
             ->where('shift_id', $shiftClosed->shift_id)
             ->whereDate('created_at', $shiftClosed->close_date)
+            ->select(
+                'credit_sales',
+                'bank_sales', 
+                'cash_sales',
+                'credit_sales_other',
+                'bank_sales_other',
+                'cash_sales_other',
+                'cash_receive',
+                'bank_receive',
+                'total_cash',
+                'cash_payment',
+                'bank_payment',
+                'office_payment',
+                'final_due_amount'
+            )
             ->first();
+            
+        // Ensure all fields have default values if null
+        if ($shiftClosed->daily_reading) {
+            $shiftClosed->daily_reading->credit_sales_other = $shiftClosed->daily_reading->credit_sales_other ?? '0.00';
+            $shiftClosed->daily_reading->bank_sales_other = $shiftClosed->daily_reading->bank_sales_other ?? '0.00';
+            $shiftClosed->daily_reading->cash_sales_other = $shiftClosed->daily_reading->cash_sales_other ?? '0.00';
+            $shiftClosed->daily_reading->cash_receive = $shiftClosed->daily_reading->cash_receive ?? '0.00';
+            $shiftClosed->daily_reading->bank_receive = $shiftClosed->daily_reading->bank_receive ?? '0.00';
+        }
             
         $shiftClosed->dispenser_readings = DB::table('dispenser_readings')
             ->join('dispensers', 'dispenser_readings.dispenser_id', '=', 'dispensers.id')

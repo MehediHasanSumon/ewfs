@@ -103,6 +103,26 @@ export default function ShiftClosedShow({ shiftClosed }: ShiftClosedShowProps) {
                                 <p className="text-xl font-semibold dark:text-white">{Number(shiftClosed.daily_reading.cash_sales).toFixed(2)}</p>
                             </div>
                             <div>
+                                <p className="text-sm text-gray-600 dark:text-gray-400">Credit Sales Other</p>
+                                <p className="text-xl font-semibold dark:text-white">{Number(shiftClosed.daily_reading.credit_sales_other).toFixed(2)}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-gray-600 dark:text-gray-400">Bank Sales Other</p>
+                                <p className="text-xl font-semibold dark:text-white">{Number(shiftClosed.daily_reading.bank_sales_other).toFixed(2)}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-gray-600 dark:text-gray-400">Cash Sales Other</p>
+                                <p className="text-xl font-semibold dark:text-white">{Number(shiftClosed.daily_reading.cash_sales_other).toFixed(2)}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-gray-600 dark:text-gray-400">Cash Receive</p>
+                                <p className="text-xl font-semibold dark:text-white">{Number(shiftClosed.daily_reading.cash_receive).toFixed(2)}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-gray-600 dark:text-gray-400">Bank Receive</p>
+                                <p className="text-xl font-semibold dark:text-white">{Number(shiftClosed.daily_reading.bank_receive).toFixed(2)}</p>
+                            </div>
+                            <div>
                                 <p className="text-sm text-gray-600 dark:text-gray-400">Total Cash</p>
                                 <p className="text-xl font-semibold dark:text-white">{Number(shiftClosed.daily_reading.total_cash).toFixed(2)}</p>
                             </div>

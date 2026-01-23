@@ -776,8 +776,15 @@ export default function DispenserReading({
                 remarks: null
             }));
 
+        // Recalculate cash_sales_other to ensure latest value
+        const totalOtherProductsSales = otherProductsSales.reduce((sum, sale) => sum + (sale.total_sales || 0), 0);
+        const creditSalesOther = parseFloat(data.credit_sales_other) || 0;
+        const bankSalesOther = parseFloat(data.bank_sales_other) || 0;
+        const cashSalesOther = totalOtherProductsSales - creditSalesOther - bankSalesOther;
+
         const submitData = {
             ...data,
+            cash_sales_other: cashSalesOther.toFixed(2),
             other_product_sales: otherProductSalesData
         };
 
