@@ -118,7 +118,7 @@ class MonthlyDispenserReportController extends Controller
         return Inertia::render('Reports/MonthlyDispenserReport', [
             'readings' => $shiftClosedList,
             'products' => $products->toArray(),
-            'filters' => $request->only(['search', 'product_id', 'start_date', 'end_date', 'sort_by', 'sort_order', 'per_page'])
+            'filters' => $request->only(['search', 'product_id', 'start_date', 'end_date', 'sort_by', 'sort_order', 'per_page', 'visible_columns', 'visible_products'])
         ]);
     }
 
@@ -225,8 +225,18 @@ class MonthlyDispenserReportController extends Controller
         })->toArray();
         
         $companySetting = CompanySetting::first();
+        
+        $visibleColumns = [];
+        if ($request->visible_columns) {
+            $visibleColumns = json_decode($request->visible_columns, true) ?? [];
+        }
+        
+        $visibleProducts = [];
+        if ($request->visible_products) {
+            $visibleProducts = json_decode($request->visible_products, true) ?? [];
+        }
 
-        $pdf = Pdf::loadView('pdf.monthly-dispenser-report', compact('readings', 'products', 'companySetting'));
+        $pdf = Pdf::loadView('pdf.monthly-dispenser-report', compact('readings', 'products', 'companySetting', 'visibleColumns', 'visibleProducts'));
         return $pdf->stream('monthly-dispenser-report.pdf');
     }
 }

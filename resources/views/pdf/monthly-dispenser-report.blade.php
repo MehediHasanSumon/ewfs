@@ -151,22 +151,26 @@
                 <th rowspan="2">Date</th>
                 <th rowspan="2">Shift</th>
                 @foreach($products as $product)
-                <th colspan="3">{{ $product->product_name }}</th>
+                    @if(($visibleProducts[$product->id] ?? true))
+                    <th colspan="3">{{ $product->product_name }}</th>
+                    @endif
                 @endforeach
-                <th rowspan="2">Received</th>
-                <th rowspan="2">Amount</th>
-                <th rowspan="2">Credit</th>
-                <th rowspan="2">Bank</th>
-                <th rowspan="2">Expenses</th>
-                <th rowspan="2">Purchase</th>
-                <th rowspan="2">Cash</th>
-                <th rowspan="2">Balance</th>
+                @if($visibleColumns['received_due_paid'] ?? true)<th rowspan="2">Received</th>@endif
+                @if($visibleColumns['amount'] ?? true)<th rowspan="2">Amount</th>@endif
+                @if($visibleColumns['credit_sale'] ?? true)<th rowspan="2">Credit</th>@endif
+                @if($visibleColumns['bank_sale'] ?? true)<th rowspan="2">Bank</th>@endif
+                @if($visibleColumns['expenses'] ?? true)<th rowspan="2">Expenses</th>@endif
+                @if($visibleColumns['purchase'] ?? true)<th rowspan="2">Purchase</th>@endif
+                @if($visibleColumns['cash_in_hand'] ?? true)<th rowspan="2">Cash</th>@endif
+                @if($visibleColumns['total_balance'] ?? true)<th rowspan="2">Balance</th>@endif
             </tr>
             <tr>
                 @foreach($products as $product)
-                <th>Sale</th>
-                <th>Price</th>
-                <th>Amount</th>
+                    @if(($visibleProducts[$product->id] ?? true))
+                    <th>Sale</th>
+                    <th>Price</th>
+                    <th>Amount</th>
+                    @endif
                 @endforeach
             </tr>
         </thead>
@@ -177,6 +181,7 @@
                 <td class="text-left">{{ $reading['date'] }}</td>
                 <td>{{ $reading['shift'] }}</td>
                 @foreach($products as $product)
+                    @if(($visibleProducts[$product->id] ?? true))
                     @php
                         $productSale = collect($reading['product_sales'])->firstWhere('product_id', $product->id);
                         $totalSale = $productSale ? $productSale->total_sale : 0;
@@ -186,15 +191,16 @@
                     <td class="text-right">{{ number_format($totalSale, 2) }}</td>
                     <td class="text-right">{{ number_format($price, 2) }}</td>
                     <td class="text-right">{{ number_format($amount, 2) }}</td>
+                    @endif
                 @endforeach
-                <td class="text-right">{{ number_format($reading['received_due_paid'], 2) }}</td>
-                <td class="text-right">{{ number_format($reading['amount'], 2) }}</td>
-                <td class="text-right">{{ number_format($reading['credit_sale'], 2) }}</td>
-                <td class="text-right">{{ number_format($reading['bank_sale'], 2) }}</td>
-                <td class="text-right">{{ number_format($reading['expenses'], 2) }}</td>
-                <td class="text-right">{{ number_format($reading['purchase'], 2) }}</td>
-                <td class="text-right">{{ number_format($reading['cash_in_hand'], 2) }}</td>
-                <td class="text-right">{{ number_format($reading['total_balance'], 2) }}</td>
+                @if($visibleColumns['received_due_paid'] ?? true)<td class="text-right">{{ number_format($reading['received_due_paid'], 2) }}</td>@endif
+                @if($visibleColumns['amount'] ?? true)<td class="text-right">{{ number_format($reading['amount'], 2) }}</td>@endif
+                @if($visibleColumns['credit_sale'] ?? true)<td class="text-right">{{ number_format($reading['credit_sale'], 2) }}</td>@endif
+                @if($visibleColumns['bank_sale'] ?? true)<td class="text-right">{{ number_format($reading['bank_sale'], 2) }}</td>@endif
+                @if($visibleColumns['expenses'] ?? true)<td class="text-right">{{ number_format($reading['expenses'], 2) }}</td>@endif
+                @if($visibleColumns['purchase'] ?? true)<td class="text-right">{{ number_format($reading['purchase'], 2) }}</td>@endif
+                @if($visibleColumns['cash_in_hand'] ?? true)<td class="text-right">{{ number_format($reading['cash_in_hand'], 2) }}</td>@endif
+                @if($visibleColumns['total_balance'] ?? true)<td class="text-right">{{ number_format($reading['total_balance'], 2) }}</td>@endif
             </tr>
             @empty
             <tr>

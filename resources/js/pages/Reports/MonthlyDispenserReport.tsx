@@ -20,6 +20,7 @@ import {
     Filter,
     BarChart3,
     X,
+    Settings,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import React from 'react';
@@ -102,9 +103,28 @@ export default function MonthlyDispenserReport({
     const [startDate, setStartDate] = useState(filters?.start_date || '');
     const [endDate, setEndDate] = useState(filters?.end_date || '');
     const [perPage, setPerPage] = useState(filters?.per_page || 10);
+    const [showColumnSettings, setShowColumnSettings] = useState(false);
+    const [visibleColumns, setVisibleColumns] = useState({
+        received_due_paid: true,
+        amount: true,
+        credit_sale: true,
+        bank_sale: true,
+        expenses: true,
+        purchase: true,
+        cash_in_hand: true,
+        total_balance: true,
+    });
+    const [visibleProducts, setVisibleProducts] = useState(
+        products.reduce((acc, product) => {
+            acc[product.id] = true;
+            return acc;
+        }, {} as Record<number, boolean>)
+    );
 
-    // Calculate total columns: 3 base + (products * 3) + 9 fixed = 12 + (products * 3)
-    const totalColumns = 12 + (products.length * 3);
+    // Calculate total columns dynamically based on visible columns and products
+    const visibleColumnCount = Object.values(visibleColumns).filter(Boolean).length;
+    const visibleProductCount = Object.values(visibleProducts).filter(Boolean).length;
+    const totalColumns = 3 + (visibleProductCount * 3) + visibleColumnCount;
 
     const applyFilters = () => {
         router.get(
@@ -115,6 +135,8 @@ export default function MonthlyDispenserReport({
                 start_date: startDate || undefined,
                 end_date: endDate || undefined,
                 per_page: perPage,
+                visible_columns: JSON.stringify(visibleColumns),
+                visible_products: JSON.stringify(visibleProducts),
             },
             { preserveState: true },
         );
@@ -145,6 +167,8 @@ export default function MonthlyDispenserReport({
                 start_date: startDate || undefined,
                 end_date: endDate || undefined,
                 per_page: perPage,
+                visible_columns: JSON.stringify(visibleColumns),
+                visible_products: JSON.stringify(visibleProducts),
                 page,
             },
             { preserveState: true },
@@ -159,6 +183,15 @@ export default function MonthlyDispenserReport({
         }, 500);
         return () => clearTimeout(timer);
     }, [search]);
+
+    useEffect(() => {
+        if (products.length > 0) {
+            setVisibleProducts(products.reduce((acc, product) => {
+                acc[product.id] = true;
+                return acc;
+            }, {} as Record<number, boolean>));
+        }
+    }, [products]);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -176,6 +209,13 @@ export default function MonthlyDispenserReport({
                     </div>
                     <div className="flex gap-2">
                         <Button
+                            variant="outline"
+                            onClick={() => setShowColumnSettings(!showColumnSettings)}
+                        >
+                            <Settings className="mr-2 h-4 w-4" />
+                            Columns
+                        </Button>
+                        <Button
                             variant="success"
                             onClick={() => {
                                 const params = new URLSearchParams();
@@ -183,11 +223,13 @@ export default function MonthlyDispenserReport({
                                 if (productId !== 'all') params.append('product_id', productId);
                                 if (startDate) params.append('start_date', startDate);
                                 if (endDate) params.append('end_date', endDate);
+                                params.append('visible_columns', JSON.stringify(visibleColumns));
+                                params.append('visible_products', JSON.stringify(visibleProducts));
                                 window.location.href = `/reports/monthly-dispenser-report/download-pdf?${params.toString()}`;
                             }}
                         >
                             <FileText className="mr-2 h-4 w-4" />
-                            Download PDF
+                            Download
                         </Button>
                     </div>
                 </div>
@@ -229,6 +271,8 @@ export default function MonthlyDispenserReport({
                                                 start_date: startDate || undefined,
                                                 end_date: endDate || undefined,
                                                 per_page: perPage,
+                                                visible_columns: JSON.stringify(visibleColumns),
+                                                visible_products: JSON.stringify(visibleProducts),
                                             },
                                             { preserveState: true },
                                         );
@@ -312,6 +356,79 @@ export default function MonthlyDispenserReport({
                     </CardContent>
                 </Card>
 
+                {/* Column Settings */}
+                {showColumnSettings && (
+                    <Card className="dark:border-gray-700 dark:bg-gray-800">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 dark:text-white">
+                                <Settings className="h-5 w-5" />
+                                Column Visibility
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-4">
+                                <div>
+                                    <h4 className="text-sm font-medium mb-3 dark:text-white">Product Columns</h4>
+                                    <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                                        {products.map((product) => (
+                                            <div key={product.id} className="flex items-center space-x-2">
+                                                <input
+                                                    type="checkbox"
+                                                    id={`product-${product.id}`}
+                                                    checked={visibleProducts[product.id] ?? true}
+                                                    onChange={(e) => {
+                                                        setVisibleProducts(prev => ({
+                                                            ...prev,
+                                                            [product.id]: e.target.checked
+                                                        }));
+                                                    }}
+                                                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                />
+                                                <Label htmlFor={`product-${product.id}`} className="text-sm dark:text-gray-200">
+                                                    {product.product_name}
+                                                </Label>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div>
+                                    <h4 className="text-sm font-medium mb-3 dark:text-white">Financial Columns</h4>
+                                    <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                                        {[
+                                            { key: 'received_due_paid', label: 'Received (Due Paid)' },
+                                            { key: 'amount', label: 'Amount' },
+                                            { key: 'credit_sale', label: 'Credit Sale' },
+                                            { key: 'bank_sale', label: 'Bank Sale' },
+                                            { key: 'expenses', label: 'Expenses' },
+                                            { key: 'purchase', label: 'Purchase' },
+                                            { key: 'cash_in_hand', label: 'Cash in Hand' },
+                                            { key: 'total_balance', label: 'Total Balance' },
+                                        ].map((column) => (
+                                            <div key={column.key} className="flex items-center space-x-2">
+                                                <input
+                                                    type="checkbox"
+                                                    id={column.key}
+                                                    checked={visibleColumns[column.key as keyof typeof visibleColumns]}
+                                                    onChange={(e) => {
+                                                        setVisibleColumns(prev => ({
+                                                            ...prev,
+                                                            [column.key]: e.target.checked
+                                                        }));
+                                                    }}
+                                                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                />
+                                                <Label htmlFor={column.key} className="text-sm dark:text-gray-200">
+                                                    {column.label}
+                                                </Label>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
+
                 <Card className="dark:border-gray-700 dark:bg-gray-800">
                     <CardContent>
                         <div className="overflow-x-auto">
@@ -323,24 +440,24 @@ export default function MonthlyDispenserReport({
                                         <th rowSpan={2} className="border border-gray-300 p-3 text-[12px] font-semibold dark:text-gray-200 min-w-[100px]">Date</th>
                                         <th rowSpan={2} className="border border-gray-300 p-3 text-[12px] font-semibold dark:text-gray-200 min-w-[80px]">Shift</th>
                                         {/* Dynamic Product Headers */}
-                                        {products.map((product) => (
+                                        {products.filter(product => visibleProducts[product.id]).map((product) => (
                                             <th key={product.id} colSpan={3} className="border border-gray-300 p-3 text-[12px] font-semibold dark:text-gray-200">
                                                 {product.product_name}
                                             </th>
                                         ))}
-                                        <th rowSpan={2} className="border border-gray-300 p-3 text-[12px] font-semibold dark:text-gray-200 min-w-[120px]">Received (Due Paid)</th>
-                                        <th rowSpan={2} className="border border-gray-300 p-3 text-[12px] font-semibold dark:text-gray-200 min-w-[100px]">Amount</th>
-                                        <th rowSpan={2} className="border border-gray-300 p-3 text-[12px] font-semibold dark:text-gray-200 min-w-[100px]">Credit Sale</th>
-                                        <th rowSpan={2} className="border border-gray-300 p-3 text-[12px] font-semibold dark:text-gray-200 min-w-[100px]">Bank Sale</th>
-                                        <th rowSpan={2} className="border border-gray-300 p-3 text-[12px] font-semibold dark:text-gray-200 min-w-[100px]">Expenses</th>
-                                        <th rowSpan={2} className="border border-gray-300 p-3 text-[12px] font-semibold dark:text-gray-200 min-w-[100px]">Purchase</th>
-                                        <th rowSpan={2} className="border border-gray-300 p-3 text-[12px] font-semibold dark:text-gray-200 min-w-[120px]">Cash in Hand</th>
-                                        <th rowSpan={2} className="border border-gray-300 p-3 text-[12px] font-semibold dark:text-gray-200 min-w-[120px]">Total Balance</th>
+                                        {visibleColumns.received_due_paid && <th rowSpan={2} className="border border-gray-300 p-3 text-[12px] font-semibold dark:text-gray-200 min-w-[120px]">Received (Due Paid)</th>}
+                                        {visibleColumns.amount && <th rowSpan={2} className="border border-gray-300 p-3 text-[12px] font-semibold dark:text-gray-200 min-w-[100px]">Amount</th>}
+                                        {visibleColumns.credit_sale && <th rowSpan={2} className="border border-gray-300 p-3 text-[12px] font-semibold dark:text-gray-200 min-w-[100px]">Credit Sale</th>}
+                                        {visibleColumns.bank_sale && <th rowSpan={2} className="border border-gray-300 p-3 text-[12px] font-semibold dark:text-gray-200 min-w-[100px]">Bank Sale</th>}
+                                        {visibleColumns.expenses && <th rowSpan={2} className="border border-gray-300 p-3 text-[12px] font-semibold dark:text-gray-200 min-w-[100px]">Expenses</th>}
+                                        {visibleColumns.purchase && <th rowSpan={2} className="border border-gray-300 p-3 text-[12px] font-semibold dark:text-gray-200 min-w-[100px]">Purchase</th>}
+                                        {visibleColumns.cash_in_hand && <th rowSpan={2} className="border border-gray-300 p-3 text-[12px] font-semibold dark:text-gray-200 min-w-[120px]">Cash in Hand</th>}
+                                        {visibleColumns.total_balance && <th rowSpan={2} className="border border-gray-300 p-3 text-[12px] font-semibold dark:text-gray-200 min-w-[120px]">Total Balance</th>}
                                     </tr>
                                     {/* Second Header Row */}
                                     <tr className="bg-gray-50 dark:bg-gray-600">
                                         {/* Dynamic Product Sub-headers */}
-                                        {products.map((product) => (
+                                        {products.filter(product => visibleProducts[product.id]).map((product) => (
                                             <React.Fragment key={`sub-${product.id}`}>
                                                 <th className="border border-gray-300 p-2 text-[11px] font-medium dark:text-gray-200 text-center min-w-[80px]">Total Sale</th>
                                                 <th className="border border-gray-300 p-2 text-[11px] font-medium dark:text-gray-200 text-center min-w-[80px]">Price</th>
@@ -357,7 +474,7 @@ export default function MonthlyDispenserReport({
                                             <td className="border border-gray-300 p-2 text-[12px] dark:text-white">{reading.date}</td>
                                             <td className="border border-gray-300 p-2 text-[12px] text-center dark:text-white">{reading.shift}</td>
                                             {/* Dynamic Product Data */}
-                                            {products.map((product) => {
+                                            {products.filter(product => visibleProducts[product.id]).map((product) => {
                                                 const productSale = reading.product_sales.find(ps => ps.product_id === product.id);
                                                 const totalSale = productSale?.total_sale || 0;
                                                 const price = productSale?.price || 0;
@@ -371,14 +488,14 @@ export default function MonthlyDispenserReport({
                                                     </React.Fragment>
                                                 );
                                             })}
-                                            <td className="border border-gray-300 p-2 text-[12px] text-right dark:text-gray-300">{Number(reading.received_due_paid).toFixed(2)}</td>
-                                            <td className="border border-gray-300 p-2 text-[12px] text-right font-semibold dark:text-white">{Number(reading.amount).toFixed(2)}</td>
-                                            <td className="border border-gray-300 p-2 text-[12px] text-right dark:text-gray-300">{Number(reading.credit_sale).toFixed(2)}</td>
-                                            <td className="border border-gray-300 p-2 text-[12px] text-right dark:text-gray-300">{Number(reading.bank_sale).toFixed(2)}</td>
-                                            <td className="border border-gray-300 p-2 text-[12px] text-right dark:text-gray-300">{Number(reading.expenses).toFixed(2)}</td>
-                                            <td className="border border-gray-300 p-2 text-[12px] text-right dark:text-gray-300">{Number(reading.purchase).toFixed(2)}</td>
-                                            <td className="border border-gray-300 p-2 text-[12px] text-right font-semibold dark:text-white">{Number(reading.cash_in_hand).toFixed(2)}</td>
-                                            <td className="border border-gray-300 p-2 text-[12px] text-right font-semibold dark:text-white">{Number(reading.total_balance).toFixed(2)}</td>
+                                            {visibleColumns.received_due_paid && <td className="border border-gray-300 p-2 text-[12px] text-right dark:text-gray-300">{Number(reading.received_due_paid).toFixed(2)}</td>}
+                                            {visibleColumns.amount && <td className="border border-gray-300 p-2 text-[12px] text-right font-semibold dark:text-white">{Number(reading.amount).toFixed(2)}</td>}
+                                            {visibleColumns.credit_sale && <td className="border border-gray-300 p-2 text-[12px] text-right dark:text-gray-300">{Number(reading.credit_sale).toFixed(2)}</td>}
+                                            {visibleColumns.bank_sale && <td className="border border-gray-300 p-2 text-[12px] text-right dark:text-gray-300">{Number(reading.bank_sale).toFixed(2)}</td>}
+                                            {visibleColumns.expenses && <td className="border border-gray-300 p-2 text-[12px] text-right dark:text-gray-300">{Number(reading.expenses).toFixed(2)}</td>}
+                                            {visibleColumns.purchase && <td className="border border-gray-300 p-2 text-[12px] text-right dark:text-gray-300">{Number(reading.purchase).toFixed(2)}</td>}
+                                            {visibleColumns.cash_in_hand && <td className="border border-gray-300 p-2 text-[12px] text-right font-semibold dark:text-white">{Number(reading.cash_in_hand).toFixed(2)}</td>}
+                                            {visibleColumns.total_balance && <td className="border border-gray-300 p-2 text-[12px] text-right font-semibold dark:text-white">{Number(reading.total_balance).toFixed(2)}</td>}
                                         </tr>
                                     ))}
                                     {readings.data.length === 0 && (
@@ -414,6 +531,8 @@ export default function MonthlyDispenserReport({
                                         start_date: startDate || undefined,
                                         end_date: endDate || undefined,
                                         per_page: newPerPage,
+                                        visible_columns: JSON.stringify(visibleColumns),
+                                        visible_products: JSON.stringify(visibleProducts),
                                     },
                                     { preserveState: true },
                                 );
