@@ -51,6 +51,7 @@ use App\Http\Controllers\SMSTemplateController;
 use App\Http\Controllers\SMSLogController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MonthlyDispenserReportController;
+use App\Http\Controllers\WhiteSaleController;
 
 Route::get('/', function () {
     return Inertia::render('home');
@@ -413,6 +414,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('sms-logs', [SMSLogController::class, 'index'])->name('sms-logs.index');
     Route::delete('sms-logs/{smsLog}', [SMSLogController::class, 'destroy'])->name('sms-logs.destroy');
     Route::delete('sms-logs/bulk/delete', [SMSLogController::class, 'bulkDelete'])->name('sms-logs.bulk.delete');
+    
+    // White Sale routes
+    Route::get('white-sales', [WhiteSaleController::class, 'index'])->name('white-sales.index');
+    Route::get('white-sales/create', [WhiteSaleController::class, 'create'])->name('white-sales.create');
+    Route::post('white-sales', [WhiteSaleController::class, 'store'])->name('white-sales.store');
+    Route::get('white-sales/{whiteSale}', [WhiteSaleController::class, 'show'])->name('white-sales.show');
+    Route::get('white-sales/{whiteSale}/edit', [WhiteSaleController::class, 'edit'])->name('white-sales.edit');
+    Route::put('white-sales/{whiteSale}', [WhiteSaleController::class, 'update'])->name('white-sales.update');
+    Route::delete('white-sales/{whiteSale}', [WhiteSaleController::class, 'destroy'])->name('white-sales.destroy');
+    Route::delete('white-sales/bulk/delete', [WhiteSaleController::class, 'bulkDelete'])->name('white-sales.bulk.delete');
+    Route::get('white-sales/download-pdf', [WhiteSaleController::class, 'downloadPdf'])->name('white-sales.download.pdf');
     
     // Monthly Dispenser Report routes
     Route::get('reports/monthly-dispenser-report', [MonthlyDispenserReportController::class, 'index'])->name('monthly-dispenser-report.index');

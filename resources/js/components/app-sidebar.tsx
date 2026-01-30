@@ -154,6 +154,7 @@ const mainNavItems = [
         icon: DollarSign,
         children: [
             { title: 'Sales', href: '/sales', icon: DollarSign, permission: 'view-sale' },
+            { title: 'White Sales', href: '/white-sales', icon: ShoppingCart, permission: 'view-white-sale' },
             {
                 title: 'Customer Sales Reports',
                 href: '/customer-wise-sales-reports',
