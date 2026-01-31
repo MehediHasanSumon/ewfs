@@ -425,6 +425,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('white-sales/{whiteSale}', [WhiteSaleController::class, 'update'])->name('white-sales.update');
     Route::delete('white-sales/{whiteSale}', [WhiteSaleController::class, 'destroy'])->name('white-sales.destroy');
     Route::delete('white-sales/bulk/delete', [WhiteSaleController::class, 'bulkDelete'])->name('white-sales.bulk.delete');
+    Route::get('white-sales/{whiteSale}/pdf', [WhiteSaleController::class, 'downloadSinglePdf'])->name('white-sales.single.pdf');
     Route::get('white-sales/download-pdf', [WhiteSaleController::class, 'downloadPdf'])->name('white-sales.download.pdf');
     
     // Monthly Dispenser Report routes

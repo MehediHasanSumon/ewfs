@@ -584,6 +584,15 @@ export default function WhiteSales({ whiteSales, products = [], shifts = [], fil
                                                 {hasActionPermission && (
                                                     <td className="p-4">
                                                         <div className="flex gap-2">
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={() => window.open(`/white-sales/${sale.id}/pdf`, '_blank')}
+                                                                className="text-blue-600 hover:text-blue-800"
+                                                                title="Download PDF"
+                                                            >
+                                                                <FileText className="h-4 w-4" />
+                                                            </Button>
                                                             {can('update-white-sale') && (
                                                                 <Button
                                                                     variant="ghost"

@@ -7,6 +7,7 @@ use App\Models\WhiteSaleProduct;
 use App\Models\Shift;
 use App\Models\Product;
 use App\Models\Category;
+use App\Models\CompanySetting;
 use App\Helpers\InvoiceHelper;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -142,6 +143,17 @@ class WhiteSaleController extends Controller
 
         return redirect()->route('white-sales.index')
             ->with('success', 'White sale updated successfully.');
+    }
+
+    public function downloadSinglePdf(WhiteSale $whiteSale)
+    {
+        $whiteSale->load(['shift', 'products.product', 'products.category', 'products.unit']);
+        $companySetting = CompanySetting::first();
+        
+        $pdf = app('dompdf.wrapper');
+        $pdf->loadView('pdf.white-sale-invoice', compact('whiteSale', 'companySetting'));
+        
+        return $pdf->stream('white-sale-' . $whiteSale->invoice_no . '.pdf');
     }
 
     public function getCustomerByMobile($mobile)
