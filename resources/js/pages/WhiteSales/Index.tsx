@@ -35,6 +35,7 @@ interface WhiteSale {
     id: number;
     sale_date: string;
     sale_time: string;
+    invoice_no: string;
     mobile_no?: string;
     company_name?: string;
     proprietor_name?: string;
@@ -65,11 +66,6 @@ interface Product {
     rates?: { sales_price: number }[];
 }
 
-interface Category {
-    id: number;
-    name: string;
-}
-
 interface Shift {
     id: number;
     name: string;
@@ -97,7 +93,6 @@ interface WhiteSalesProps {
         to: number;
     };
     products: Product[];
-    categories: Category[];
     shifts: Shift[];
     filters: {
         search?: string;
@@ -187,18 +182,18 @@ export default function WhiteSales({ whiteSales, products = [], shifts = [], fil
             alert('Please add at least one product to cart');
             return;
         }
-        
+
         if (!data.mobile_no || !data.company_name) {
             alert('Please fill all required fields');
             return;
         }
-        
+
         const submitData = {
             ...data,
             products: validProducts,
             total_amount: validProducts.reduce((sum, p) => sum + parseFloat(p.amount || '0'), 0)
         };
-        
+
         if (editingWhiteSale) {
             router.put(`/white-sales/${editingWhiteSale.id}`, submitData, {
                 onSuccess: () => {
@@ -410,7 +405,7 @@ export default function WhiteSales({ whiteSales, products = [], shifts = [], fil
                 const price = parseFloat(newProducts[index].purchase_price) || 0;
                 newProducts[index].amount = (quantity * price).toFixed(2);
             }
-            
+
             return {
                 ...prevData,
                 products: newProducts
@@ -478,54 +473,54 @@ export default function WhiteSales({ whiteSales, products = [], shifts = [], fil
                 </div>
 
                 {canFilter && (
-                <Card className="dark:border-gray-700 dark:bg-gray-800">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2 dark:text-white">
-                            <Filter className="h-5 w-5" />
-                            Filters
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-                            <div>
-                                <Label className="dark:text-gray-200">Search</Label>
-                                <Input
-                                    placeholder="Search white sales..."
-                                    value={search}
-                                    onChange={(e) => setSearch(e.target.value)}
-                                    className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                />
+                    <Card className="dark:border-gray-700 dark:bg-gray-800">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 dark:text-white">
+                                <Filter className="h-5 w-5" />
+                                Filters
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+                                <div>
+                                    <Label className="dark:text-gray-200">Search</Label>
+                                    <Input
+                                        placeholder="Search white sales..."
+                                        value={search}
+                                        onChange={(e) => setSearch(e.target.value)}
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    />
+                                </div>
+                                <div>
+                                    <Label className="dark:text-gray-200">Start Date</Label>
+                                    <Input
+                                        type="date"
+                                        value={startDate}
+                                        onChange={(e) => setStartDate(e.target.value)}
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    />
+                                </div>
+                                <div>
+                                    <Label className="dark:text-gray-200">End Date</Label>
+                                    <Input
+                                        type="date"
+                                        value={endDate}
+                                        onChange={(e) => setEndDate(e.target.value)}
+                                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    />
+                                </div>
+                                <div className="flex items-end gap-2">
+                                    <Button onClick={applyFilters} className="px-4">
+                                        Apply Filters
+                                    </Button>
+                                    <Button onClick={clearFilters} variant="secondary" className="px-4">
+                                        <X className="mr-2 h-4 w-4" />
+                                        Clear
+                                    </Button>
+                                </div>
                             </div>
-                            <div>
-                                <Label className="dark:text-gray-200">Start Date</Label>
-                                <Input
-                                    type="date"
-                                    value={startDate}
-                                    onChange={(e) => setStartDate(e.target.value)}
-                                    className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                />
-                            </div>
-                            <div>
-                                <Label className="dark:text-gray-200">End Date</Label>
-                                <Input
-                                    type="date"
-                                    value={endDate}
-                                    onChange={(e) => setEndDate(e.target.value)}
-                                    className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                />
-                            </div>
-                            <div className="flex items-end gap-2">
-                                <Button onClick={applyFilters} className="px-4">
-                                    Apply Filters
-                                </Button>
-                                <Button onClick={clearFilters} variant="secondary" className="px-4">
-                                    <X className="mr-2 h-4 w-4" />
-                                    Clear
-                                </Button>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
+                        </CardContent>
+                    </Card>
                 )}
 
                 <Card className="dark:border-gray-700 dark:bg-gray-800">
@@ -552,6 +547,7 @@ export default function WhiteSales({ whiteSales, products = [], shifts = [], fil
                                             </div>
                                         </th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Time</th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Invoice No</th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Shift</th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Products</th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Total Amount</th>
@@ -573,49 +569,49 @@ export default function WhiteSales({ whiteSales, products = [], shifts = [], fil
                                                 </td>
                                                 <td className="p-4 text-[13px] dark:text-white">{new Date(sale.sale_date).toLocaleDateString('en-GB')}</td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">{sale.sale_time}</td>
+                                                <td className="p-4 text-[13px] dark:text-gray-300">{sale.invoice_no}</td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">{sale.shift?.name}</td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">{sale.products.length} items</td>
                                                 <td className="p-4 text-[13px] dark:text-gray-300">{sale.total_amount.toLocaleString()}</td>
                                                 <td className="p-4">
-                                                    <span className={`rounded px-2 py-1 text-xs font-medium ${
-                                                        sale.status === 1 
+                                                    <span className={`rounded px-2 py-1 text-xs font-medium ${sale.status === 1
                                                             ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                                                             : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                                                    }`}>
+                                                        }`}>
                                                         {sale.status === 1 ? 'Active' : 'Inactive'}
                                                     </span>
                                                 </td>
                                                 {hasActionPermission && (
-                                                <td className="p-4">
-                                                    <div className="flex gap-2">
-                                                        {can('update-white-sale') && (
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                onClick={() => handleEdit(sale)}
-                                                                className="text-indigo-600 hover:text-indigo-800"
-                                                            >
-                                                                <Edit className="h-4 w-4" />
-                                                            </Button>
-                                                        )}
-                                                        {can('delete-white-sale') && (
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                onClick={() => handleDelete(sale)}
-                                                                className="text-red-600 hover:text-red-800"
-                                                            >
-                                                                <Trash2 className="h-4 w-4" />
-                                                            </Button>
-                                                        )}
-                                                    </div>
-                                                </td>
+                                                    <td className="p-4">
+                                                        <div className="flex gap-2">
+                                                            {can('update-white-sale') && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    onClick={() => handleEdit(sale)}
+                                                                    className="text-indigo-600 hover:text-indigo-800"
+                                                                >
+                                                                    <Edit className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+                                                            {can('delete-white-sale') && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    onClick={() => handleDelete(sale)}
+                                                                    className="text-red-600 hover:text-red-800"
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+                                                        </div>
+                                                    </td>
                                                 )}
                                             </tr>
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan={hasActionPermission ? 8 : 7} className="p-8 text-center text-gray-500 dark:text-gray-400">
+                                            <td colSpan={hasActionPermission ? 9 : 8} className="p-8 text-center text-gray-500 dark:text-gray-400">
                                                 <ShoppingCart className="mx-auto mb-4 h-12 w-12 text-gray-400" />
                                                 No white sales found
                                             </td>
@@ -679,7 +675,22 @@ export default function WhiteSales({ whiteSales, products = [], shifts = [], fil
                                 </Label>
                                 <Input
                                     value={data.mobile_no}
-                                    onChange={(e) => setData('mobile_no', e.target.value)}
+                                    onChange={(e) => {
+                                        const mobile = e.target.value;
+                                        setData('mobile_no', mobile);
+
+                                        if (mobile.length >= 11) {
+                                            fetch(`/white-sales/customer/${mobile}`)
+                                                .then(res => res.json())
+                                                .then(customer => {
+                                                    if (customer) {
+                                                        setData('company_name', customer.company_name || '');
+                                                        setData('proprietor_name', customer.proprietor_name || '');
+                                                    }
+                                                })
+                                                .catch(() => { });
+                                        }
+                                    }}
                                     placeholder="Enter mobile number"
                                     className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                 />
@@ -787,62 +798,62 @@ export default function WhiteSales({ whiteSales, products = [], shifts = [], fil
                         </div>
 
                         {data.products.slice(1).filter(p => p.product).length > 0 && (
-                        <div className="mt-6">
-                            <table className="w-full border border-gray-300 dark:border-gray-600">
-                                <thead className="bg-gray-100 dark:bg-gray-700">
-                                    <tr>
-                                        <th className="p-2 text-left text-sm font-medium dark:text-gray-200">SL</th>
-                                        <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Product</th>
-                                        <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Sales Price</th>
-                                        <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Unit</th>
-                                        <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Quantity</th>
-                                        <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Amount</th>
-                                        <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {data.products.slice(1).filter(p => p.product).map((product, index) => {
-                                        const actualIndex = index + 1;
-                                        return (
-                                            <tr key={actualIndex} className="border-t dark:border-gray-600">
-                                                <td className="p-2 text-sm dark:text-white">{index + 1}</td>
-                                                <td className="p-2 text-sm dark:text-white">{product.product}</td>
-                                                <td className="p-2 text-sm dark:text-white">{parseFloat(product.purchase_price).toLocaleString()}</td>
-                                                <td className="p-2 text-sm dark:text-white">{product.unit}</td>
-                                                <td className="p-2 text-sm dark:text-white">{parseFloat(product.quantity).toLocaleString()}</td>
-                                                <td className="p-2 text-sm dark:text-white">{parseFloat(product.amount).toLocaleString()}</td>
-                                                <td className="p-2">
-                                                    <div className="flex gap-2">
-                                                        <Button
-                                                            type="button"
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            onClick={() => {
-                                                                const editProduct = data.products[actualIndex];
-                                                                const newProducts = data.products.filter((_, i) => i !== actualIndex);
-                                                                newProducts[0] = editProduct;
-                                                                setData('products', newProducts);
-                                                            }}
-                                                            className="text-indigo-600 hover:text-indigo-800"
-                                                        >
-                                                            <Edit className="h-4 w-4" />
-                                                        </Button>
-                                                        <Button
-                                                            type="button"
-                                                            variant="destructive"
-                                                            size="sm"
-                                                            onClick={() => removeProduct(actualIndex)}
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
+                            <div className="mt-6">
+                                <table className="w-full border border-gray-300 dark:border-gray-600">
+                                    <thead className="bg-gray-100 dark:bg-gray-700">
+                                        <tr>
+                                            <th className="p-2 text-left text-sm font-medium dark:text-gray-200">SL</th>
+                                            <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Product</th>
+                                            <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Sales Price</th>
+                                            <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Unit</th>
+                                            <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Quantity</th>
+                                            <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Amount</th>
+                                            <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {data.products.slice(1).filter(p => p.product).map((product, index) => {
+                                            const actualIndex = index + 1;
+                                            return (
+                                                <tr key={actualIndex} className="border-t dark:border-gray-600">
+                                                    <td className="p-2 text-sm dark:text-white">{index + 1}</td>
+                                                    <td className="p-2 text-sm dark:text-white">{product.product}</td>
+                                                    <td className="p-2 text-sm dark:text-white">{parseFloat(product.purchase_price).toLocaleString()}</td>
+                                                    <td className="p-2 text-sm dark:text-white">{product.unit}</td>
+                                                    <td className="p-2 text-sm dark:text-white">{parseFloat(product.quantity).toLocaleString()}</td>
+                                                    <td className="p-2 text-sm dark:text-white">{parseFloat(product.amount).toLocaleString()}</td>
+                                                    <td className="p-2">
+                                                        <div className="flex gap-2">
+                                                            <Button
+                                                                type="button"
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={() => {
+                                                                    const editProduct = data.products[actualIndex];
+                                                                    const newProducts = data.products.filter((_, i) => i !== actualIndex);
+                                                                    newProducts[0] = editProduct;
+                                                                    setData('products', newProducts);
+                                                                }}
+                                                                className="text-indigo-600 hover:text-indigo-800"
+                                                            >
+                                                                <Edit className="h-4 w-4" />
+                                                            </Button>
+                                                            <Button
+                                                                type="button"
+                                                                variant="destructive"
+                                                                size="sm"
+                                                                onClick={() => removeProduct(actualIndex)}
+                                                            >
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </Button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
                         )}
                     </div>
                 </FormModal>

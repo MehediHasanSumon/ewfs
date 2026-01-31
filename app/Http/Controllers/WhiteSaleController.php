@@ -36,13 +36,11 @@ class WhiteSaleController extends Controller
 
         $shifts = Shift::where('status', 1)->get();
         $products = Product::with(['category', 'unit', 'activeRate', 'rates'])->where('status', 1)->get();
-        $categories = Category::where('status', 1)->get();
 
         return Inertia::render('WhiteSales/Index', [
             'whiteSales' => $whiteSales,
             'shifts' => $shifts,
             'products' => $products,
-            'categories' => $categories,
             'filters' => $request->only(['search', 'start_date', 'end_date', 'sort_by', 'sort_order', 'per_page'])
         ]);
     }
@@ -146,8 +144,18 @@ class WhiteSaleController extends Controller
             ->with('success', 'White sale updated successfully.');
     }
 
+    public function getCustomerByMobile($mobile)
+    {
+        $customer = WhiteSale::where('mobile_no', $mobile)
+            ->select('company_name', 'proprietor_name')
+            ->first();
+            
+        return response()->json($customer);
+    }
+
     public function destroy(WhiteSale $whiteSale)
     {
+        $whiteSale->products()->delete();
         $whiteSale->delete();
 
         return redirect()->route('white-sales.index')
@@ -161,6 +169,7 @@ class WhiteSaleController extends Controller
             'ids.*' => 'exists:white_sales,id'
         ]);
 
+        WhiteSaleProduct::whereIn('white_sale_id', $request->ids)->delete();
         WhiteSale::whereIn('id', $request->ids)->delete();
 
         return redirect()->route('white-sales.index')

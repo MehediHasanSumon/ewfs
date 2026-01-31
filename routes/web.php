@@ -417,6 +417,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     
     // White Sale routes
     Route::get('white-sales', [WhiteSaleController::class, 'index'])->name('white-sales.index');
+    Route::get('white-sales/customer/{mobile}', [WhiteSaleController::class, 'getCustomerByMobile']);
     Route::get('white-sales/create', [WhiteSaleController::class, 'create'])->name('white-sales.create');
     Route::post('white-sales', [WhiteSaleController::class, 'store'])->name('white-sales.store');
     Route::get('white-sales/{whiteSale}', [WhiteSaleController::class, 'show'])->name('white-sales.show');
