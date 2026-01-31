@@ -27,7 +27,9 @@ class DispenserController extends Controller implements HasMiddleware
     }
     public function index(Request $request)
     {
-        $query = Dispenser::with('product');
+        $query = Dispenser::with(['product', 'readings' => function($q) {
+            $q->latest();
+        }]);
 
         if ($request->search) {
             $query->where('dispenser_name', 'like', '%' . $request->search . '%');
@@ -55,14 +57,22 @@ class DispenserController extends Controller implements HasMiddleware
 
         $perPage = $request->get('per_page', 10);
         $dispensers = $query->paginate($perPage)->withQueryString()->through(function ($dispenser) {
-            $latestReading = $dispenser->readings()->latest()->first();
+            $latestReading = $dispenser->readings->first();
+            
+            // Get current product rate
+            $currentRate = ProductRate::where('product_id', $dispenser->product_id)
+                ->where('status', 1)
+                ->where('effective_date', '<=', now()->toDateString())
+                ->orderBy('effective_date', 'desc')
+                ->value('sales_price');
+                
             return [
                 'id' => $dispenser->id,
                 'dispenser_name' => $dispenser->dispenser_name,
                 'product_id' => $dispenser->product_id,
                 'product_name' => $dispenser->product->product_name ?? '',
                 'dispenser_item' => $dispenser->dispenser_item,
-                'item_rate' => $latestReading->item_rate ?? null,
+                'item_rate' => $currentRate ?? ($latestReading->item_rate ?? null),
                 'start_reading' => $latestReading->start_reading ?? null,
                 'status' => $dispenser->status,
                 'created_at' => $dispenser->created_at->format('Y-m-d'),
