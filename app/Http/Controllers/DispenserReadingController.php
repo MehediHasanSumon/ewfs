@@ -33,7 +33,7 @@ class DispenserReadingController extends Controller implements HasMiddleware
     }
     public function index()
     {
-        $dispenserReading = DispenserReading::with(['product.activeRate', 'dispenser'])
+        $dispenserReading = DispenserReading::with(['product', 'dispenser'])
             ->orderBy('dispenser_id')
             ->orderByDesc('created_at')
             ->get()
@@ -47,10 +47,17 @@ class DispenserReadingController extends Controller implements HasMiddleware
                 }
                 $latest->meter_test = 0;
                 $latest->product_id = $latest->product_id ?? ($latest->dispenser->product_id ?? null);
-                if ($latest->product) {
-                    $latest->product->sales_price = $latest->product->activeRate->sales_price ?? 0;
+                
+                // Get current product rate from ProductRate table
+                if ($latest->product_id) {
+                    $currentRate = \App\Models\ProductRate::where('product_id', $latest->product_id)
+                        ->where('status', 1)
+                        ->where('effective_date', '<=', now()->toDateString())
+                        ->orderBy('effective_date', 'desc')
+                        ->value('sales_price');
+                    $latest->item_rate = $currentRate ?? $latest->item_rate;
                 }
-                $latest->item_rate = $latest->product->activeRate->sales_price ?? 0;
+                
                 return $latest;
             })
             ->values();

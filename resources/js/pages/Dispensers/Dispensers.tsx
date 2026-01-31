@@ -361,7 +361,14 @@ export default function Dispensers({ dispensers, products, filters }: Dispensers
                             <table className="w-full">
                                 <thead>
                                     <tr className="border-b dark:border-gray-700">
-                                        <th className="p-4 text-left font-medium dark:text-gray-300">SL</th>
+                                        <th className="p-4 text-left font-medium dark:text-gray-300">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedDispensers.length === dispensers.data.length && dispensers.data.length > 0}
+                                                onChange={toggleSelectAll}
+                                                className="rounded border-gray-300 dark:border-gray-600"
+                                            />
+                                        </th>
                                         <th className="cursor-pointer p-4 text-left text-[13px] font-medium dark:text-gray-300" onClick={() => handleSort('dispenser_name')}>
                                             <div className="flex items-center gap-1">
                                                 Dispenser Name
@@ -381,7 +388,14 @@ export default function Dispensers({ dispensers, products, filters }: Dispensers
                                 <tbody>
                                     {dispensers.data.length > 0 ? dispensers.data.map((dispenser, index) => (
                                         <tr key={dispenser.id} className="border-b hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700">
-                                            <td className="p-4 text-[13px] dark:text-gray-300">{dispensers.from + index}</td>
+                                            <td className="p-4">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedDispensers.includes(dispenser.id)}
+                                                    onChange={() => toggleSelectDispenser(dispenser.id)}
+                                                    className="rounded border-gray-300 dark:border-gray-600"
+                                                />
+                                            </td>
                                             <td className="p-4 text-[13px] dark:text-white">{dispenser.dispenser_name}</td>
                                             <td className="p-4 text-[13px] dark:text-gray-300">{dispenser.product_name}</td>
                                             <td className="p-4 text-[13px] dark:text-gray-300">{dispenser.dispenser_item}</td>
