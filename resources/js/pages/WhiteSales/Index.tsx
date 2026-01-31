@@ -5,7 +5,7 @@ import { FormModal } from '@/components/ui/form-modal';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Pagination } from '@/components/ui/pagination';
-import { Combobox } from '@/components/ui/combobox';
+import { SearchableSelect } from '@/components/ui/searchable-select';
 import {
     Select,
     SelectContent,
@@ -38,13 +38,14 @@ interface WhiteSale {
     mobile_no?: string;
     company_name?: string;
     proprietor_name?: string;
-    shift: { name: string };
+    shift: { id: number; name: string };
     products: {
-        product: string;
-        category: string;
-        purchase_price: number;
-        unit: string;
+        id: number;
+        product: { product_name: string };
+        category: { name: string };
+        unit: { name: string };
         quantity: number;
+        sales_price: number;
         amount: number;
     }[];
     total_amount: number;
@@ -58,7 +59,10 @@ interface Product {
     product_name: string;
     product_code: string;
     unit: { name: string };
-    purchase_price: number;
+    category?: { name: string };
+    purchase_price?: number;
+    activeRate?: { sales_price: number };
+    rates?: { sales_price: number }[];
 }
 
 interface Category {
@@ -105,7 +109,7 @@ interface WhiteSalesProps {
     };
 }
 
-export default function WhiteSales({ whiteSales, products = [], categories = [], shifts = [], filters = {} }: WhiteSalesProps) {
+export default function WhiteSales({ whiteSales, products = [], shifts = [], filters = {} }: WhiteSalesProps) {
     const { can } = usePermission();
     const hasActionPermission = can('update-white-sale') || can('delete-white-sale');
     const canFilter = can('can-white-sale-filter');
@@ -142,11 +146,13 @@ export default function WhiteSales({ whiteSales, products = [], categories = [],
         status: 1,
     });
 
-    const setData = (key: string | any, value?: any) => {
+    type DataType = typeof data;
+
+    const setData = (key: string | DataType, value?: string | number | DataType['products']) => {
         if (typeof key === 'string') {
             setDataState(prev => ({ ...prev, [key]: value }));
         } else {
-            setDataState(key as any);
+            setDataState(key);
         }
     };
 
@@ -176,9 +182,14 @@ export default function WhiteSales({ whiteSales, products = [], categories = [],
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const validProducts = data.products.filter(p => p.product && p.category && p.quantity && p.amount);
+        const validProducts = data.products.filter(p => p.product && p.quantity !== '' && p.amount !== '');
         if (validProducts.length === 0) {
             alert('Please add at least one product to cart');
+            return;
+        }
+        
+        if (!data.mobile_no || !data.company_name) {
+            alert('Please fill all required fields');
             return;
         }
         
@@ -218,14 +229,24 @@ export default function WhiteSales({ whiteSales, products = [], categories = [],
             mobile_no: whiteSale.mobile_no || '',
             company_name: whiteSale.company_name || '',
             proprietor_name: whiteSale.proprietor_name || '',
-            products: whiteSale.products.map(p => ({
-                product: p.product,
-                category: p.category,
-                purchase_price: p.purchase_price.toString(),
-                unit: p.unit,
-                quantity: p.quantity.toString(),
-                amount: p.amount.toString(),
-            })),
+            products: [
+                {
+                    product: '',
+                    category: '',
+                    purchase_price: '',
+                    unit: '',
+                    quantity: '',
+                    amount: '',
+                },
+                ...whiteSale.products.map(p => ({
+                    product: p.product?.product_name || '',
+                    category: p.category?.name || '',
+                    purchase_price: p.sales_price?.toString() || '',
+                    unit: p.unit?.name || '',
+                    quantity: p.quantity?.toString() || '',
+                    amount: p.amount?.toString() || '',
+                }))
+            ],
             total_amount: whiteSale.total_amount.toString(),
             remarks: whiteSale.remarks || '',
             status: whiteSale.status,
@@ -341,7 +362,7 @@ export default function WhiteSales({ whiteSales, products = [], categories = [],
 
     const addProduct = () => {
         const firstProduct = data.products[0];
-        if (!firstProduct.product || !firstProduct.category || !firstProduct.quantity || !firstProduct.amount) {
+        if (!firstProduct.product || firstProduct.quantity === '' || firstProduct.purchase_price === '') {
             alert('Please fill all required fields');
             return;
         }
@@ -370,9 +391,19 @@ export default function WhiteSales({ whiteSales, products = [], categories = [],
     };
 
     const updateProduct = (index: number, field: string, value: string) => {
-        setData((prevData: any) => {
+        setDataState((prevData) => {
             const newProducts = [...prevData.products];
             newProducts[index] = { ...newProducts[index], [field]: value };
+
+            // Auto-fill when product is selected
+            if (field === 'product') {
+                const selectedProduct = products.find(p => p.product_name === value);
+                if (selectedProduct) {
+                    newProducts[index].category = selectedProduct.category?.name || '';
+                    newProducts[index].unit = selectedProduct.unit?.name || '';
+                    newProducts[index].purchase_price = selectedProduct.activeRate?.sales_price?.toString() || selectedProduct.rates?.[0]?.sales_price?.toString() || selectedProduct.purchase_price?.toString() || '';
+                }
+            }
 
             if (field === 'quantity' || field === 'purchase_price') {
                 const quantity = parseFloat(newProducts[index].quantity) || 0;
@@ -643,7 +674,9 @@ export default function WhiteSales({ whiteSales, products = [], categories = [],
                                 </Select>
                             </div>
                             <div>
-                                <Label className="text-sm font-medium dark:text-gray-200">Mobile No</Label>
+                                <Label className="text-sm font-medium dark:text-gray-200">
+                                    Mobile No <span className="text-red-500">*</span>
+                                </Label>
                                 <Input
                                     value={data.mobile_no}
                                     onChange={(e) => setData('mobile_no', e.target.value)}
@@ -652,7 +685,9 @@ export default function WhiteSales({ whiteSales, products = [], categories = [],
                                 />
                             </div>
                             <div>
-                                <Label className="text-sm font-medium dark:text-gray-200">Company Name</Label>
+                                <Label className="text-sm font-medium dark:text-gray-200">
+                                    Company Name <span className="text-red-500">*</span>
+                                </Label>
                                 <Input
                                     value={data.company_name}
                                     onChange={(e) => setData('company_name', e.target.value)}
@@ -671,33 +706,24 @@ export default function WhiteSales({ whiteSales, products = [], categories = [],
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-6 gap-4">
+                        <div className="grid grid-cols-5 gap-4">
                             <div>
                                 <Label className="text-sm font-medium dark:text-gray-200">
                                     Product <span className="text-red-500">*</span>
                                 </Label>
-                                <Combobox
-                                    options={products.map(p => p.product_name)}
+                                <SearchableSelect
+                                    options={products.map(p => ({ value: p.product_name, label: p.product_name, subtitle: p.product_code }))}
                                     value={data.products[0]?.product || ''}
                                     onValueChange={(value) => updateProduct(0, 'product', value)}
-                                    placeholder="Type product name"
+                                    placeholder="Select product"
+                                    searchPlaceholder="Search products..."
                                     className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                 />
                             </div>
                             <div>
                                 <Label className="text-sm font-medium dark:text-gray-200">
-                                    Category <span className="text-red-500">*</span>
+                                    Sales Price <span className="text-red-500">*</span>
                                 </Label>
-                                <Combobox
-                                    options={categories.map(c => c.name)}
-                                    value={data.products[0]?.category || ''}
-                                    onValueChange={(value) => updateProduct(0, 'category', value)}
-                                    placeholder="Type category"
-                                    className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                />
-                            </div>
-                            <div>
-                                <Label className="text-sm font-medium dark:text-gray-200">Sales Price</Label>
                                 <Input
                                     type="number"
                                     step="0.01"
@@ -710,13 +736,14 @@ export default function WhiteSales({ whiteSales, products = [], categories = [],
                                 <Label className="text-sm font-medium dark:text-gray-200">Unit</Label>
                                 <Input
                                     value={data.products[0]?.unit || ''}
-                                    onChange={(e) => updateProduct(0, 'unit', e.target.value)}
-                                    placeholder="e.g., Liter, Kg"
-                                    className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    readOnly
+                                    className="bg-gray-100 dark:border-gray-600 dark:bg-gray-600 dark:text-white"
                                 />
                             </div>
                             <div>
-                                <Label className="text-sm font-medium dark:text-gray-200">Quantity</Label>
+                                <Label className="text-sm font-medium dark:text-gray-200">
+                                    Quantity <span className="text-red-500">*</span>
+                                </Label>
                                 <Input
                                     type="number"
                                     step="0.01"
@@ -738,7 +765,7 @@ export default function WhiteSales({ whiteSales, products = [], categories = [],
                         </div>
 
                         <div className="grid grid-cols-12 gap-4">
-                            <div className={editingWhiteSale ? "col-span-12" : "col-span-10"}>
+                            <div className="col-span-10">
                                 <Label className="text-sm font-medium dark:text-gray-200">Remarks</Label>
                                 <Input
                                     value={data.remarks}
@@ -747,28 +774,27 @@ export default function WhiteSales({ whiteSales, products = [], categories = [],
                                     className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                 />
                             </div>
-                            {!editingWhiteSale && (
-                                <div className="col-span-2 flex flex-col justify-end">
-                                    <Button
-                                        type="button"
-                                        onClick={addProduct}
-                                        className="bg-blue-600 hover:bg-blue-700"
-                                    >
-                                        <Plus className="h-4 w-4 mr-1" />
-                                        Add to Cart
-                                    </Button>
-                                </div>
-                            )}
+                            <div className="col-span-2 flex flex-col justify-end">
+                                <Button
+                                    type="button"
+                                    onClick={addProduct}
+                                    className="bg-blue-600 hover:bg-blue-700"
+                                >
+                                    <Plus className="h-4 w-4 mr-1" />
+                                    Add to Cart
+                                </Button>
+                            </div>
                         </div>
 
-                        {!editingWhiteSale && (
+                        {data.products.slice(1).filter(p => p.product).length > 0 && (
                         <div className="mt-6">
                             <table className="w-full border border-gray-300 dark:border-gray-600">
                                 <thead className="bg-gray-100 dark:bg-gray-700">
                                     <tr>
                                         <th className="p-2 text-left text-sm font-medium dark:text-gray-200">SL</th>
                                         <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Product</th>
-                                        <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Category</th>
+                                        <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Sales Price</th>
+                                        <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Unit</th>
                                         <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Quantity</th>
                                         <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Amount</th>
                                         <th className="p-2 text-left text-sm font-medium dark:text-gray-200">Action</th>
@@ -781,9 +807,10 @@ export default function WhiteSales({ whiteSales, products = [], categories = [],
                                             <tr key={actualIndex} className="border-t dark:border-gray-600">
                                                 <td className="p-2 text-sm dark:text-white">{index + 1}</td>
                                                 <td className="p-2 text-sm dark:text-white">{product.product}</td>
-                                                <td className="p-2 text-sm dark:text-white">{product.category}</td>
-                                                <td className="p-2 text-sm dark:text-white">{product.quantity}</td>
-                                                <td className="p-2 text-sm dark:text-white">{product.amount}</td>
+                                                <td className="p-2 text-sm dark:text-white">{parseFloat(product.purchase_price).toLocaleString()}</td>
+                                                <td className="p-2 text-sm dark:text-white">{product.unit}</td>
+                                                <td className="p-2 text-sm dark:text-white">{parseFloat(product.quantity).toLocaleString()}</td>
+                                                <td className="p-2 text-sm dark:text-white">{parseFloat(product.amount).toLocaleString()}</td>
                                                 <td className="p-2">
                                                     <div className="flex gap-2">
                                                         <Button

@@ -14,14 +14,13 @@ class WhiteSale extends Model
         'company_name',
         'proprietor_name',
         'shift_id',
-        'products',
         'total_amount',
         'remarks',
-        'status'
+        'status',
+        'is_send_sms'
     ];
     
     protected $casts = [
-        'products' => 'array',
         'sale_date' => 'date',
         'sale_time' => 'datetime:H:i:s',
         'total_amount' => 'decimal:2'
@@ -30,5 +29,10 @@ class WhiteSale extends Model
     public function shift()
     {
         return $this->belongsTo(Shift::class);
+    }
+
+    public function products()
+    {
+        return $this->hasMany(WhiteSaleProduct::class);
     }
 }

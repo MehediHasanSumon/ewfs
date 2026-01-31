@@ -17,10 +17,10 @@ return new class extends Migration
             $table->string('company_name')->nullable();
             $table->string('proprietor_name')->nullable();
             $table->unsignedBigInteger('shift_id');
-            $table->json('products');
             $table->decimal('total_amount', 10, 2);
             $table->text('remarks')->nullable();
-            $table->tinyInteger('status')->default(1);
+            $table->boolean('status')->default(true);
+            $table->boolean('is_send_sms')->default(false);
             $table->timestamps();
 
             $table->foreign('shift_id')->references('id')->on('shifts');

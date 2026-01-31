@@ -5,6 +5,7 @@ namespace App\Helpers;
 use App\Models\Purchase;
 use App\Models\Sale;
 use App\Models\CreditSale;
+use App\Models\WhiteSale;
 
 class InvoiceHelper
 {
@@ -29,6 +30,10 @@ class InvoiceHelper
         $lastCreditSale = CreditSale::where('invoice_no', 'LIKE', 'IN%')
             ->orderBy('invoice_no', 'desc')
             ->value('invoice_no');
+            
+        $lastWhiteSale = WhiteSale::where('invoice_no', 'LIKE', 'IN%')
+            ->orderBy('invoice_no', 'desc')
+            ->value('invoice_no');
 
         $numbers = [];
         
@@ -42,6 +47,10 @@ class InvoiceHelper
         
         if ($lastCreditSale) {
             $numbers[] = (int) substr($lastCreditSale, 2);
+        }
+        
+        if ($lastWhiteSale) {
+            $numbers[] = (int) substr($lastWhiteSale, 2);
         }
         
         return empty($numbers) ? 0 : max($numbers);

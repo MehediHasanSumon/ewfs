@@ -25,4 +25,9 @@ class Unit extends Model
     {
         return $this->hasMany(DailyOtherProductSale::class);
     }
+
+    public function whiteSaleProducts()
+    {
+        return $this->hasMany(WhiteSaleProduct::class);
+    }
 }
