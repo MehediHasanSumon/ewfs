@@ -28,6 +28,7 @@ import {
     Settings as SettingsIcon,
     X,
 } from 'lucide-react';
+import { usePermission } from '@/hooks/usePermission';
 
 interface SMSConfig {
     id: number;
@@ -71,9 +72,10 @@ interface SMSConfigProps {
 }
 
 export default function SMSConfig({ configs, filters }: SMSConfigProps) {
-    const hasActionPermission = true;
-    const canFilter = true;
-    const canDownload = true;
+    const { can } = usePermission();
+    const hasActionPermission = can('update-s-m-s-setting') || can('delete-s-m-s-setting');
+    const canFilter = can('can-s-m-s-setting-filter');
+    const canDownload = can('can-s-m-s-setting-download');
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editingConfig, setEditingConfig] = useState<SMSConfig | null>(null);
     const [deletingConfig, setDeletingConfig] = useState<SMSConfig | null>(null);
@@ -258,7 +260,7 @@ export default function SMSConfig({ configs, filters }: SMSConfigProps) {
                         </p>
                     </div>
                     <div className="flex gap-2">
-                        {selectedConfigs.length > 0 && (
+                        {selectedConfigs.length > 0 && can('delete-s-m-s-setting') && (
                             <Button
                                 variant="destructive"
                                 onClick={handleBulkDelete}
@@ -285,10 +287,12 @@ export default function SMSConfig({ configs, filters }: SMSConfigProps) {
                             Download
                         </Button>
                         )}
+                        {can('create-s-m-s-setting') && (
                         <Button onClick={() => setIsCreateOpen(true)}>
                             <Plus className="mr-2 h-4 w-4" />
                             Add Config
                         </Button>
+                        )}
                     </div>
                 </div>
 
@@ -470,6 +474,7 @@ export default function SMSConfig({ configs, filters }: SMSConfigProps) {
                                                 {hasActionPermission && (
                                                 <td className="p-4">
                                                     <div className="flex gap-2">
+                                                        {can('update-s-m-s-setting') && (
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
@@ -478,6 +483,8 @@ export default function SMSConfig({ configs, filters }: SMSConfigProps) {
                                                         >
                                                             <Edit className="h-4 w-4" />
                                                         </Button>
+                                                        )}
+                                                        {can('delete-s-m-s-setting') && (
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
@@ -486,6 +493,7 @@ export default function SMSConfig({ configs, filters }: SMSConfigProps) {
                                                         >
                                                             <Trash2 className="h-4 w-4" />
                                                         </Button>
+                                                        )}
                                                     </div>
                                                 </td>
                                                 )}

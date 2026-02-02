@@ -6,14 +6,25 @@ use App\Models\WhiteSale;
 use App\Models\WhiteSaleProduct;
 use App\Models\Shift;
 use App\Models\Product;
-use App\Models\Category;
 use App\Models\CompanySetting;
 use App\Helpers\InvoiceHelper;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Inertia\Inertia;
 
-class WhiteSaleController extends Controller
+class WhiteSaleController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:view-white-sale', only: ['index', 'getCustomerByMobile']),
+            new Middleware('permission:view-white-sale|can-white-sale-download', only: ['downloadSinglePdf']),
+            new Middleware('permission:create-white-sale', only: ['store']),
+            new Middleware('permission:update-white-sale', only: ['update']),
+            new Middleware('permission:delete-white-sale', only: ['destroy', 'bulkDelete']),
+        ];
+    }
     public function index(Request $request)
     {
         $query = WhiteSale::with(['shift', 'products.product', 'products.category', 'products.unit']);
@@ -149,10 +160,10 @@ class WhiteSaleController extends Controller
     {
         $whiteSale->load(['shift', 'products.product', 'products.category', 'products.unit']);
         $companySetting = CompanySetting::first();
-        
+
         $pdf = app('dompdf.wrapper');
         $pdf->loadView('pdf.white-sale-invoice', compact('whiteSale', 'companySetting'));
-        
+
         return $pdf->stream('white-sale-' . $whiteSale->invoice_no . '.pdf');
     }
 
@@ -161,7 +172,7 @@ class WhiteSaleController extends Controller
         $customer = WhiteSale::where('mobile_no', $mobile)
             ->select('company_name', 'proprietor_name')
             ->first();
-            
+
         return response()->json($customer);
     }
 

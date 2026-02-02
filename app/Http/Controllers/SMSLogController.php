@@ -3,8 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\SMSLog;
-use App\Models\SMSTemplate;
-use App\Models\SMSSetting;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Routing\Controllers\Middleware;
@@ -26,9 +24,9 @@ class SMSLogController extends Controller implements HasMiddleware
             ->select('id', 'phone_number', 'message', 'sms_template_id', 'sms_setting_id', 'status', 'sent_at', 'error_message', 'created_at');
 
         if ($request->search) {
-            $query->where(function($q) use ($request) {
+            $query->where(function ($q) use ($request) {
                 $q->where('phone_number', 'like', '%' . $request->search . '%')
-                  ->orWhere('message', 'like', '%' . $request->search . '%');
+                    ->orWhere('message', 'like', '%' . $request->search . '%');
             });
         }
 

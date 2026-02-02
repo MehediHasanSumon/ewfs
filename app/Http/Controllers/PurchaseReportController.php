@@ -24,7 +24,6 @@ class PurchaseReportController extends Controller implements HasMiddleware
         $query = Purchase::with(['supplier', 'product.unit'])
             ->orderBy('purchase_date', 'desc');
 
-        // Apply filters only if provided
         if ($request->filled('start_date')) {
             $query->whereDate('purchase_date', '>=', $request->start_date);
         }

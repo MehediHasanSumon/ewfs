@@ -6,11 +6,20 @@ use App\Models\Category;
 use App\Models\CompanySetting;
 use App\Models\Stock;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Inertia\Inertia;
 use Barryvdh\DomPDF\Facade\Pdf;
 
-class StockReportController extends Controller
+class StockReportController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:view-stock', only: ['index']),
+            new Middleware('permission:view-stock|can-stock-download', only: ['downloadPdf']),
+        ];
+    }
     public function index(Request $request)
     {
         $query = Stock::with(['product.unit', 'product.category']);
