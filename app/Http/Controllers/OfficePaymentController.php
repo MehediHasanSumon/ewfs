@@ -217,8 +217,8 @@ class OfficePaymentController extends Controller implements HasMiddleware
             $amount = $officePayment->transaction->amount;
             $officePayment->to_account->decrement('total_amount', $amount);
 
-            $officePayment->transaction?->delete();
             $officePayment->delete();
+            $officePayment->transaction?->delete();
         });
 
         return redirect()->back()->with('success', 'Office payment deleted successfully.');
@@ -237,8 +237,8 @@ class OfficePaymentController extends Controller implements HasMiddleware
             foreach ($officePayments as $payment) {
                 $amount = $payment->transaction->amount;
                 $payment->to_account->decrement('total_amount', $amount);
-                $payment->transaction?->delete();
                 $payment->delete();
+                $payment->transaction?->delete();
             }
         });
 
