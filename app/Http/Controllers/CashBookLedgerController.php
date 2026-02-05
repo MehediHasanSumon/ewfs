@@ -72,9 +72,19 @@ class CashBookLedgerController extends Controller implements HasMiddleware
             }
         }
 
+        // Calculate summary data
+        $totalDebit = collect($ledgers)->sum('total_debit');
+        $totalCredit = collect($ledgers)->sum('total_credit');
+        $netBalance = collect($ledgers)->sum('closing_balance');
+
         return Inertia::render('CashBookLedger/Index', [
             'ledgers' => $ledgers,
-            'filters' => $request->only(['start_date', 'end_date'])
+            'filters' => $request->only(['start_date', 'end_date']),
+            'summary' => [
+                'total_debit' => $totalDebit,
+                'total_credit' => $totalCredit,
+                'net_balance' => $netBalance
+            ]
         ]);
     }
 

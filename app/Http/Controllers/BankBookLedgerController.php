@@ -76,9 +76,23 @@ class BankBookLedgerController extends Controller implements HasMiddleware
             }
         }
 
+        // Calculate summary data
+        $totalDebit = 0;
+        $totalCredit = 0;
+        foreach ($ledgers as $ledger) {
+            $totalDebit += $ledger['total_debit'];
+            $totalCredit += $ledger['total_credit'];
+        }
+        $summary = [
+            'total_debit' => $totalDebit,
+            'total_credit' => $totalCredit,
+            'net_balance' => $totalCredit - $totalDebit,
+        ];
+
         return Inertia::render('BankBookLedger/Index', [
             'ledgers' => $ledgers,
-            'filters' => $request->only(['start_date', 'end_date'])
+            'filters' => $request->only(['start_date', 'end_date']),
+            'summary' => $summary,
         ]);
     }
 

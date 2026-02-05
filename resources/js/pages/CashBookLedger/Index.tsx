@@ -44,6 +44,11 @@ interface Props {
         start_date?: string;
         end_date?: string;
     };
+    summary: {
+        total_debit: number;
+        total_credit: number;
+        net_balance: number;
+    };
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -51,7 +56,7 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Cash Book Ledger', href: '/cash-book-ledger' },
 ];
 
-export default function CashBookLedger({ ledgers, filters }: Props) {
+export default function CashBookLedger({ ledgers, filters, summary }: Props) {
     const { can } = usePermission();
     const canFilter = can('can-account-filter');
     const canDownload = can('can-account-download');
@@ -107,6 +112,73 @@ export default function CashBookLedger({ ledgers, filters }: Props) {
                             Download
                         </Button>
                     )}
+                </div>
+
+                {/* Summary Cards */}
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                    <Card className="dark:border-gray-700 dark:bg-gray-800">
+                        <CardContent className="p-4">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                                        Total Debit
+                                    </p>
+                                    <p className="text-2xl font-bold text-red-600">
+                                        {summary.total_debit.toLocaleString()}
+                                    </p>
+                                </div>
+                                <div className="rounded-full bg-red-100 p-3 dark:bg-red-900">
+                                    <svg className="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                                    </svg>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="dark:border-gray-700 dark:bg-gray-800">
+                        <CardContent className="p-4">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                                        Total Credit
+                                    </p>
+                                    <p className="text-2xl font-bold text-green-600">
+                                        {summary.total_credit.toLocaleString()}
+                                    </p>
+                                </div>
+                                <div className="rounded-full bg-green-100 p-3 dark:bg-green-900">
+                                    <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                                    </svg>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="dark:border-gray-700 dark:bg-gray-800">
+                        <CardContent className="p-4">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                                        Net Balance
+                                    </p>
+                                    <p className={`text-2xl font-bold ${
+                                        summary.net_balance >= 0 
+                                            ? 'text-green-600' 
+                                            : 'text-red-600'
+                                    }`}>
+                                        {Math.abs(summary.net_balance).toLocaleString()}
+                                    </p>
+                                </div>
+                                <div className="rounded-full bg-blue-100 p-3 dark:bg-blue-900">
+                                    <svg className="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                                    </svg>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
                 </div>
 
                 {/* Filter Card */}

@@ -6,7 +6,7 @@ import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
-import { FileText, Filter, X } from 'lucide-react';
+import { FileText, Filter, X, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
 import { useState } from 'react';
 import { usePermission } from '@/hooks/usePermission';
 
@@ -44,6 +44,11 @@ interface Props {
         start_date?: string;
         end_date?: string;
     };
+    summary: {
+        total_debit: number;
+        total_credit: number;
+        net_balance: number;
+    };
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -51,7 +56,7 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Bank Book Ledger', href: '/bank-book-ledger' },
 ];
 
-export default function BankBookLedger({ ledgers, filters }: Props) {
+export default function BankBookLedger({ ledgers, filters, summary }: Props) {
     const { can } = usePermission();
     const canFilter = can('can-account-filter');
     const canDownload = can('can-account-download');
@@ -108,6 +113,69 @@ export default function BankBookLedger({ ledgers, filters }: Props) {
                             Download
                         </Button>
                     )}
+                </div>
+
+                {/* Summary Cards */}
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                    <Card className="dark:border-gray-700 dark:bg-gray-800">
+                        <CardContent className="flex items-center p-6">
+                            <div className="flex items-center space-x-4">
+                                <div className="rounded-full bg-red-100 p-3 dark:bg-red-900">
+                                    <TrendingDown className="h-6 w-6 text-red-600 dark:text-red-400" />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Debit</p>
+                                    <p className="text-2xl font-bold text-red-600 dark:text-red-400">
+                                        {summary?.total_debit?.toLocaleString() || '0'}
+                                    </p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="dark:border-gray-700 dark:bg-gray-800">
+                        <CardContent className="flex items-center p-6">
+                            <div className="flex items-center space-x-4">
+                                <div className="rounded-full bg-green-100 p-3 dark:bg-green-900">
+                                    <TrendingUp className="h-6 w-6 text-green-600 dark:text-green-400" />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Credit</p>
+                                    <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                                        {summary?.total_credit?.toLocaleString() || '0'}
+                                    </p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="dark:border-gray-700 dark:bg-gray-800">
+                        <CardContent className="flex items-center p-6">
+                            <div className="flex items-center space-x-4">
+                                <div className={`rounded-full p-3 ${
+                                    (summary?.net_balance || 0) >= 0 
+                                        ? 'bg-blue-100 dark:bg-blue-900' 
+                                        : 'bg-orange-100 dark:bg-orange-900'
+                                }`}>
+                                    <DollarSign className={`h-6 w-6 ${
+                                        (summary?.net_balance || 0) >= 0 
+                                            ? 'text-blue-600 dark:text-blue-400' 
+                                            : 'text-orange-600 dark:text-orange-400'
+                                    }`} />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Net Balance</p>
+                                    <p className={`text-2xl font-bold ${
+                                        (summary?.net_balance || 0) >= 0 
+                                            ? 'text-blue-600 dark:text-blue-400' 
+                                            : 'text-orange-600 dark:text-orange-400'
+                                    }`}>
+                                        {summary?.net_balance?.toLocaleString() || '0'}
+                                    </p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
                 </div>
 
                 {/* Filter Card */}
