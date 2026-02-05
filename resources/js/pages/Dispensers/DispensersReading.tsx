@@ -616,7 +616,7 @@ export default function DispenserReading({
             const productWiseCreditSalesData =
                 result?.getCreditSalesDetailsReport || [];
             const creditSalesByProduct: { [key: number]: number } = {};
-            productWiseCreditSalesData.forEach((item: any) => {
+            productWiseCreditSalesData.forEach((item: { product_id: string; product_wise_credit_sales: string }) => {
                 const productId = parseInt(item.product_id);
                 const creditSales =
                     parseFloat(item.product_wise_credit_sales) || 0;
@@ -708,48 +708,48 @@ export default function DispenserReading({
         const totalCash = parseFloat(data.total_cash || '0');
         const cashPayment = parseFloat(data.cash_payment || '0');
 
-        if (isNaN(creditSales) || creditSales < 0) {
-            setValidationError('Credit sales must be a valid positive number');
+        if (isNaN(creditSales)) {
+            setValidationError('Credit sales must be a valid number');
             setIsValidationModalOpen(true);
             return;
         }
-        if (isNaN(bankSales) || bankSales < 0) {
-            setValidationError('Bank sales must be a valid positive number');
+        if (isNaN(bankSales)) {
+            setValidationError('Bank sales must be a valid number');
             setIsValidationModalOpen(true);
             return;
         }
-        if (isNaN(cashSales) || cashSales < 0) {
-            setValidationError('Cash sales must be a valid positive number');
+        if (isNaN(cashSales)) {
+            setValidationError('Cash sales must be a valid number');
             setIsValidationModalOpen(true);
             return;
         }
-        if (isNaN(creditSalesOther) || creditSalesOther < 0) {
-            setValidationError('Credit sales (other) must be a valid positive number');
+        if (isNaN(creditSalesOther)) {
+            setValidationError('Credit sales (other) must be a valid number');
             setIsValidationModalOpen(true);
             return;
         }
-        if (isNaN(bankSalesOther) || bankSalesOther < 0) {
-            setValidationError('Bank sales (other) must be a valid positive number');
+        if (isNaN(bankSalesOther)) {
+            setValidationError('Bank sales (other) must be a valid number');
             setIsValidationModalOpen(true);
             return;
         }
-        if (isNaN(cashSalesOther) || cashSalesOther < 0) {
-            setValidationError('Cash sales (other) must be a valid positive number');
+        if (isNaN(cashSalesOther)) {
+            setValidationError('Cash sales (other) must be a valid number');
             setIsValidationModalOpen(true);
             return;
         }
-        if (isNaN(cashReceive) || cashReceive < 0) {
-            setValidationError('Cash receive must be a valid positive number');
+        if (isNaN(cashReceive)) {
+            setValidationError('Cash receive must be a valid number');
             setIsValidationModalOpen(true);
             return;
         }
-        if (isNaN(totalCash) || totalCash < 0) {
-            setValidationError('Total cash must be a valid positive number');
+        if (isNaN(totalCash)) {
+            setValidationError('Total cash must be a valid number');
             setIsValidationModalOpen(true);
             return;
         }
-        if (isNaN(cashPayment) || cashPayment < 0) {
-            setValidationError('Cash payment must be a valid positive number');
+        if (isNaN(cashPayment)) {
+            setValidationError('Cash payment must be a valid number');
             setIsValidationModalOpen(true);
             return;
         }
@@ -776,7 +776,6 @@ export default function DispenserReading({
                 remarks: null
             }));
 
-        // Recalculate cash_sales_other to ensure latest value
         const totalOtherProductsSales = otherProductsSales.reduce((sum, sale) => sum + (sale.total_sales || 0), 0);
         const creditSalesOther = parseFloat(data.credit_sales_other) || 0;
         const bankSalesOther = parseFloat(data.bank_sales_other) || 0;
@@ -819,14 +818,12 @@ export default function DispenserReading({
         }
     };
 
-    // Calculate cash_sales_other when other products sales change
     const updateOtherProductsCashSales = () => {
         const totalOtherProductsSales = otherProductsSales.reduce((sum, sale) => sum + (sale.total_sales || 0), 0);
         const creditSalesOther = parseFloat(data.credit_sales_other) || 0;
         const bankSalesOther = parseFloat(data.bank_sales_other) || 0;
         const cashSalesOther = totalOtherProductsSales - creditSalesOther - bankSalesOther;
 
-        // Update cash_sales_other and recalculate totals in one go
         const creditSales = parseFloat(data.credit_sales) || 0;
         const bankSales = parseFloat(data.bank_sales) || 0;
         const totalSales = data.dispenser_readings.reduce((sum, reading) => sum + (reading.total_sale || 0), 0);
