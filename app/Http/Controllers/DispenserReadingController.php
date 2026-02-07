@@ -47,7 +47,7 @@ class DispenserReadingController extends Controller implements HasMiddleware
                 }
                 $latest->meter_test = 0;
                 $latest->product_id = $latest->product_id ?? ($latest->dispenser->product_id ?? null);
-                
+
                 // Get current product rate from ProductRate table
                 if ($latest->product_id) {
                     $currentRate = \App\Models\ProductRate::where('product_id', $latest->product_id)
@@ -57,7 +57,7 @@ class DispenserReadingController extends Controller implements HasMiddleware
                         ->value('sales_price');
                     $latest->item_rate = $currentRate ?? $latest->item_rate;
                 }
-                
+
                 return $latest;
             })
             ->values();
@@ -263,8 +263,7 @@ class DispenserReadingController extends Controller implements HasMiddleware
                     'employee_id' => $reading['reading_by'] ?? Auth::id(),
                     'dispenser_id' => $reading['dispenser_id'],
                     'product_id' => $reading['product_id'],
-                    'start_reading' => $reading['start_reading'],
-                    'end_reading' => $reading['end_reading'],
+                    'start_reading' => $reading['end_reading'],
                     'meter_test' => $reading['meter_test'],
                     'net_reading' => $reading['net_reading'],
                     'item_rate' => $reading['item_rate'],
