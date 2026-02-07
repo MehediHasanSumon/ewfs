@@ -31,8 +31,8 @@ export function FormModal({
     const finalClassName = className || defaultClassName;
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className={`dark:bg-gray-800 ${finalClassName} max-h-[90vh] overflow-hidden`}>
-                <DialogHeader className="pb-4 border-b dark:border-gray-700">
+            <DialogContent className={`dark:bg-gray-800 ${finalClassName} !flex !flex-col overflow-hidden`}>
+                <DialogHeader className="pb-4 border-b dark:border-gray-700 flex-shrink-0">
                     <DialogTitle className="dark:text-white">{title}</DialogTitle>
                     {description && (
                         <DialogDescription className="sr-only">
@@ -40,11 +40,11 @@ export function FormModal({
                         </DialogDescription>
                     )}
                 </DialogHeader>
-                <form onSubmit={onSubmit} className="space-y-4">
-                    <div className="max-h-[70vh] overflow-y-auto pr-2 space-y-4">
+                <form onSubmit={onSubmit} className="flex flex-col flex-1 min-h-0">
+                    <div className="flex-1 overflow-y-auto pr-2 space-y-4 py-4">
                         {children}
                     </div>
-                    <div className="flex gap-2 justify-end pt-4 border-t dark:border-gray-700">
+                    <div className="flex gap-2 justify-end pt-4 border-t dark:border-gray-700 flex-shrink-0">
                         <Button type="button" variant="secondary" onClick={onClose}>
                             Cancel
                         </Button>

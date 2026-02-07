@@ -89,56 +89,60 @@ export default function ShiftClosedShow({ shiftClosed }: ShiftClosedShowProps) {
                         <CardTitle className="dark:text-white">Financial Summary</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
-                            <div>
-                                <p className="text-sm text-gray-600 dark:text-gray-400">Credit Sales</p>
-                                <p className="text-xl font-semibold dark:text-white">{Number(shiftClosed.daily_reading.credit_sales).toFixed(2)}</p>
+                        {shiftClosed.daily_reading ? (
+                            <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
+                                <div>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">Credit Sales</p>
+                                    <p className="text-xl font-semibold dark:text-white">{Number(shiftClosed.daily_reading.credit_sales).toFixed(2)}</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">Bank Sales</p>
+                                    <p className="text-xl font-semibold dark:text-white">{Number(shiftClosed.daily_reading.bank_sales).toFixed(2)}</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">Cash Sales</p>
+                                    <p className="text-xl font-semibold dark:text-white">{Number(shiftClosed.daily_reading.cash_sales).toFixed(2)}</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">Credit Sales Other</p>
+                                    <p className="text-xl font-semibold dark:text-white">{Number(shiftClosed.daily_reading.credit_sales_other).toFixed(2)}</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">Bank Sales Other</p>
+                                    <p className="text-xl font-semibold dark:text-white">{Number(shiftClosed.daily_reading.bank_sales_other).toFixed(2)}</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">Cash Sales Other</p>
+                                    <p className="text-xl font-semibold dark:text-white">{Number(shiftClosed.daily_reading.cash_sales_other).toFixed(2)}</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">Cash Receive</p>
+                                    <p className="text-xl font-semibold dark:text-white">{Number(shiftClosed.daily_reading.cash_receive).toFixed(2)}</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">Bank Receive</p>
+                                    <p className="text-xl font-semibold dark:text-white">{Number(shiftClosed.daily_reading.bank_receive).toFixed(2)}</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">Total Cash</p>
+                                    <p className="text-xl font-semibold dark:text-white">{Number(shiftClosed.daily_reading.total_cash).toFixed(2)}</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">Cash Payment</p>
+                                    <p className="text-xl font-semibold dark:text-white">{Number(shiftClosed.daily_reading.cash_payment).toFixed(2)}</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">Office Payment</p>
+                                    <p className="text-xl font-semibold dark:text-white">{Number(shiftClosed.daily_reading.office_payment).toFixed(2)}</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">Final Due Amount</p>
+                                    <p className="text-xl font-semibold dark:text-white">{Number(shiftClosed.daily_reading.final_due_amount).toFixed(2)}</p>
+                                </div>
                             </div>
-                            <div>
-                                <p className="text-sm text-gray-600 dark:text-gray-400">Bank Sales</p>
-                                <p className="text-xl font-semibold dark:text-white">{Number(shiftClosed.daily_reading.bank_sales).toFixed(2)}</p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-gray-600 dark:text-gray-400">Cash Sales</p>
-                                <p className="text-xl font-semibold dark:text-white">{Number(shiftClosed.daily_reading.cash_sales).toFixed(2)}</p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-gray-600 dark:text-gray-400">Credit Sales Other</p>
-                                <p className="text-xl font-semibold dark:text-white">{Number(shiftClosed.daily_reading.credit_sales_other).toFixed(2)}</p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-gray-600 dark:text-gray-400">Bank Sales Other</p>
-                                <p className="text-xl font-semibold dark:text-white">{Number(shiftClosed.daily_reading.bank_sales_other).toFixed(2)}</p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-gray-600 dark:text-gray-400">Cash Sales Other</p>
-                                <p className="text-xl font-semibold dark:text-white">{Number(shiftClosed.daily_reading.cash_sales_other).toFixed(2)}</p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-gray-600 dark:text-gray-400">Cash Receive</p>
-                                <p className="text-xl font-semibold dark:text-white">{Number(shiftClosed.daily_reading.cash_receive).toFixed(2)}</p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-gray-600 dark:text-gray-400">Bank Receive</p>
-                                <p className="text-xl font-semibold dark:text-white">{Number(shiftClosed.daily_reading.bank_receive).toFixed(2)}</p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-gray-600 dark:text-gray-400">Total Cash</p>
-                                <p className="text-xl font-semibold dark:text-white">{Number(shiftClosed.daily_reading.total_cash).toFixed(2)}</p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-gray-600 dark:text-gray-400">Cash Payment</p>
-                                <p className="text-xl font-semibold dark:text-white">{Number(shiftClosed.daily_reading.cash_payment).toFixed(2)}</p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-gray-600 dark:text-gray-400">Office Payment</p>
-                                <p className="text-xl font-semibold dark:text-white">{Number(shiftClosed.daily_reading.office_payment).toFixed(2)}</p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-gray-600 dark:text-gray-400">Final Due Amount</p>
-                                <p className="text-xl font-semibold dark:text-white">{Number(shiftClosed.daily_reading.final_due_amount).toFixed(2)}</p>
-                            </div>
-                        </div>
+                        ) : (
+                            <p className="text-gray-500 dark:text-gray-400">No financial data available</p>
+                        )}
                     </CardContent>
                 </Card>
 

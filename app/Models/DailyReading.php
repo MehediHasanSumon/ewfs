@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class DailyReading extends Model
 {
     protected $fillable = [
+        'date',
         'shift_id',
         'employee_id',
         'credit_sales',
