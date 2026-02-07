@@ -27,7 +27,7 @@ class DispenserController extends Controller implements HasMiddleware
     }
     public function index(Request $request)
     {
-        $query = Dispenser::with(['product', 'readings' => function($q) {
+        $query = Dispenser::with(['product', 'readings' => function ($q) {
             $q->latest();
         }]);
 
@@ -58,14 +58,13 @@ class DispenserController extends Controller implements HasMiddleware
         $perPage = $request->get('per_page', 10);
         $dispensers = $query->paginate($perPage)->withQueryString()->through(function ($dispenser) {
             $latestReading = $dispenser->readings->first();
-            
-            // Get current product rate
+
             $currentRate = ProductRate::where('product_id', $dispenser->product_id)
                 ->where('status', 1)
                 ->where('effective_date', '<=', now()->toDateString())
                 ->orderBy('effective_date', 'desc')
                 ->value('sales_price');
-                
+
             return [
                 'id' => $dispenser->id,
                 'dispenser_name' => $dispenser->dispenser_name,
@@ -74,13 +73,14 @@ class DispenserController extends Controller implements HasMiddleware
                 'dispenser_item' => $dispenser->dispenser_item,
                 'item_rate' => $currentRate ?? ($latestReading->item_rate ?? null),
                 'start_reading' => $latestReading->start_reading ?? null,
+                'end_reading' => $latestReading->end_reading ?? null,
                 'status' => $dispenser->status,
                 'created_at' => $dispenser->created_at->format('Y-m-d'),
             ];
         });
 
         $products = Product::select('id', 'product_name')
-            ->whereHas('category', function($query) {
+            ->whereHas('category', function ($query) {
                 $query->where('code', '1001');
             })
             ->get();
@@ -109,13 +109,15 @@ class DispenserController extends Controller implements HasMiddleware
         $product_id = $input['product_id'];
         $product_rate = ProductRate::where('product_id', $product_id)->where('status', 1)->latest('effective_date')->value('sales_price');
 
+        $opening_reading = $request->filled('opening_reading') ? $input['opening_reading'] : 0.00;
+        
         DispenserReading::create([
             'shift_id' => null,
             'employee_id' => null,
             'dispenser_id' => $dispenser->id,
             'product_id' => $input['product_id'],
-            'start_reading' => $request->filled('opening_reading') ? $input['opening_reading'] : 0.00,
-            'end_reading' => 0.00,
+            'start_reading' => $opening_reading,
+            'end_reading' => $opening_reading,
             'meter_test' => 0.00,
             'net_reading' => 0.00,
             'item_rate' => $request->filled('item_rate') ? $input['item_rate'] : $product_rate,
@@ -143,7 +145,7 @@ class DispenserController extends Controller implements HasMiddleware
         if ($request->filled('opening_reading')) {
             $latestReading = $dispenser->readings()->latest()->first();
             if ($latestReading) {
-                $latestReading->update(['start_reading' => $request->opening_reading]);
+                $latestReading->update(['end_reading' => $request->opening_reading]);
             }
         }
 

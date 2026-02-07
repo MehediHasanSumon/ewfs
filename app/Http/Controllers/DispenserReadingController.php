@@ -15,6 +15,7 @@ use App\Models\DailyOtherProductSale;
 use App\Models\Stock;
 use App\Models\VoucherCategory;
 use App\Models\PaymentSubType;
+use App\Models\ProductRate;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
@@ -48,9 +49,8 @@ class DispenserReadingController extends Controller implements HasMiddleware
                 $latest->meter_test = 0;
                 $latest->product_id = $latest->product_id ?? ($latest->dispenser->product_id ?? null);
 
-                // Get current product rate from ProductRate table
                 if ($latest->product_id) {
-                    $currentRate = \App\Models\ProductRate::where('product_id', $latest->product_id)
+                    $currentRate = ProductRate::where('product_id', $latest->product_id)
                         ->where('status', 1)
                         ->where('effective_date', '<=', now()->toDateString())
                         ->orderBy('effective_date', 'desc')
@@ -263,7 +263,8 @@ class DispenserReadingController extends Controller implements HasMiddleware
                     'employee_id' => $reading['reading_by'] ?? Auth::id(),
                     'dispenser_id' => $reading['dispenser_id'],
                     'product_id' => $reading['product_id'],
-                    'start_reading' => $reading['end_reading'],
+                    'start_reading' => $reading['start_reading'],
+                    'end_reading' => $reading['end_reading'],
                     'meter_test' => $reading['meter_test'],
                     'net_reading' => $reading['net_reading'],
                     'item_rate' => $reading['item_rate'],
@@ -297,6 +298,7 @@ class DispenserReadingController extends Controller implements HasMiddleware
             }
 
             DailyReading::create([
+                'date' => $request->transaction_date,
                 'shift_id' => $request->shift_id,
                 'employee_id' => Auth::id(),
                 'credit_sales' => $request->credit_sales ?? 0,

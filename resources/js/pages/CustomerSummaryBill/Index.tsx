@@ -52,7 +52,6 @@ interface CustomerSummaryBillProps {
 }
 
 export default function CustomerSummaryBill({ bills = [], customers = [], filters = {} }: CustomerSummaryBillProps) {
-    console.log('Bills data:', bills);
     const { can } = usePermission();
     const canFilter = can('can-customer-filter');
     const canDownload = can('can-customer-download');

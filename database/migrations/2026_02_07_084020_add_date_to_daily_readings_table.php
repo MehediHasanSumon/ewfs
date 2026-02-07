@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('dispenser_readings', function (Blueprint $table) {
-            $table->dropColumn('end_reading');
+        Schema::table('daily_readings', function (Blueprint $table) {
+            $table->date('date')->nullable()->after('id');
         });
     }
 
@@ -21,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('dispenser_readings', function (Blueprint $table) {
-            $table->decimal('end_reading', 10, 2)->default(0)->after('start_reading');
+        Schema::table('daily_readings', function (Blueprint $table) {
+            $table->dropColumn('date');
         });
     }
 };

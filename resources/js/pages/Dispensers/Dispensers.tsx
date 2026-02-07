@@ -22,6 +22,7 @@ interface Dispenser {
     dispenser_item: number;
     item_rate?: number;
     start_reading?: number;
+    end_reading?: number;
     status: boolean;
     created_at: string;
 }
@@ -84,7 +85,7 @@ export default function Dispensers({ dispensers, products, filters }: Dispensers
     const [sortBy, setSortBy] = useState(filters?.sort_by || 'dispenser_name');
     const [sortOrder, setSortOrder] = useState(filters?.sort_order || 'asc');
     const [perPage, setPerPage] = useState(filters?.per_page || 10);
-    
+
     const { data, setData, post, put, processing, errors, reset } = useForm({
         dispenser_name: '',
         product_id: '',
@@ -116,7 +117,7 @@ export default function Dispensers({ dispensers, products, filters }: Dispensers
         setData({
             dispenser_name: dispenser.dispenser_name,
             product_id: dispenser.product_id.toString(),
-            opening_reading: dispenser.start_reading?.toString() || '',
+            opening_reading: dispenser.end_reading?.toString() || '',
             status: dispenser.status
         });
     };
@@ -231,7 +232,7 @@ export default function Dispensers({ dispensers, products, filters }: Dispensers
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Dispensers" />
-            
+
             <div className="space-y-6 p-6">
                 <div className="flex items-center justify-between">
                     <div>
@@ -378,7 +379,7 @@ export default function Dispensers({ dispensers, products, filters }: Dispensers
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Product ID</th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Dispenser Items</th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Dispenser Items Rate</th>
-                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Dispenser Readings</th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Start Reading</th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Status</th>
                                         {hasActionPermission && (
                                             <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">Actions</th>
@@ -386,7 +387,7 @@ export default function Dispensers({ dispensers, products, filters }: Dispensers
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {dispensers.data.length > 0 ? dispensers.data.map((dispenser, index) => (
+                                    {dispensers.data.length > 0 ? dispensers.data.map((dispenser) => (
                                         <tr key={dispenser.id} className="border-b hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700">
                                             <td className="p-4">
                                                 <input
@@ -400,7 +401,7 @@ export default function Dispensers({ dispensers, products, filters }: Dispensers
                                             <td className="p-4 text-[13px] dark:text-gray-300">{dispenser.product_name}</td>
                                             <td className="p-4 text-[13px] dark:text-gray-300">{dispenser.dispenser_item}</td>
                                             <td className="p-4 text-[13px] dark:text-gray-300">{dispenser.item_rate || '-'}</td>
-                                            <td className="p-4 text-[13px] dark:text-gray-300">{dispenser.start_reading || '-'}</td>
+                                            <td className="p-4 text-[13px] dark:text-gray-300">{dispenser.end_reading || '-'}</td>
                                             <td className="p-4">
                                                 <span className={`px-2 py-1 rounded text-xs ${dispenser.status ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'}`}>
                                                     {dispenser.status ? 'Active' : 'Disabled'}
@@ -444,7 +445,7 @@ export default function Dispensers({ dispensers, products, filters }: Dispensers
                                 </tbody>
                             </table>
                         </div>
-                        
+
                         <Pagination
                             currentPage={dispensers.current_page}
                             lastPage={dispensers.last_page}

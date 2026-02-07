@@ -49,15 +49,15 @@ class ShiftClosedListController extends Controller implements HasMiddleware
         $query->orderBy($sortField, $sortDirection);
 
         $shiftClosedList = $query->paginate(10);
-        
+
         $shiftClosedList->getCollection()->transform(function ($item) {
             $item->daily_reading = DB::table('daily_readings')
                 ->where('shift_id', $item->shift_id)
-                ->whereDate('created_at', $item->close_date)
+                ->whereDate('date', $item->close_date)
                 ->first();
             return $item;
         });
-        
+
         $shifts = Shift::all();
 
         return Inertia::render('ShiftClosedList/Index', [
@@ -77,13 +77,13 @@ class ShiftClosedListController extends Controller implements HasMiddleware
     public function show($id)
     {
         $shiftClosed = IsShiftClose::with('shift')->findOrFail($id);
-        
+
         $shiftClosed->daily_reading = DB::table('daily_readings')
             ->where('shift_id', $shiftClosed->shift_id)
-            ->whereDate('created_at', $shiftClosed->close_date)
+            ->whereDate('date', $shiftClosed->close_date)
             ->select(
                 'credit_sales',
-                'bank_sales', 
+                'bank_sales',
                 'cash_sales',
                 'credit_sales_other',
                 'bank_sales_other',
@@ -97,8 +97,7 @@ class ShiftClosedListController extends Controller implements HasMiddleware
                 'final_due_amount'
             )
             ->first();
-            
-        // Ensure all fields have default values if null
+
         if ($shiftClosed->daily_reading) {
             $shiftClosed->daily_reading->credit_sales_other = $shiftClosed->daily_reading->credit_sales_other ?? '0.00';
             $shiftClosed->daily_reading->bank_sales_other = $shiftClosed->daily_reading->bank_sales_other ?? '0.00';
@@ -106,13 +105,13 @@ class ShiftClosedListController extends Controller implements HasMiddleware
             $shiftClosed->daily_reading->cash_receive = $shiftClosed->daily_reading->cash_receive ?? '0.00';
             $shiftClosed->daily_reading->bank_receive = $shiftClosed->daily_reading->bank_receive ?? '0.00';
         }
-            
+
         $shiftClosed->dispenser_readings = DB::table('dispenser_readings')
             ->join('dispensers', 'dispenser_readings.dispenser_id', '=', 'dispensers.id')
             ->join('products', 'dispenser_readings.product_id', '=', 'products.id')
             ->leftJoin('employees', 'dispenser_readings.employee_id', '=', 'employees.id')
             ->where('dispenser_readings.shift_id', $shiftClosed->shift_id)
-            ->whereDate('dispenser_readings.created_at', $shiftClosed->close_date)
+            ->whereDate('dispenser_readings.transaction_date', $shiftClosed->close_date)
             ->select(
                 'dispenser_readings.*',
                 'dispensers.dispenser_name',
@@ -134,7 +133,7 @@ class ShiftClosedListController extends Controller implements HasMiddleware
                     'employee' => ['employee_name' => $reading->employee_name],
                 ];
             });
-            
+
         $shiftClosed->other_product_sales = DB::table('daily_other_product_sales')
             ->join('products', 'daily_other_product_sales.product_id', '=', 'products.id')
             ->join('units', 'daily_other_product_sales.unit_id', '=', 'units.id')
@@ -160,7 +159,7 @@ class ShiftClosedListController extends Controller implements HasMiddleware
                     'employee' => ['employee_name' => $sale->employee_name],
                 ];
             });
-        
+
         return Inertia::render('ShiftClosedList/Show', [
             'shiftClosed' => $shiftClosed
         ]);
@@ -169,22 +168,22 @@ class ShiftClosedListController extends Controller implements HasMiddleware
     public function destroy($id)
     {
         $shiftClosed = IsShiftClose::findOrFail($id);
-        
+
         DB::table('daily_readings')
             ->where('shift_id', $shiftClosed->shift_id)
-            ->whereDate('created_at', $shiftClosed->close_date)
+            ->whereDate('date', $shiftClosed->close_date)
             ->delete();
-            
+
         DB::table('dispenser_readings')
             ->where('shift_id', $shiftClosed->shift_id)
-            ->whereDate('created_at', $shiftClosed->close_date)
+            ->whereDate('transaction_date', $shiftClosed->close_date)
             ->delete();
-            
+
         DB::table('daily_other_product_sales')
             ->where('shift_id', $shiftClosed->shift_id)
             ->whereDate('date', $shiftClosed->close_date)
             ->delete();
-        
+
         $shiftClosed->delete();
         return redirect()->back()->with('success', 'Shift and related data deleted successfully.');
     }
@@ -197,24 +196,24 @@ class ShiftClosedListController extends Controller implements HasMiddleware
         ]);
 
         $shiftClosedRecords = IsShiftClose::whereIn('id', $request->ids)->get();
-        
+
         foreach ($shiftClosedRecords as $record) {
             DB::table('daily_readings')
                 ->where('shift_id', $record->shift_id)
-                ->whereDate('created_at', $record->close_date)
+                ->whereDate('date', $record->close_date)
                 ->delete();
-                
+
             DB::table('dispenser_readings')
                 ->where('shift_id', $record->shift_id)
-                ->whereDate('created_at', $record->close_date)
+                ->whereDate('transaction_date', $record->close_date)
                 ->delete();
-                
+
             DB::table('daily_other_product_sales')
                 ->where('shift_id', $record->shift_id)
                 ->whereDate('date', $record->close_date)
                 ->delete();
         }
-        
+
         IsShiftClose::whereIn('id', $request->ids)->delete();
         return redirect()->back()->with('success', 'Selected records and related data deleted successfully.');
     }
@@ -247,14 +246,14 @@ class ShiftClosedListController extends Controller implements HasMiddleware
         $query->orderBy($sortField, $sortDirection);
 
         $shiftClosedList = $query->get();
-        
+
         $shiftClosedList->transform(function ($item) {
             $item->daily_reading = DB::table('daily_readings')
                 ->where('shift_id', $item->shift_id)
-                ->whereDate('created_at', $item->close_date)
+                ->whereDate('date', $item->close_date)
                 ->select(
                     'credit_sales',
-                    'bank_sales', 
+                    'bank_sales',
                     'cash_sales',
                     'credit_sales_other',
                     'bank_sales_other',
@@ -270,7 +269,7 @@ class ShiftClosedListController extends Controller implements HasMiddleware
                 ->first();
             return $item;
         });
-        
+
         $companySetting = CompanySetting::first();
 
         $pdf = Pdf::loadView('pdf.shift-closed-list', compact('shiftClosedList', 'companySetting'));
@@ -280,13 +279,13 @@ class ShiftClosedListController extends Controller implements HasMiddleware
     public function downloadShowPdf($id)
     {
         $shiftClosed = IsShiftClose::with('shift')->findOrFail($id);
-        
+
         $shiftClosed->daily_reading = DB::table('daily_readings')
             ->where('shift_id', $shiftClosed->shift_id)
-            ->whereDate('created_at', $shiftClosed->close_date)
+            ->whereDate('date', $shiftClosed->close_date)
             ->select(
                 'credit_sales',
-                'bank_sales', 
+                'bank_sales',
                 'cash_sales',
                 'credit_sales_other',
                 'bank_sales_other',
@@ -300,7 +299,7 @@ class ShiftClosedListController extends Controller implements HasMiddleware
                 'final_due_amount'
             )
             ->first();
-            
+
         // Ensure all fields have default values if null
         if ($shiftClosed->daily_reading) {
             $shiftClosed->daily_reading->credit_sales_other = $shiftClosed->daily_reading->credit_sales_other ?? '0.00';
@@ -309,13 +308,13 @@ class ShiftClosedListController extends Controller implements HasMiddleware
             $shiftClosed->daily_reading->cash_receive = $shiftClosed->daily_reading->cash_receive ?? '0.00';
             $shiftClosed->daily_reading->bank_receive = $shiftClosed->daily_reading->bank_receive ?? '0.00';
         }
-            
+
         $shiftClosed->dispenser_readings = DB::table('dispenser_readings')
             ->join('dispensers', 'dispenser_readings.dispenser_id', '=', 'dispensers.id')
             ->join('products', 'dispenser_readings.product_id', '=', 'products.id')
             ->leftJoin('employees', 'dispenser_readings.employee_id', '=', 'employees.id')
             ->where('dispenser_readings.shift_id', $shiftClosed->shift_id)
-            ->whereDate('dispenser_readings.created_at', $shiftClosed->close_date)
+            ->whereDate('dispenser_readings.transaction_date', $shiftClosed->close_date)
             ->select(
                 'dispenser_readings.*',
                 'dispensers.dispenser_name',
@@ -337,7 +336,7 @@ class ShiftClosedListController extends Controller implements HasMiddleware
                     'employee' => ['employee_name' => $reading->employee_name],
                 ];
             });
-            
+
         $shiftClosed->other_product_sales = DB::table('daily_other_product_sales')
             ->join('products', 'daily_other_product_sales.product_id', '=', 'products.id')
             ->join('units', 'daily_other_product_sales.unit_id', '=', 'units.id')
@@ -363,7 +362,7 @@ class ShiftClosedListController extends Controller implements HasMiddleware
                     'employee' => ['employee_name' => $sale->employee_name],
                 ];
             });
-        
+
         $companySetting = CompanySetting::first();
 
         $pdf = Pdf::loadView('pdf.shift-closed-show', compact('shiftClosed', 'companySetting'));

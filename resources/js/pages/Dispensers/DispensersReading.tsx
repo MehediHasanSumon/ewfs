@@ -407,8 +407,6 @@ export default function DispenserReading({
                 }
             }
 
-            console.log('Updating Credit Product:', { index, field, value, newProduct: newProducts[index] });
-
             return {
                 ...prevData,
                 products: newProducts,
@@ -456,10 +454,8 @@ export default function DispenserReading({
     };
 
     const getCreditFilteredVehicles = (customerId: string) => {
-        console.log('getCreditFilteredVehicles:', { customerId, vehiclesCount: vehicles.length });
         if (!customerId) return vehicles;
         const filtered = vehicles.filter((v) => v.customer_id.toString() === customerId);
-        console.log('Filtered Vehicles:', filtered.length);
         return filtered;
     };
 
@@ -603,16 +599,12 @@ export default function DispenserReading({
 
     const fetchShiftData = async (shiftDate: string, shiftId: string) => {
         if (!shiftDate || !shiftId) return;
-        console.log('Fetching shift data for:', shiftDate, shiftId);
         try {
             const response = await fetch(
                 `/product/get-shift-closing-data/${shiftDate}/${shiftId}`,
             );
-            console.log('Response status:', response.status);
             const result = await response.json();
-            console.log('API Result:', result);
             const summaryData = result?.getTotalSummeryReport?.[0] || {};
-            console.log('Summary Data:', summaryData);
             const productWiseCreditSalesData =
                 result?.getCreditSalesDetailsReport || [];
             const creditSalesByProduct: { [key: number]: number } = {};
@@ -667,7 +659,6 @@ export default function DispenserReading({
                         summaryData.total_office_payment_amount || 0
                     ).toString(),
                 };
-                console.log('Updated data:', newData);
                 setTimeout(
                     () =>
                         updateTotals(
@@ -851,12 +842,6 @@ export default function DispenserReading({
     }, [otherProductsSales, data.credit_sales_other, data.bank_sales_other]);
 
     useEffect(() => {
-        console.log(
-            'useEffect triggered - Date:',
-            data.transaction_date,
-            'Shift:',
-            data.shift_id,
-        );
         if (data.transaction_date && data.shift_id) {
             fetchShiftData(data.transaction_date, data.shift_id);
         }
