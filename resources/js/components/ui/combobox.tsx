@@ -78,7 +78,7 @@ export function Combobox({
         />
       </div>
       {isOpen && filteredOptions.length > 0 && (
-        <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-md max-h-60 overflow-auto">
+        <div className="absolute z-[150] w-full mt-1 bg-popover border rounded-md shadow-md max-h-60 overflow-auto">
           {filteredOptions.map((option, index) => (
             <div
               key={index}

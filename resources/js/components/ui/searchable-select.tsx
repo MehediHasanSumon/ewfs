@@ -82,7 +82,7 @@ export function SearchableSelect({
             </button>
 
             {isOpen && (
-                <div className="absolute top-full z-50 mt-1 w-full rounded-md border bg-popover shadow-md animate-in fade-in-0 zoom-in-95 dark:border-gray-600 dark:bg-gray-700">
+                <div className="absolute top-full z-[150] mt-1 w-full rounded-md border bg-popover shadow-md animate-in fade-in-0 zoom-in-95 dark:border-gray-600 dark:bg-gray-700">
                     <div className="p-2 border-b dark:border-gray-600">
                         <div className="relative">
                             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
