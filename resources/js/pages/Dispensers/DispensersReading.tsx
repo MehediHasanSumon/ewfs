@@ -290,7 +290,7 @@ export default function DispenserReading({
             product_id: reading.product_id,
             item_rate: reading.item_rate,
             start_reading: reading.start_reading,
-            end_reading: reading.end_reading || reading.start_reading,
+            end_reading: reading.end_reading,
             meter_test: reading.meter_test || 0,
             reading_by: '',
             net_reading: 0,
@@ -497,10 +497,7 @@ export default function DispenserReading({
             [field]: parseFloat(value) || 0,
         };
         const reading = newReadings[index];
-        const netReading = Math.max(
-            0,
-            reading.end_reading - reading.start_reading - reading.meter_test,
-        );
+        const netReading = reading.end_reading - reading.start_reading - reading.meter_test;
         const totalSale = netReading * reading.item_rate;
         newReadings[index].net_reading = netReading;
         newReadings[index].total_sale = totalSale;
