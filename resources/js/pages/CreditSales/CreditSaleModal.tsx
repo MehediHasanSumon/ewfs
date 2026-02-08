@@ -69,27 +69,33 @@ export interface CreditSale {
 interface CreditSaleModalProps {
     isOpen: boolean;
     onClose: () => void;
+    onSuccess?: () => void;
     editingSale: CreditSale | null;
     products: Product[];
     vehicles: Vehicle[];
     customers: Customer[];
     shifts: Shift[];
     closedShifts: ClosedShift[];
+    initialSaleDate?: string;
+    initialShiftId?: string;
 }
 
 export function CreditSaleModal({
     isOpen,
     onClose,
+    onSuccess,
     editingSale,
     products,
     vehicles,
     customers,
     shifts,
     closedShifts,
+    initialSaleDate,
+    initialShiftId,
 }: CreditSaleModalProps) {
-    const [data, setDataState] = useState({
-        sale_date: '',
-        shift_id: '',
+    const buildInitialState = () => ({
+        sale_date: initialSaleDate || '',
+        shift_id: initialShiftId || '',
         products: [
             {
                 product_id: '',
@@ -104,12 +110,28 @@ export function CreditSaleModal({
         ],
     });
 
+    const [data, setDataState] = useState(buildInitialState());
+
     const [processing, setProcessing] = useState(false);
     const [availableShifts, setAvailableShifts] = useState<Shift[]>(shifts);
+
+    const getAvailableShifts = (selectedDate: string) => {
+        if (!selectedDate) return shifts;
+
+        const closedShiftIds = closedShifts
+            .filter(cs => cs.close_date === selectedDate)
+            .map(cs => cs.shift_id);
+
+        return shifts.filter(shift => !closedShiftIds.includes(shift.id));
+    };
 
     useEffect(() => {
         if (editingSale && isOpen) {
             loadEditData();
+        } else if (isOpen) {
+            const initialState = buildInitialState();
+            setDataState(initialState);
+            setAvailableShifts(getAvailableShifts(initialState.sale_date));
         } else if (!isOpen) {
             reset();
         }
@@ -144,22 +166,9 @@ export function CreditSaleModal({
     };
 
     const reset = () => {
-        setDataState({
-            sale_date: '',
-            shift_id: '',
-            products: [
-                {
-                    product_id: '',
-                    customer_id: '',
-                    vehicle_id: '',
-                    memo_no: '',
-                    quantity: '',
-                    amount: '',
-                    due_amount: '',
-                    remarks: '',
-                }
-            ],
-        });
+        const initialState = buildInitialState();
+        setDataState(initialState);
+        setAvailableShifts(getAvailableShifts(initialState.sale_date));
     };
 
     const setData = (key: string, value: string) => {
@@ -192,6 +201,7 @@ export function CreditSaleModal({
                 onSuccess: () => {
                     onClose();
                     reset();
+                    onSuccess?.();
                 },
             });
         } else {
@@ -205,6 +215,7 @@ export function CreditSaleModal({
                     onClose();
                     reset();
                     setProcessing(false);
+                    onSuccess?.();
                 },
                 onError: () => {
                     setProcessing(false);
@@ -308,16 +319,6 @@ export function CreditSaleModal({
             return [];
         }
         return products.filter(p => selectedVehicle.products!.some(vp => vp.id === p.id));
-    };
-
-    const getAvailableShifts = (selectedDate: string) => {
-        if (!selectedDate) return shifts;
-        
-        const closedShiftIds = closedShifts
-            .filter(cs => cs.close_date === selectedDate)
-            .map(cs => cs.shift_id);
-        
-        return shifts.filter(shift => !closedShiftIds.includes(shift.id));
     };
 
     return (
