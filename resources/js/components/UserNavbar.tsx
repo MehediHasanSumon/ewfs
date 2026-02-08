@@ -17,7 +17,7 @@ interface PageProps {
 export default function UserNavbar() {
     const pageProps = usePage<PageProps>();
     const { auth, url } = pageProps.props || {};
-    
+
     // Fallback if auth is undefined
     const user = auth?.user || null;
 
@@ -40,6 +40,8 @@ export default function UserNavbar() {
                         <li><Link href="/contact" className={`px-3 py-4 ${isActive('/contact')} font-medium font-poppins text-sm transition-colors`}>Contact</Link></li>
                         {user ? (
                             <>
+                                <li><a href="https://dispenser.ddrbit.com/" className="px-3 py-4 font-medium font-poppins text-sm transition-colors">Dispenser</a></li>
+                                <li><a href="https://statement.ddrbit.com/" className="px-3 py-4 font-medium font-poppins text-sm transition-colors">Statement</a></li>
                                 <li><Link href="/dashboard" className={`px-3 py-4 ${isActive('/dashboard')} font-medium font-poppins text-sm transition-colors`}>Dashboard</Link></li>
                                 <li><Link href="/logout" method="post" as="button" className="px-3 py-4 text-[#012970] hover:text-[#4154f1] font-medium font-poppins text-sm transition-colors bg-transparent border-none cursor-pointer">Logout</Link></li>
                             </>
