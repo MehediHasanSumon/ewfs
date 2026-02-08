@@ -1,3 +1,4 @@
+import { Button } from '@/components/ui/button';
 import { FormModal } from '@/components/ui/form-modal';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,8 +9,9 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { useForm } from '@inertiajs/react';
-import { useCallback, useEffect } from 'react';
+import { router } from '@inertiajs/react';
+import { Edit, Plus, Trash2 } from 'lucide-react';
+import { useCallback, useState } from 'react';
 
 export interface PaymentVoucher {
     id: number;
@@ -63,6 +65,25 @@ interface PaymentVoucherModalProps {
     initialShiftId?: string;
 }
 
+const buildEmptyVoucher = () => ({
+    voucher_category_id: '',
+    payment_sub_type_id: '',
+    from_account_id: '',
+    to_account_id: '',
+    amount: '',
+    payment_method: 'Cash',
+    bank_type: '',
+    bank_name: '',
+    cheque_no: '',
+    cheque_date: '',
+    account_no: '',
+    branch_name: '',
+    mobile_bank: '',
+    mobile_number: '',
+    description: '',
+    remarks: '',
+});
+
 export function PaymentVoucherModal({
     isOpen,
     onClose,
@@ -80,129 +101,226 @@ export function PaymentVoucherModal({
     const buildInitialState = () => ({
         date: initialDate || '',
         shift_id: initialShiftId || '',
-        voucher_category_id: '',
-        payment_sub_type_id: '',
-        from_account_id: '',
-        to_account_id: '',
-        amount: '',
-        payment_method: 'Cash',
-        bank_type: '',
-        bank_name: '',
-        cheque_no: '',
-        cheque_date: '',
-        account_no: '',
-        branch_name: '',
-        mobile_bank: '',
-        mobile_number: '',
-        description: '',
-        remarks: '',
+        vouchers: [buildEmptyVoucher()],
     });
 
-    const { data, setData, post, put, processing, errors, reset } = useForm(
-        buildInitialState(),
-    );
+    const getInitialData = () => {
+        if (!editingVoucher) return buildInitialState();
+        return {
+            date: editingVoucher.date?.split('T')[0] || '',
+            shift_id: editingVoucher.shift?.id?.toString() || '',
+            vouchers: [
+                {
+                    voucher_category_id:
+                        editingVoucher.voucher_category?.id?.toString() || '',
+                    payment_sub_type_id:
+                        editingVoucher.payment_sub_type?.id?.toString() || '',
+                    from_account_id:
+                        editingVoucher.from_account?.id?.toString() || '',
+                    to_account_id:
+                        editingVoucher.to_account?.id?.toString() || '',
+                    amount: editingVoucher.transaction?.amount?.toString() || '',
+                    payment_method: editingVoucher.transaction?.payment_type
+                        ? editingVoucher.transaction.payment_type
+                              .charAt(0)
+                              .toUpperCase() +
+                          editingVoucher.transaction.payment_type.slice(1)
+                        : 'Cash',
+                    description: editingVoucher.description || '',
+                    bank_type: '',
+                    bank_name: '',
+                    cheque_no: '',
+                    cheque_date: '',
+                    account_no: '',
+                    branch_name: '',
+                    mobile_bank: '',
+                    mobile_number: '',
+                    remarks: editingVoucher.remarks || '',
+                },
+            ],
+        };
+    };
 
-    const getFilteredAccounts = useCallback(() => {
-        const groupName = data.payment_method === 'Cash' ? 'Cash in hand' :
-                         data.payment_method === 'Bank' ? 'Bank Account' :
-                         data.payment_method === 'Mobile Bank' ? 'Mobile Bank' : 'Other';
-        return groupedAccounts[groupName] || [];
-    }, [data.payment_method, groupedAccounts]);
+    const [data, setData] = useState(getInitialData);
+    const [errors, setErrors] = useState<Record<string, string>>({});
+    const [processing, setProcessing] = useState(false);
+
+    const reset = () => {
+        setData(buildInitialState());
+        setErrors({});
+    };
+
+    const setField = (key: 'date' | 'shift_id', value: string) => {
+        setData((prev) => ({ ...prev, [key]: value }));
+    };
+
+    const getFilteredAccounts = useCallback(
+        (paymentMethod: string) => {
+            const groupName =
+                paymentMethod === 'Cash'
+                    ? 'Cash in hand'
+                    : paymentMethod === 'Bank'
+                      ? 'Bank Account'
+                      : paymentMethod === 'Mobile Bank'
+                        ? 'Mobile Bank'
+                        : 'Other';
+            return groupedAccounts[groupName] || [];
+        },
+        [groupedAccounts],
+    );
 
     const getAvailableShifts = useCallback(() => {
         if (!data.date) return [];
-        
+
         const selectedDate = data.date;
         const closedShiftIds = closedShifts
-            .filter(cs => cs.close_date === selectedDate)
-            .map(cs => cs.shift_id);
-        
-        return shifts.filter(shift => !closedShiftIds.includes(shift.id));
+            .filter((cs) => cs.close_date === selectedDate)
+            .map((cs) => cs.shift_id);
+
+        return shifts.filter((shift) => !closedShiftIds.includes(shift.id));
     }, [data.date, shifts, closedShifts]);
 
-    useEffect(() => {
-        if (editingVoucher && isOpen) {
-            const paymentType = editingVoucher.transaction?.payment_type || 'cash';
-            const formattedPaymentMethod = paymentType.charAt(0).toUpperCase() + paymentType.slice(1);
-            
-            setData({
-                date: editingVoucher.date?.split('T')[0] || '',
-                shift_id: editingVoucher.shift?.id?.toString() || '',
-                from_account_id: editingVoucher.from_account?.id?.toString() || '',
-                to_account_id: editingVoucher.to_account?.id?.toString() || '',
-                amount: editingVoucher.transaction?.amount?.toString() || '',
-                payment_method: formattedPaymentMethod,
-                voucher_category_id: editingVoucher.voucher_category?.id?.toString() || '',
-                payment_sub_type_id: editingVoucher.payment_sub_type?.id?.toString() || '',
-                description: editingVoucher.description || '',
-                bank_type: '',
-                bank_name: '',
-                cheque_no: '',
-                cheque_date: '',
-                account_no: '',
-                branch_name: '',
-                mobile_bank: '',
-                mobile_number: '',
-                remarks: editingVoucher.remarks || '',
-            });
-        } else if (isOpen) {
-            setData(buildInitialState());
-        } else if (!editingVoucher && !isOpen) {
-            reset();
+    const updateVoucher = (index: number, field: string, value: string) => {
+        setData((prev) => {
+            const vouchers = [...prev.vouchers];
+            vouchers[index] = { ...vouchers[index], [field]: value };
+            if (field === 'payment_method') {
+                vouchers[index].from_account_id = '';
+            }
+            return { ...prev, vouchers };
+        });
+    };
+
+    const addVoucher = () => {
+        const firstVoucher = data.vouchers[0];
+        if (
+            !firstVoucher.voucher_category_id ||
+            !firstVoucher.payment_sub_type_id ||
+            !firstVoucher.from_account_id ||
+            !firstVoucher.to_account_id ||
+            !firstVoucher.amount
+        ) {
+            alert('Please fill required fields before adding.');
+            return;
         }
-    }, [editingVoucher, isOpen]);
+
+        setData((prev) => ({
+            ...prev,
+            vouchers: [buildEmptyVoucher(), ...prev.vouchers],
+        }));
+    };
+
+    const removeVoucher = (index: number) => {
+        setData((prev) => ({
+            ...prev,
+            vouchers: prev.vouchers.filter((_, i) => i != index),
+        }));
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        setErrors({});
+
         if (editingVoucher) {
-            put(`/vouchers/payment/${editingVoucher.id}`, {
+            const firstVoucher = data.vouchers[0];
+            const payload = {
+                date: data.date,
+                shift_id: data.shift_id,
+                ...firstVoucher,
+            };
+
+            setProcessing(true);
+            router.put(`/vouchers/payment/${editingVoucher.id}`, payload, {
                 onSuccess: () => {
                     onClose();
                     reset();
                     onSuccess?.();
                 },
-            });
-        } else {
-            post('/vouchers/payment', {
-                onSuccess: () => {
-                    onClose();
-                    reset();
-                    onSuccess?.();
+                onError: (errs) => {
+                    setErrors(errs as Record<string, string>);
+                },
+                onFinish: () => {
+                    setProcessing(false);
                 },
             });
+            return;
         }
+
+        const validVouchers = data.vouchers.filter(
+            (v) =>
+                v.voucher_category_id &&
+                v.payment_sub_type_id &&
+                v.from_account_id &&
+                v.to_account_id &&
+                v.amount,
+        );
+
+        if (validVouchers.length === 0) {
+            alert('Please add at least one voucher.');
+            return;
+        }
+
+        const payload = {
+            date: data.date,
+            shift_id: data.shift_id,
+            vouchers: validVouchers,
+        };
+
+        setProcessing(true);
+        router.post('/vouchers/payment', payload, {
+            onSuccess: () => {
+                onClose();
+                reset();
+                onSuccess?.();
+            },
+            onError: (errs) => {
+                setErrors(errs as Record<string, string>);
+            },
+            onFinish: () => {
+                setProcessing(false);
+            },
+        });
     };
+
+    const currentVoucher = data.vouchers[0];
+
+    if (!isOpen) {
+        return null;
+    }
 
     return (
         <FormModal
             isOpen={isOpen}
-            onClose={() => {
-                onClose();
-                reset();
-            }}
+            onClose={onClose}
             title={editingVoucher ? 'Edit Payment Voucher' : 'Create Payment Voucher'}
             onSubmit={handleSubmit}
             processing={processing}
             submitText={editingVoucher ? 'Update' : 'Create'}
-            className="max-w-2xl"
+            className="max-w-[65vw]"
         >
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-4 gap-4">
                 <div>
-                    <Label htmlFor="date" className="dark:text-gray-200">Date</Label>
+                    <Label htmlFor="date" className="dark:text-gray-200">
+                        Date
+                    </Label>
                     <Input
                         id="date"
                         type="date"
                         value={data.date}
-                        onChange={(e) => setData('date', e.target.value)}
+                        onChange={(e) => setField('date', e.target.value)}
                         className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                     />
-                    {errors.date && <span className="text-sm text-red-500">{errors.date}</span>}
+                    {errors.date && (
+                        <span className="text-sm text-red-500">{errors.date}</span>
+                    )}
                 </div>
                 <div>
-                    <Label htmlFor="shift_id" className="dark:text-gray-200">Shift</Label>
-                    <Select 
-                        value={data.shift_id} 
-                        onValueChange={(value) => setData('shift_id', value)}
+                    <Label htmlFor="shift_id" className="dark:text-gray-200">
+                        Shift
+                    </Label>
+                    <Select
+                        value={data.shift_id}
+                        onValueChange={(value) => setField('shift_id', value)}
                         disabled={!data.date}
                     >
                         <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
@@ -216,201 +334,119 @@ export function PaymentVoucherModal({
                             ))}
                         </SelectContent>
                     </Select>
-                    {errors.shift_id && <span className="text-sm text-red-500">{errors.shift_id}</span>}
-                </div>
-            </div>
-            <div>
-                <Label className="dark:text-gray-200">Category</Label>
-                <div className="mt-2 flex flex-wrap gap-4">
-                    {voucherCategories.map((category) => (
-                        <label key={category.id} className="flex items-center space-x-2">
-                            <input
-                                type="radio"
-                                name="voucher_category_id"
-                                value={category.id.toString()}
-                                checked={data.voucher_category_id === category.id.toString()}
-                                onChange={(e) => {
-                                    setData('voucher_category_id', e.target.value);
-                                    setData('payment_sub_type_id', '');
-                                }}
-                                className="rounded border-gray-300 dark:border-gray-600"
-                            />
-                            <span className="text-sm dark:text-gray-300">{category.name}</span>
-                        </label>
-                    ))}
-                </div>
-                {errors.voucher_category_id && <span className="text-sm text-red-500">{errors.voucher_category_id}</span>}
-            </div>
-            <div>
-                <Label htmlFor="payment_sub_type_id" className="dark:text-gray-200">Payment Sub Type</Label>
-                <Select 
-                    value={data.payment_sub_type_id} 
-                    onValueChange={(value) => setData('payment_sub_type_id', value)}
-                    disabled={!data.voucher_category_id}
-                >
-                    <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                        <SelectValue placeholder="Choose sub type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {paymentSubTypes.filter(subType => 
-                            subType.voucher_category_id.toString() === data.voucher_category_id
-                        ).map((subType) => (
-                            <SelectItem key={subType.id} value={subType.id.toString()}>
-                                {subType.name}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-                {errors.payment_sub_type_id && <span className="text-sm text-red-500">{errors.payment_sub_type_id}</span>}
-            </div>
-            <div>
-                <Label htmlFor="payment_method" className="dark:text-gray-200">Payment Method</Label>
-                <Select value={data.payment_method} onValueChange={(value) => {
-                    setData('payment_method', value);
-                    setData('from_account_id', '');
-                }}>
-                    <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                        <SelectValue placeholder="Choose payment method" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="Cash">Cash</SelectItem>
-                        <SelectItem value="Bank">Bank</SelectItem>
-                        <SelectItem value="Mobile Bank">Mobile Bank</SelectItem>
-                    </SelectContent>
-                </Select>
-                {errors.payment_method && <span className="text-sm text-red-500">{errors.payment_method}</span>}
-            </div>
-
-            {data.payment_method === 'Bank' && (
-                <div className="space-y-4 border-t pt-4">
-                    <h4 className="font-medium dark:text-white">Bank Payment Details</h4>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <Label htmlFor="bank_type" className="dark:text-gray-200">Bank Type</Label>
-                            <Select value={data.bank_type} onValueChange={(value) => setData('bank_type', value)}>
-                                <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                    <SelectValue placeholder="Choose bank type" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="Cheque">Cheque</SelectItem>
-                                    <SelectItem value="Cash Deposit">Cash Deposit</SelectItem>
-                                    <SelectItem value="Online">Online</SelectItem>
-                                    <SelectItem value="CHT">CHT</SelectItem>
-                                    <SelectItem value="RTGS">RTGS</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div>
-                            <Label htmlFor="bank_name" className="dark:text-gray-200">Bank Name</Label>
-                            <Input
-                                id="bank_name"
-                                placeholder="Enter bank name"
-                                value={data.bank_name}
-                                onChange={(e) => setData('bank_name', e.target.value)}
-                                className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                            />
-                        </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <Label htmlFor="branch_name" className="dark:text-gray-200">Branch Name</Label>
-                            <Input
-                                id="branch_name"
-                                placeholder="Enter branch name"
-                                value={data.branch_name}
-                                onChange={(e) => setData('branch_name', e.target.value)}
-                                className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                            />
-                        </div>
-                        <div>
-                            <Label htmlFor="account_no" className="dark:text-gray-200">Account Number</Label>
-                            <Input
-                                id="account_no"
-                                placeholder="Enter account number"
-                                value={data.account_no}
-                                onChange={(e) => setData('account_no', e.target.value)}
-                                className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                            />
-                        </div>
-                    </div>
-                    {data.bank_type === 'Cheque' && (
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <Label htmlFor="cheque_no" className="dark:text-gray-200">Cheque Number</Label>
-                                <Input
-                                    id="cheque_no"
-                                    placeholder="Enter cheque number"
-                                    value={data.cheque_no}
-                                    onChange={(e) => setData('cheque_no', e.target.value)}
-                                    className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                />
-                            </div>
-                            <div>
-                                <Label htmlFor="cheque_date" className="dark:text-gray-200">Cheque Date</Label>
-                                <Input
-                                    id="cheque_date"
-                                    type="date"
-                                    value={data.cheque_date}
-                                    onChange={(e) => setData('cheque_date', e.target.value)}
-                                    className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                />
-                            </div>
-                        </div>
+                    {errors.shift_id && (
+                        <span className="text-sm text-red-500">{errors.shift_id}</span>
                     )}
                 </div>
-            )}
-
-            {data.payment_method === 'Mobile Bank' && (
-                <div className="space-y-4 border-t pt-4">
-                    <h4 className="font-medium dark:text-white">Mobile Bank Details</h4>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <Label htmlFor="mobile_bank" className="dark:text-gray-200">Mobile Bank</Label>
-                            <Select value={data.mobile_bank} onValueChange={(value) => setData('mobile_bank', value)}>
-                                <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
-                                    <SelectValue placeholder="Choose mobile bank" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="bKash">bKash</SelectItem>
-                                    <SelectItem value="Nagad">Nagad</SelectItem>
-                                    <SelectItem value="Rocket">Rocket</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div>
-                            <Label htmlFor="mobile_number" className="dark:text-gray-200">Mobile Number</Label>
-                            <Input
-                                id="mobile_number"
-                                placeholder="Enter mobile number"
-                                value={data.mobile_number}
-                                onChange={(e) => setData('mobile_number', e.target.value)}
-                                className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                            />
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            <div className="grid grid-cols-2 gap-4">
                 <div>
-                    <Label htmlFor="from_account_id" className="dark:text-gray-200">From Account</Label>
-                    <Select value={data.from_account_id} onValueChange={(value) => setData('from_account_id', value)}>
+                    <Label className="dark:text-gray-200">Category</Label>
+                    <Select
+                        value={currentVoucher.voucher_category_id}
+                        onValueChange={(value) => {
+                            updateVoucher(0, 'voucher_category_id', value);
+                            updateVoucher(0, 'payment_sub_type_id', '');
+                        }}
+                    >
+                        <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                            <SelectValue placeholder="Choose category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {voucherCategories.map((category) => (
+                                <SelectItem key={category.id} value={category.id.toString()}>
+                                    {category.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    {errors['vouchers.0.voucher_category_id'] && (
+                        <span className="text-sm text-red-500">{errors['vouchers.0.voucher_category_id']}</span>
+                    )}
+                </div>
+                <div>
+                    <Label htmlFor="payment_sub_type_id" className="dark:text-gray-200">
+                        Payment Sub Type
+                    </Label>
+                    <Select
+                        value={currentVoucher.payment_sub_type_id}
+                        onValueChange={(value) => updateVoucher(0, 'payment_sub_type_id', value)}
+                        disabled={!currentVoucher.voucher_category_id}
+                    >
+                        <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                            <SelectValue placeholder="Choose sub type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {paymentSubTypes
+                                .filter(
+                                    (subType) =>
+                                        subType.voucher_category_id.toString() ===
+                                        currentVoucher.voucher_category_id,
+                                )
+                                .map((subType) => (
+                                    <SelectItem key={subType.id} value={subType.id.toString()}>
+                                        {subType.name}
+                                    </SelectItem>
+                                ))}
+                        </SelectContent>
+                    </Select>
+                    {errors['vouchers.0.payment_sub_type_id'] && (
+                        <span className="text-sm text-red-500">{errors['vouchers.0.payment_sub_type_id']}</span>
+                    )}
+                </div>
+            </div>
+
+            <div className="grid grid-cols-4 gap-4">
+                <div>
+                    <Label htmlFor="payment_method" className="dark:text-gray-200">
+                        Payment Method
+                    </Label>
+                    <Select
+                        value={currentVoucher.payment_method}
+                        onValueChange={(value) => updateVoucher(0, 'payment_method', value)}
+                    >
+                        <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                            <SelectValue placeholder="Choose payment method" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="Cash">Cash</SelectItem>
+                            <SelectItem value="Bank">Bank</SelectItem>
+                            <SelectItem value="Mobile Bank">Mobile Bank</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    {errors['vouchers.0.payment_method'] && (
+                        <span className="text-sm text-red-500">{errors['vouchers.0.payment_method']}</span>
+                    )}
+                </div>
+                <div>
+                    <Label htmlFor="from_account_id" className="dark:text-gray-200">
+                        From Account
+                    </Label>
+                    <Select
+                        value={currentVoucher.from_account_id}
+                        onValueChange={(value) => updateVoucher(0, 'from_account_id', value)}
+                    >
                         <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
                             <SelectValue placeholder="Choose source account" />
                         </SelectTrigger>
                         <SelectContent>
-                            {getFilteredAccounts().map((account) => (
+                            {getFilteredAccounts(currentVoucher.payment_method).map((account) => (
                                 <SelectItem key={account.id} value={account.id.toString()}>
                                     {account.name}
                                 </SelectItem>
                             ))}
                         </SelectContent>
                     </Select>
-                    {errors.from_account_id && <span className="text-sm text-red-500">{errors.from_account_id}</span>}
+                    {errors['vouchers.0.from_account_id'] && (
+                        <span className="text-sm text-red-500">{errors['vouchers.0.from_account_id']}</span>
+                    )}
                 </div>
                 <div>
-                    <Label htmlFor="to_account_id" className="dark:text-gray-200">To Account</Label>
-                    <Select value={data.to_account_id} onValueChange={(value) => setData('to_account_id', value)}>
+                    <Label htmlFor="to_account_id" className="dark:text-gray-200">
+                        To Account
+                    </Label>
+                    <Select
+                        value={currentVoucher.to_account_id}
+                        onValueChange={(value) => updateVoucher(0, 'to_account_id', value)}
+                    >
                         <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
                             <SelectValue placeholder="Choose destination account" />
                         </SelectTrigger>
@@ -422,45 +458,267 @@ export function PaymentVoucherModal({
                             ))}
                         </SelectContent>
                     </Select>
-                    {errors.to_account_id && <span className="text-sm text-red-500">{errors.to_account_id}</span>}
+                    {errors['vouchers.0.to_account_id'] && (
+                        <span className="text-sm text-red-500">{errors['vouchers.0.to_account_id']}</span>
+                    )}
+                </div>
+                <div>
+                    <Label htmlFor="amount" className="dark:text-gray-200">
+                        Amount
+                    </Label>
+                    <Input
+                        id="amount"
+                        type="number"
+                        step="0.01"
+                        placeholder="Enter amount"
+                        value={currentVoucher.amount}
+                        onChange={(e) => updateVoucher(0, 'amount', e.target.value)}
+                        className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                    />
+                    {errors['vouchers.0.amount'] && (
+                        <span className="text-sm text-red-500">{errors['vouchers.0.amount']}</span>
+                    )}
                 </div>
             </div>
 
-            <div>
-                <Label htmlFor="amount" className="dark:text-gray-200">Amount</Label>
-                <Input
-                    id="amount"
-                    type="number"
-                    step="0.01"
-                    placeholder="Enter amount"
-                    value={data.amount}
-                    onChange={(e) => setData('amount', e.target.value)}
-                    className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                />
-                {errors.amount && <span className="text-sm text-red-500">{errors.amount}</span>}
-            </div>
+            {currentVoucher.payment_method === 'Bank' && (
+                <div className="grid grid-cols-4 gap-4">
+                    <div>
+                        <Label htmlFor="bank_type" className="dark:text-gray-200">
+                            Bank Type
+                        </Label>
+                        <Select
+                            value={currentVoucher.bank_type}
+                            onValueChange={(value) => updateVoucher(0, 'bank_type', value)}
+                        >
+                            <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                <SelectValue placeholder="Select type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="Cheque">Cheque</SelectItem>
+                                <SelectItem value="Cash Deposit">Cash Deposit</SelectItem>
+                                <SelectItem value="Online">Online</SelectItem>
+                                <SelectItem value="CHT">CHT</SelectItem>
+                                <SelectItem value="RTGS">RTGS</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div>
+                        <Label htmlFor="bank_name" className="dark:text-gray-200">
+                            Bank Name
+                        </Label>
+                        <Input
+                            id="bank_name"
+                            value={currentVoucher.bank_name}
+                            onChange={(e) => updateVoucher(0, 'bank_name', e.target.value)}
+                            className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        />
+                    </div>
+                    <div>
+                        <Label htmlFor="cheque_no" className="dark:text-gray-200">
+                            Cheque Number
+                        </Label>
+                        <Input
+                            id="cheque_no"
+                            value={currentVoucher.cheque_no}
+                            onChange={(e) => updateVoucher(0, 'cheque_no', e.target.value)}
+                            disabled={currentVoucher.bank_type !== 'Cheque'}
+                            className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        />
+                    </div>
+                    <div>
+                        <Label htmlFor="cheque_date" className="dark:text-gray-200">
+                            Cheque Date
+                        </Label>
+                        <Input
+                            id="cheque_date"
+                            type="date"
+                            value={currentVoucher.cheque_date}
+                            onChange={(e) => updateVoucher(0, 'cheque_date', e.target.value)}
+                            disabled={currentVoucher.bank_type !== 'Cheque'}
+                            className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        />
+                    </div>
+                </div>
+            )}
 
-            <div>
-                <Label htmlFor="description" className="dark:text-gray-200">Description</Label>
-                <Input
-                    id="description"
-                    placeholder="Enter description (optional)"
-                    value={data.description}
-                    onChange={(e) => setData('description', e.target.value)}
-                    className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                />
-            </div>
+            {currentVoucher.payment_method === 'Mobile Bank' ? (
+                <div className="grid grid-cols-4 gap-4">
+                    <div>
+                        <Label htmlFor="mobile_bank" className="dark:text-gray-200">
+                            Mobile Bank
+                        </Label>
+                        <Select
+                            value={currentVoucher.mobile_bank}
+                            onValueChange={(value) => updateVoucher(0, 'mobile_bank', value)}
+                        >
+                            <SelectTrigger className="dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                <SelectValue placeholder="Select mobile bank" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="bKash">bKash</SelectItem>
+                                <SelectItem value="Nagad">Nagad</SelectItem>
+                                <SelectItem value="Rocket">Rocket</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div>
+                        <Label htmlFor="mobile_number" className="dark:text-gray-200">
+                            Mobile Number
+                        </Label>
+                        <Input
+                            id="mobile_number"
+                            value={currentVoucher.mobile_number}
+                            onChange={(e) => updateVoucher(0, 'mobile_number', e.target.value)}
+                            className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        />
+                    </div>
+                    <div>
+                        <Label htmlFor="remarks" className="dark:text-gray-200">
+                            Remarks
+                        </Label>
+                        <Input
+                            id="remarks"
+                            placeholder="Enter remarks (optional)"
+                            value={currentVoucher.remarks}
+                            onChange={(e) => updateVoucher(0, 'remarks', e.target.value)}
+                            className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        />
+                    </div>
+                    <div className="flex items-end">
+                        {!editingVoucher && (
+                            <Button
+                                type="button"
+                                onClick={addVoucher}
+                                className="w-full bg-blue-600 hover:bg-blue-700"
+                            >
+                                <Plus className="mr-1 h-4 w-4" />
+                                Add Voucher
+                            </Button>
+                        )}
+                    </div>
+                </div>
+            ) : (
+                <div className="grid grid-cols-4 gap-4">
+                    <div
+                        className={
+                            currentVoucher.payment_method === 'Cash' ||
+                            currentVoucher.payment_method === 'Bank'
+                                ? 'col-span-3'
+                                : undefined
+                        }
+                    >
+                        <Label htmlFor="remarks" className="dark:text-gray-200">
+                            Remarks
+                        </Label>
+                        <Input
+                            id="remarks"
+                            placeholder="Enter remarks (optional)"
+                            value={currentVoucher.remarks}
+                            onChange={(e) => updateVoucher(0, 'remarks', e.target.value)}
+                            className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        />
+                    </div>
+                    <div className="flex items-end">
+                        {!editingVoucher && (
+                            <Button
+                                type="button"
+                                onClick={addVoucher}
+                                className="w-full bg-blue-600 hover:bg-blue-700"
+                            >
+                                <Plus className="mr-1 h-4 w-4" />
+                                Add Voucher
+                            </Button>
+                        )}
+                    </div>
+                    {currentVoucher.payment_method !== 'Cash' &&
+                        currentVoucher.payment_method !== 'Bank' && (
+                            <div className="col-span-2" />
+                        )}
+                </div>
+            )}
 
-            <div>
-                <Label htmlFor="remarks" className="dark:text-gray-200">Remarks</Label>
-                <Input
-                    id="remarks"
-                    placeholder="Enter remarks (optional)"
-                    value={data.remarks}
-                    onChange={(e) => setData('remarks', e.target.value)}
-                    className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                />
-            </div>
+            {!editingVoucher && (
+                <div className="mt-6">
+                    <table className="w-full border border-gray-300 dark:border-gray-600">
+                        <thead className="bg-gray-100 dark:bg-gray-700">
+                            <tr>
+                                <th className="p-2 text-left text-sm font-medium dark:text-gray-200">
+                                    SL
+                                </th>
+                                <th className="p-2 text-left text-sm font-medium dark:text-gray-200">
+                                    Category
+                                </th>
+                                <th className="p-2 text-left text-sm font-medium dark:text-gray-200">
+                                    From
+                                </th>
+                                <th className="p-2 text-left text-sm font-medium dark:text-gray-200">
+                                    To
+                                </th>
+                                <th className="p-2 text-left text-sm font-medium dark:text-gray-200">
+                                    Amount
+                                </th>
+                                <th className="p-2 text-left text-sm font-medium dark:text-gray-200">
+                                    Method
+                                </th>
+                                <th className="p-2 text-left text-sm font-medium dark:text-gray-200">
+                                    Action
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {data.vouchers
+                                .slice(1)
+                                .filter((v) => v.voucher_category_id)
+                                .map((voucher, index) => {
+                                    const actualIndex = index + 1;
+                                    const category = voucherCategories.find(
+                                        (c) => c.id.toString() === voucher.voucher_category_id,
+                                    );
+                                    const fromAccount = accounts.find(
+                                        (a) => a.id.toString() === voucher.from_account_id,
+                                    );
+                                    const toAccount = accounts.find(
+                                        (a) => a.id.toString() === voucher.to_account_id,
+                                    );
+                                    return (
+                                        <tr key={actualIndex} className="border-t dark:border-gray-600">
+                                            <td className="p-2 text-sm dark:text-white">{index + 1}</td>
+                                            <td className="p-2 text-sm dark:text-white">{category?.name || '-'}</td>
+                                            <td className="p-2 text-sm dark:text-white">{fromAccount?.name || '-'}</td>
+                                            <td className="p-2 text-sm dark:text-white">{toAccount?.name || '-'}</td>
+                                            <td className="p-2 text-sm dark:text-white">{voucher.amount || '0'}</td>
+                                            <td className="p-2 text-sm dark:text-white">{voucher.payment_method}</td>
+                                            <td className="p-2">
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            const editVoucher = data.vouchers[actualIndex];
+                                                            const newVouchers = data.vouchers.filter((_, i) => i !== actualIndex);
+                                                            newVouchers[0] = editVoucher;
+                                                            setData((prev) => ({ ...prev, vouchers: newVouchers }));
+                                                        }}
+                                                        className="text-indigo-600 hover:text-indigo-800"
+                                                    >
+                                                        <Edit className="h-4 w-4" />
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => removeVoucher(actualIndex)}
+                                                        className="text-red-600 hover:text-red-800"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                        </tbody>
+                    </table>
+                </div>
+            )}
         </FormModal>
     );
 }
