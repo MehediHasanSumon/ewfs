@@ -90,12 +90,6 @@ const mainNavItems = [
                 permission: 'view-customer',
             },
             {
-                title: 'Customer Ledger Summary',
-                href: '/customer-ledger-summary',
-                icon: BarChart3,
-                permission: 'view-customer',
-            },
-            {
                 title: 'Daily Statement Report',
                 href: '/daily-statement',
                 icon: BarChart3,
@@ -299,7 +293,7 @@ export function AppSidebar() {
                 <nav className="space-y-1">
                     {mainNavItems.map((item, index) => {
                         if (item.children) {
-                            const visibleChildren = item.children.filter((child) => 
+                            const visibleChildren = item.children.filter((child) =>
                                 child.permission ? can(child.permission) : true
                             );
                             if (visibleChildren.length === 0) return null;
@@ -309,8 +303,8 @@ export function AppSidebar() {
                                     <button
                                         onClick={() => toggleDropdown(item.title)}
                                         className={`flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-[13px] font-semibold transition-colors ${isParentActive(visibleChildren)
-                                                ? 'bg-indigo-600 text-white'
-                                                : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
+                                            ? 'bg-indigo-600 text-white'
+                                            : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
                                             }`}
                                     >
                                         <item.icon className="h-5 w-5" />
@@ -322,8 +316,8 @@ export function AppSidebar() {
                                     </button>
                                     <div
                                         className={`mt-1 ml-8 space-y-1 overflow-hidden transition-all duration-300 ease-in-out ${openDropdowns.includes(item.title)
-                                                ? 'max-h-[500px] opacity-100'
-                                                : 'max-h-0 opacity-0'
+                                            ? 'max-h-[500px] opacity-100'
+                                            : 'max-h-0 opacity-0'
                                             }`}
                                     >
                                         {visibleChildren.map((child, childIndex) => (
@@ -331,14 +325,14 @@ export function AppSidebar() {
                                                 key={childIndex}
                                                 href={child.href}
                                                 className={`relative flex items-center gap-3 rounded-lg px-3 py-2 text-[13px] transition-colors ${isActive(child.href)
-                                                        ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-200'
-                                                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100'
+                                                    ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-200'
+                                                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100'
                                                     }`}
                                             >
                                                 <span
                                                     className={`h-2 w-2 flex-shrink-0 rounded-full ${isActive(child.href)
-                                                            ? 'bg-indigo-500'
-                                                            : 'bg-gray-400 dark:bg-gray-500'
+                                                        ? 'bg-indigo-500'
+                                                        : 'bg-gray-400 dark:bg-gray-500'
                                                         }`}
                                                 ></span>
                                                 <span>{child.title}</span>
@@ -355,8 +349,8 @@ export function AppSidebar() {
                                     key={index}
                                     href={item.href || '#'}
                                     className={`flex items-center gap-3 rounded-lg px-3 py-2 text-[13px] font-semibold transition-colors ${isActive(item.href || '#')
-                                            ? 'bg-indigo-600 text-white'
-                                            : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
+                                        ? 'bg-indigo-600 text-white'
+                                        : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
                                         }`}
                                 >
                                     <item.icon className="h-5 w-5" />
