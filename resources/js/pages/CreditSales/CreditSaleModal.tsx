@@ -551,6 +551,24 @@ export function CreditSaleModal({
                                     );
                                 })}
                             </tbody>
+                            <tfoot>
+                                <tr className="border-t bg-gray-50 dark:border-gray-600 dark:bg-gray-700">
+                                    <td colSpan={5} className="p-2 text-right text-sm font-medium dark:text-gray-200">
+                                        Total
+                                    </td>
+                                    <td className="p-2 text-sm font-semibold dark:text-white">
+                                        {data.products
+                                            .slice(1)
+                                            .filter((p) => p.product_id)
+                                            .reduce((sum, p) => {
+                                                const amount = parseFloat(p.due_amount || p.amount || '0') || 0;
+                                                return sum + amount;
+                                            }, 0)
+                                            .toFixed(2)}
+                                    </td>
+                                    <td className="p-2" />
+                                </tr>
+                            </tfoot>
                         </table>
                     </div>
                 )}

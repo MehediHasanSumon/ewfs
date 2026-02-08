@@ -1407,6 +1407,7 @@ export default function DispenserReading({
                     initialShiftId={data.shift_id}
                 />
                 <ReceivedVoucherModal
+                    key={`receive-${isCashReceiveOpen}-${data.transaction_date}-${data.shift_id}`}
                     isOpen={isCashReceiveOpen}
                     onClose={() => setIsCashReceiveOpen(false)}
                     onSuccess={() => {
@@ -1429,6 +1430,7 @@ export default function DispenserReading({
                 />
 
                 <PaymentVoucherModal
+                        key={`payment-${isCashPaymentOpen}-${data.transaction_date}-${data.shift_id}`}
                         isOpen={isCashPaymentOpen}
                         onClose={() => setIsCashPaymentOpen(false)}
                         onSuccess={() => {
