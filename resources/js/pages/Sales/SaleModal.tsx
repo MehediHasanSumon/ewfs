@@ -44,11 +44,11 @@ interface Product {
     id: number;
     product_name: string;
     product_code: string;
-    unit: { name: string };
+    unit?: { name: string };
     sales_price: number;
     stock?: {
         current_stock: number;
-        available_stock: number;
+        available_stock?: number;
     };
 }
 
@@ -60,7 +60,7 @@ interface Vehicle {
         id: number;
         product_name: string;
     }[];
-    customer: {
+    customer?: {
         id: number;
         name: string;
     } | null;
@@ -85,35 +85,41 @@ interface SalesHistory {
 interface SaleModalProps {
     isOpen: boolean;
     onClose: () => void;
+    onSuccess?: () => void;
     editingSale: Sale | null;
     accounts: Account[];
     groupedAccounts: Record<string, Account[]>;
     products: Product[];
     vehicles: Vehicle[];
-    salesHistory: SalesHistory[];
+    salesHistory?: SalesHistory[];
     shifts: Shift[];
     closedShifts: ClosedShift[];
-    uniqueCustomers: string[];
-    uniqueVehicles: string[];
+    uniqueCustomers?: string[];
+    uniqueVehicles?: string[];
+    initialSaleDate?: string;
+    initialShiftId?: string;
 }
 
 export function SaleModal({
     isOpen,
     onClose,
+    onSuccess,
     editingSale,
     accounts,
     groupedAccounts,
     products,
     vehicles,
-    salesHistory,
+    salesHistory = [],
     shifts,
     closedShifts,
-    uniqueCustomers,
-    uniqueVehicles,
+    uniqueCustomers = [],
+    uniqueVehicles = [],
+    initialSaleDate,
+    initialShiftId,
 }: SaleModalProps) {
-    const [data, setDataState] = useState({
-        sale_date: '',
-        shift_id: '',
+    const buildInitialState = () => ({
+        sale_date: initialSaleDate || '',
+        shift_id: initialShiftId || '',
         products: [
             {
                 product_id: '',
@@ -141,12 +147,18 @@ export function SaleModal({
         ],
     });
 
+    const [data, setDataState] = useState(buildInitialState());
+
     const [processing, setProcessing] = useState(false);
     const [availableShifts, setAvailableShifts] = useState<Shift[]>(shifts);
 
     useEffect(() => {
         if (editingSale && isOpen) {
             loadEditData();
+        } else if (isOpen) {
+            const initialState = buildInitialState();
+            setDataState(initialState);
+            setAvailableShifts(getAvailableShifts(initialState.sale_date));
         } else if (!isOpen) {
             reset();
         }
@@ -200,35 +212,9 @@ export function SaleModal({
     };
 
     const reset = () => {
-        setDataState({
-            sale_date: '',
-            shift_id: '',
-            products: [
-                {
-                    product_id: '',
-                    customer: '',
-                    vehicle_no: '',
-                    memo_no: '',
-                    quantity: '',
-                    amount: '',
-                    discount_type: 'Fixed',
-                    discount: '',
-                    payment_type: 'Cash',
-                    to_account_id: '',
-                    paid_amount: '',
-                    due_amount: '',
-                    bank_type: '',
-                    bank_name: '',
-                    cheque_no: '',
-                    cheque_date: '',
-                    branch_name: '',
-                    account_no: '',
-                    mobile_bank: '',
-                    mobile_number: '',
-                    remarks: '',
-                }
-            ],
-        });
+        const initialState = buildInitialState();
+        setDataState(initialState);
+        setAvailableShifts(getAvailableShifts(initialState.sale_date));
     };
 
     const setData = (key: string, value: string) => {
@@ -273,6 +259,7 @@ export function SaleModal({
                 onSuccess: () => {
                     onClose();
                     reset();
+                    onSuccess?.();
                 },
             });
         } else {
@@ -286,6 +273,7 @@ export function SaleModal({
                     onClose();
                     reset();
                     setProcessing(false);
+                    onSuccess?.();
                 },
                 onError: () => {
                     setProcessing(false);

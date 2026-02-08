@@ -29,7 +29,7 @@ interface Vehicle {
         id: number;
         product_name: string;
     }[];
-    customer: {
+    customer?: {
         id: number;
         name: string;
     } | null;

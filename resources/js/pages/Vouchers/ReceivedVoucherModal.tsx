@@ -51,6 +51,7 @@ interface Shift {
 interface ReceivedVoucherModalProps {
     isOpen: boolean;
     onClose: () => void;
+    onSuccess?: () => void;
     editingVoucher: ReceivedVoucher | null;
     accounts: Account[];
     groupedAccounts: Record<string, Account[]>;
@@ -58,11 +59,14 @@ interface ReceivedVoucherModalProps {
     closedShifts: Array<{close_date: string; shift_id: number}>;
     voucherCategories: VoucherCategory[];
     paymentSubTypes: PaymentSubType[];
+    initialDate?: string;
+    initialShiftId?: string;
 }
 
 export function ReceivedVoucherModal({
     isOpen,
     onClose,
+    onSuccess,
     editingVoucher,
     accounts,
     groupedAccounts,
@@ -70,10 +74,12 @@ export function ReceivedVoucherModal({
     closedShifts,
     voucherCategories,
     paymentSubTypes,
+    initialDate,
+    initialShiftId,
 }: ReceivedVoucherModalProps) {
-    const { data, setData, post, put, processing, errors, reset } = useForm({
-        date: '',
-        shift_id: '',
+    const buildInitialState = () => ({
+        date: initialDate || '',
+        shift_id: initialShiftId || '',
         voucher_category_id: '',
         payment_sub_type_id: '',
         from_account_id: '',
@@ -91,6 +97,10 @@ export function ReceivedVoucherModal({
         description: '',
         remarks: '',
     });
+
+    const { data, setData, post, put, processing, errors, reset } = useForm(
+        buildInitialState(),
+    );
 
     useEffect(() => {
         if (editingVoucher && isOpen) {
@@ -115,6 +125,8 @@ export function ReceivedVoucherModal({
                 mobile_number: '',
                 remarks: editingVoucher.remarks || '',
             });
+        } else if (isOpen) {
+            setData(buildInitialState());
         } else if (!isOpen) {
             reset();
         }
@@ -150,6 +162,7 @@ export function ReceivedVoucherModal({
                 onSuccess: () => {
                     onClose();
                     reset();
+                    onSuccess?.();
                 },
             });
         } else {
@@ -157,6 +170,7 @@ export function ReceivedVoucherModal({
                 onSuccess: () => {
                     onClose();
                     reset();
+                    onSuccess?.();
                 },
             });
         }

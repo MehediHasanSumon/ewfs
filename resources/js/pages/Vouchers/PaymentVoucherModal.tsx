@@ -51,6 +51,7 @@ interface Shift {
 interface PaymentVoucherModalProps {
     isOpen: boolean;
     onClose: () => void;
+    onSuccess?: () => void;
     editingVoucher: PaymentVoucher | null;
     accounts: Account[];
     groupedAccounts: Record<string, Account[]>;
@@ -58,11 +59,14 @@ interface PaymentVoucherModalProps {
     closedShifts: Array<{close_date: string; shift_id: number}>;
     voucherCategories: VoucherCategory[];
     paymentSubTypes: PaymentSubType[];
+    initialDate?: string;
+    initialShiftId?: string;
 }
 
 export function PaymentVoucherModal({
     isOpen,
     onClose,
+    onSuccess,
     editingVoucher,
     accounts,
     groupedAccounts,
@@ -70,10 +74,12 @@ export function PaymentVoucherModal({
     closedShifts,
     voucherCategories,
     paymentSubTypes,
+    initialDate,
+    initialShiftId,
 }: PaymentVoucherModalProps) {
-    const { data, setData, post, put, processing, errors, reset } = useForm({
-        date: '',
-        shift_id: '',
+    const buildInitialState = () => ({
+        date: initialDate || '',
+        shift_id: initialShiftId || '',
         voucher_category_id: '',
         payment_sub_type_id: '',
         from_account_id: '',
@@ -91,6 +97,10 @@ export function PaymentVoucherModal({
         description: '',
         remarks: '',
     });
+
+    const { data, setData, post, put, processing, errors, reset } = useForm(
+        buildInitialState(),
+    );
 
     const getFilteredAccounts = useCallback(() => {
         const groupName = data.payment_method === 'Cash' ? 'Cash in hand' :
@@ -135,6 +145,8 @@ export function PaymentVoucherModal({
                 mobile_number: '',
                 remarks: editingVoucher.remarks || '',
             });
+        } else if (isOpen) {
+            setData(buildInitialState());
         } else if (!editingVoucher && !isOpen) {
             reset();
         }
@@ -147,6 +159,7 @@ export function PaymentVoucherModal({
                 onSuccess: () => {
                     onClose();
                     reset();
+                    onSuccess?.();
                 },
             });
         } else {
@@ -154,6 +167,7 @@ export function PaymentVoucherModal({
                 onSuccess: () => {
                     onClose();
                     reset();
+                    onSuccess?.();
                 },
             });
         }
