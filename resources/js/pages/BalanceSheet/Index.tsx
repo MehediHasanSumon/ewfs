@@ -36,6 +36,7 @@ interface BalanceSheetData {
         product_name: string;
         purchase_price: number;
         sale_price: number;
+        effective_date: string;
         total_quantity: number;
         total_amount: number;
     }>;
@@ -43,6 +44,7 @@ interface BalanceSheetData {
         product_name: string;
         purchase_price: number;
         sale_price: number;
+        effective_date: string;
         total_quantity: number;
         total_amount: number;
     }>;
@@ -217,6 +219,7 @@ export default function BalanceSheet({ data, filters = {} }: BalanceSheetProps) 
                                         <th className="p-2 text-left text-[13px] font-medium dark:text-gray-300">Product</th>
                                         <th className="p-2 text-right text-[13px] font-medium dark:text-gray-300">Purchase Price</th>
                                         <th className="p-2 text-right text-[13px] font-medium dark:text-gray-300">Sale Price</th>
+                                        <th className="p-2 text-right text-[13px] font-medium dark:text-gray-300">Effective Date</th>
                                         <th className="p-2 text-right text-[13px] font-medium dark:text-gray-300">Total Liter</th>
                                         <th className="p-2 text-right text-[13px] font-medium dark:text-gray-300">Total Amount</th>
                                         <th className="p-2 text-right text-[13px] font-medium dark:text-gray-300">Total Profit</th>
@@ -232,6 +235,7 @@ export default function BalanceSheet({ data, filters = {} }: BalanceSheetProps) 
                                                 <td className="p-2 text-[13px] dark:text-white">{item.product_name}</td>
                                                 <td className="p-2 text-right text-[13px] dark:text-gray-300">{purchasePrice.toFixed(2)}</td>
                                                 <td className="p-2 text-right text-[13px] dark:text-gray-300">{salePrice.toFixed(2)}</td>
+                                                <td className="p-2 text-right text-[13px] dark:text-gray-300">{item.effective_date}</td>
                                                 <td className="p-2 text-right text-[13px] dark:text-gray-300">{item.total_quantity.toLocaleString()}</td>
                                                 <td className="p-2 text-right text-[13px] dark:text-gray-300">{item.total_amount.toLocaleString()}</td>
                                                 <td className="p-2 text-right text-[13px] dark:text-gray-300">{totalProfit.toLocaleString()}</td>
@@ -240,6 +244,7 @@ export default function BalanceSheet({ data, filters = {} }: BalanceSheetProps) 
                                     })}
                                     <tr className="border-b font-bold bg-gray-50 dark:bg-gray-700 dark:border-gray-700">
                                         <td className="p-2 text-[13px] dark:text-white">Total</td>
+                                        <td className="p-2 text-right text-[13px] dark:text-white">-</td>
                                         <td className="p-2 text-right text-[13px] dark:text-white">-</td>
                                         <td className="p-2 text-right text-[13px] dark:text-white">-</td>
                                         <td className="p-2 text-right text-[13px] dark:text-white">{[...data.sales_data, ...data.credit_sales_data].reduce((sum, item) => sum + parseFloat(item.total_quantity), 0).toLocaleString()}</td>
