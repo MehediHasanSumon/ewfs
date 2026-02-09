@@ -69,6 +69,10 @@ Route::get('/contact', function () {
     return Inertia::render('contact');
 });
 
+Route::get('/register', function () {
+    return Inertia::render('auth/register');
+})->middleware('check.registration');
+
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('dashboard/chart-data', [DashboardController::class, 'getChartData'])->name('dashboard.chart.data');

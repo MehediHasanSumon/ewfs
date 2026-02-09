@@ -110,6 +110,10 @@ class CompanySettingController extends Controller implements HasMiddleware
         }
 
         $input = $request->all();
+        
+        if (isset($input['is_registration'])) {
+            $input['is_registration'] = filter_var($input['is_registration'], FILTER_VALIDATE_BOOLEAN);
+        }
 
         if ($request->hasfile('company_logo')) {
             if ($companySetting->company_logo) {

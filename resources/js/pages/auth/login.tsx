@@ -8,7 +8,6 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { register } from '@/routes';
 import { store } from '@/routes/login';
 import { request } from '@/routes/password';
 import { Form, Head, Link } from '@inertiajs/react';
@@ -18,14 +17,21 @@ interface LoginProps {
     status?: string;
     canResetPassword: boolean;
     canRegister: boolean;
+    company?: {
+        name?: string;
+        logo?: string;
+    };
 }
 
 export default function Login({
     status,
     canResetPassword,
     canRegister,
+    company,
 }: LoginProps) {
     const [showPassword, setShowPassword] = useState(false);
+    const companyName = company?.name || 'Dispenser';
+    const companyLogo = company?.logo || '/images/logo.jpg';
 
     return (
         <>
@@ -41,21 +47,15 @@ export default function Login({
                             <div className="relative flex flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-indigo-600 to-purple-700 p-12 text-white">
                                 <div className="absolute inset-0 bg-black/10" />
                                 <div className="relative z-10 text-center">
-                                    <div className="mb-8 animate-bounce">
-                                        <svg
-                                            className="mx-auto mb-4 h-16 w-16"
-                                            fill="currentColor"
-                                            viewBox="0 0 20 20"
-                                        >
-                                            <path
-                                                fillRule="evenodd"
-                                                d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                                                clipRule="evenodd"
-                                            />
-                                        </svg>
+                                    <div className="mb-8">
+                                        <img
+                                            src={companyLogo}
+                                            alt="Company Logo"
+                                            className="mx-auto mb-4 h-16 w-16 rounded"
+                                        />
                                     </div>
                                     <h1 className="mb-4 text-4xl font-bold">
-                                        Welcome to Dispenser
+                                        Welcome to {companyName}
                                     </h1>
                                     <p className="mb-8 text-lg opacity-90">
                                         Your powerful dashboard for managing
@@ -273,7 +273,7 @@ export default function Login({
                                                                     account?{' '}
                                                                 </span>
                                                                 <Link
-                                                                    href={register()}
+                                                                    href="/register"
                                                                     className="text-sm font-medium text-indigo-600 hover:text-indigo-500 hover:underline"
                                                                 >
                                                                     Sign up

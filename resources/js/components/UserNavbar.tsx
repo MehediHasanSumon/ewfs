@@ -11,15 +11,23 @@ interface PageProps {
     auth?: {
         user: AuthUser | null;
     };
+    company?: {
+        name?: string;
+        logo?: string;
+        is_registration?: boolean;
+    };
     [key: string]: unknown;
 }
 
 export default function UserNavbar() {
     const pageProps = usePage<PageProps>();
-    const { auth, url } = pageProps.props || {};
+    const { auth, company, url } = pageProps.props || {};
 
     // Fallback if auth is undefined
     const user = auth?.user || null;
+    const isRegistrationEnabled = company?.is_registration === true;
+    const companyName = company?.name || 'East West Filling Station';
+    const companyLogo = company?.logo || '/images/logo.jpg';
 
     const isActive = (path: string) => {
         return url === path ? 'text-[#4154f1]' : 'text-[#012970] hover:text-[#4154f1]';
@@ -29,8 +37,8 @@ export default function UserNavbar() {
         <header id="header" className="header flex items-center fixed top-0 w-full z-[997] bg-white transition-all duration-500 py-5">
             <div className="container mx-auto max-w-7xl relative flex items-center px-4">
                 <a href="/" className="logo flex items-center mr-auto no-underline">
-                    <img src="/images/logo.jpg" alt="" className="max-h-9 mr-2" />
-                    <h2 className="sitename pt-2 text-3xl font-bold text-[#012970] font-nunito">East West Filling Station</h2>
+                    <img src={companyLogo} alt="" className="max-h-9 mr-2" />
+                    <h2 className="sitename pt-2 text-3xl font-bold text-[#012970] font-nunito">{companyName}</h2>
                 </a>
                 <nav id="navmenu" className="navmenu px-3">
                     <ul className="flex list-none p-0 m-0 items-center">
@@ -48,7 +56,9 @@ export default function UserNavbar() {
                         ) : (
                             <>
                                 <li><Link href="/login" className={`px-3 py-4 ${isActive('/login')} font-medium font-poppins text-sm transition-colors`}>SignIn</Link></li>
-                                <li><Link href="/register" className={`px-3 py-4 ${isActive('/register')} font-medium font-poppins text-sm transition-colors`}>SignUp</Link></li>
+                                {isRegistrationEnabled && (
+                                    <li><Link href="/register" className={`px-3 py-4 ${isActive('/register')} font-medium font-poppins text-sm transition-colors`}>SignUp</Link></li>
+                                )}
                             </>
                         )}
                     </ul>
