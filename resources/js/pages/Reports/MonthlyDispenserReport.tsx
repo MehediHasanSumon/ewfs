@@ -30,7 +30,7 @@ interface ProductSale {
     product_name: string;
     total_sale: number;
     price: number;
-    amount: number; // total_sale * price
+    amount: number;
 }
 
 interface DispenserReading {
@@ -38,15 +38,15 @@ interface DispenserReading {
     sl: number;
     date: string;
     shift: string;
-    product_sales: ProductSale[]; // Dynamic products
+    product_sales: ProductSale[];
     received_due_paid: number;
-    amount: number; // Sum of all product amounts + received_due_paid
+    amount: number;
     credit_sale: number;
     bank_sale: number;
     expenses: number;
     purchase: number;
-    cash_in_hand: number; // amount - credit_sale - bank_sale
-    total_balance: number; // amount - credit_sale - bank_sale - expenses - purchase
+    cash_in_hand: number;
+    total_balance: number;
 }
 
 interface Product {

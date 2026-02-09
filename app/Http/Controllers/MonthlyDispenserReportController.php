@@ -47,7 +47,7 @@ class MonthlyDispenserReportController extends Controller
         $readings = $shiftClosedList->getCollection()->map(function ($shift, $index) use ($request, $shiftClosedList) {
             $dailyReading = DB::table('daily_readings')
                 ->where('shift_id', $shift->shift_id)
-                ->whereDate('created_at', $shift->close_date)
+                ->where('date', $shift->close_date)
                 ->first();
                 
             $voucherData = DB::table('vouchers')
@@ -61,7 +61,6 @@ class MonthlyDispenserReportController extends Controller
             $dispenserSales = DB::table('dispenser_readings')
                 ->join('products', 'dispenser_readings.product_id', '=', 'products.id')
                 ->where('dispenser_readings.shift_id', $shift->shift_id)
-                ->whereDate('dispenser_readings.created_at', $shift->close_date)
                 ->where('dispenser_readings.net_reading', '>', 0)
                 ->when($request->product_id, function($q) use ($request) {
                     $q->where('products.id', $request->product_id);
@@ -158,7 +157,7 @@ class MonthlyDispenserReportController extends Controller
         $readings = $shiftClosedList->map(function ($shift, $index) use ($request) {
             $dailyReading = DB::table('daily_readings')
                 ->where('shift_id', $shift->shift_id)
-                ->whereDate('created_at', $shift->close_date)
+                ->where('date', $shift->close_date)
                 ->first();
                 
             $voucherData = DB::table('vouchers')
@@ -172,7 +171,6 @@ class MonthlyDispenserReportController extends Controller
             $dispenserSales = DB::table('dispenser_readings')
                 ->join('products', 'dispenser_readings.product_id', '=', 'products.id')
                 ->where('dispenser_readings.shift_id', $shift->shift_id)
-                ->whereDate('dispenser_readings.created_at', $shift->close_date)
                 ->where('dispenser_readings.net_reading', '>', 0)
                 ->when($request->product_id, function($q) use ($request) {
                     $q->where('products.id', $request->product_id);
