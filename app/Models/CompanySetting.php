@@ -22,6 +22,7 @@ class CompanySetting extends Model
         'vat_rate',
         'currency',
         'company_logo',
+        'is_registration',
         'status',
     ];
 }

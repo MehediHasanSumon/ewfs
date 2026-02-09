@@ -73,7 +73,7 @@ class CompanySettingController extends Controller implements HasMiddleware
             $image = $request->file('company_logo');
             $name = date('d-m-Y-H-i-s') . '_' . $image->getClientOriginalName();
             $path = Storage::disk('public')->putFileAs('images/company', $image, $name);
-            $input['company_logo'] = $path;
+            $input['company_logo'] = '/' . $path;
         }
 
         CompanySetting::create($input);
@@ -113,12 +113,12 @@ class CompanySettingController extends Controller implements HasMiddleware
 
         if ($request->hasfile('company_logo')) {
             if ($companySetting->company_logo) {
-                Storage::disk('public')->delete($companySetting->company_logo);
+                Storage::disk('public')->delete(ltrim($companySetting->company_logo, '/'));
             }
             $file = $request->file('company_logo');
             $name = date('d-m-Y-H-i-s') . '_' . $file->getClientOriginalName();
             $path = Storage::disk('public')->putFileAs('images/company', $file, $name);
-            $input['company_logo'] = $path;
+            $input['company_logo'] = '/' . $path;
         }
 
         $companySetting->update($input);
@@ -128,7 +128,7 @@ class CompanySettingController extends Controller implements HasMiddleware
     public function destroy(CompanySetting $companySetting)
     {
         if ($companySetting->company_logo) {
-            Storage::disk('public')->delete($companySetting->company_logo);
+            Storage::disk('public')->delete(ltrim($companySetting->company_logo, '/'));
         }
         
         $companySetting->delete();

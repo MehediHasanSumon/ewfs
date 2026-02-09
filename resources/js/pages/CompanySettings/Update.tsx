@@ -25,6 +25,7 @@ interface CompanySetting {
     vat_rate?: number;
     currency?: string;
     company_logo?: string;
+    is_registration?: boolean;
     status: number;
 }
 
@@ -48,7 +49,25 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function Update({ companySetting }: UpdateProps) {
-    const { data, setData, post, processing, errors } = useForm({
+    const { data, setData, processing, errors } = useForm<{
+        company_name: string;
+        company_details: string;
+        proprietor_name: string;
+        company_address: string;
+        factory_address: string;
+        company_mobile: string;
+        company_phone: string;
+        company_email: string;
+        trade_license: string;
+        tin_no: string;
+        bin_no: string;
+        vat_no: string;
+        vat_rate: string;
+        currency: string;
+        company_logo: File | null;
+        is_registration: boolean;
+        status: number;
+    }>({
         company_name: companySetting.company_name,
         company_details: companySetting.company_details || '',
         proprietor_name: companySetting.proprietor_name || '',
@@ -64,26 +83,28 @@ export default function Update({ companySetting }: UpdateProps) {
         vat_rate: companySetting.vat_rate?.toString() || '',
         currency: companySetting.currency || '',
         company_logo: null,
+        is_registration: companySetting.is_registration || false,
         status: companySetting.status
     });
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         const formData = new FormData();
-        Object.keys(data).forEach(key => {
-            if (data[key] !== null && data[key] !== undefined) {
-                formData.append(key, data[key]);
+        (Object.keys(data) as Array<keyof typeof data>).forEach(key => {
+            const value = data[key];
+            if (value !== null && value !== undefined) {
+                formData.append(key, value as any);
             }
         });
         formData.append('_method', 'PUT');
-        
+
         router.post(`/company-settings/${companySetting.id}`, formData);
     };
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Edit Company Setting" />
-            
+
             <div className="p-6 space-y-6">
                 <div className="flex justify-between items-center">
                     <div>
@@ -235,6 +256,18 @@ export default function Update({ companySetting }: UpdateProps) {
                                         onChange={(e) => setData('currency', e.target.value)}
                                         className="dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                     />
+                                </div>
+                                <div>
+                                    <Label htmlFor="is_registration" className="dark:text-gray-200">User Registration</Label>
+                                    <select
+                                        id="is_registration"
+                                        value={data.is_registration ? 1 : 0}
+                                        onChange={(e) => setData('is_registration', e.target.value === '1')}
+                                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
+                                    >
+                                        <option value={1}>Enable</option>
+                                        <option value={0}>Disable</option>
+                                    </select>
                                 </div>
                                 <div>
                                     <Label htmlFor="status" className="dark:text-gray-200">Status</Label>

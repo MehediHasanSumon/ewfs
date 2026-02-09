@@ -23,6 +23,7 @@ interface CompanySetting {
     vat_rate?: number;
     currency?: string;
     company_logo?: string;
+    is_registration?: boolean;
     status: number;
     created_at: string;
 }
@@ -184,13 +185,27 @@ export default function Show({ companySetting }: ShowProps) {
                                             <img 
                                                 src={`/storage/${companySetting.company_logo}`} 
                                                 alt="Company Logo" 
-                                                className="max-w-full h-auto"
+                                                className="max-w-[200px] h-auto mx-auto"
                                             />
                                         </div>
                                     </div>
                                 ) : (
                                     <p className="text-gray-500 dark:text-gray-400 text-center py-8">No logo uploaded</p>
                                 )}
+                            </CardContent>
+                        </Card>
+
+                        <Card className="dark:bg-gray-800 dark:border-gray-700 mt-6">
+                            <CardHeader>
+                                <CardTitle className="dark:text-white">User Registration</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div>
+                                    <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Registration Status</label>
+                                    <span className={`inline-flex px-2 py-1 rounded text-xs mt-2 ${companySetting.is_registration ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'}`}>
+                                        {companySetting.is_registration ? 'Enabled' : 'Disabled'}
+                                    </span>
+                                </div>
                             </CardContent>
                         </Card>
                     </div>

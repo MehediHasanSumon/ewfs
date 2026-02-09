@@ -26,7 +26,25 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 export default function Create() {
     const [processing, setProcessing] = useState(false);
-    const [data, setData] = useState({
+    const [data, setData] = useState<{
+        company_name: string;
+        company_details: string;
+        proprietor_name: string;
+        company_address: string;
+        factory_address: string;
+        company_mobile: string;
+        company_phone: string;
+        company_email: string;
+        trade_license: string;
+        tin_no: string;
+        bin_no: string;
+        vat_no: string;
+        vat_rate: string;
+        currency: string;
+        company_logo: File | null;
+        is_registration: boolean;
+        status: number;
+    }>({
         company_name: '',
         company_details: '',
         proprietor_name: '',
@@ -42,6 +60,7 @@ export default function Create() {
         vat_rate: '',
         currency: '',
         company_logo: null,
+        is_registration: false,
         status: 1,
     });
 
@@ -96,7 +115,7 @@ export default function Create() {
                                         id="company_name"
                                         value={data.company_name}
                                         onChange={(e) =>
-                                            setData({...data, company_name: e.target.value})
+                                            setData({ ...data, company_name: e.target.value })
                                         }
                                         className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                         required
@@ -113,7 +132,7 @@ export default function Create() {
                                         id="company_details"
                                         value={data.company_details}
                                         onChange={(e) =>
-                                            setData({...data, company_details: e.target.value})
+                                            setData({ ...data, company_details: e.target.value })
                                         }
                                         className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                     />
@@ -129,7 +148,7 @@ export default function Create() {
                                         id="proprietor_name"
                                         value={data.proprietor_name}
                                         onChange={(e) =>
-                                            setData({...data, proprietor_name: e.target.value})
+                                            setData({ ...data, proprietor_name: e.target.value })
                                         }
                                         className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                     />
@@ -145,7 +164,7 @@ export default function Create() {
                                         id="company_address"
                                         value={data.company_address}
                                         onChange={(e) =>
-                                            setData({...data, company_address: e.target.value})
+                                            setData({ ...data, company_address: e.target.value })
                                         }
                                         className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                     />
@@ -161,7 +180,7 @@ export default function Create() {
                                         id="factory_address"
                                         value={data.factory_address}
                                         onChange={(e) =>
-                                            setData({...data, factory_address: e.target.value})
+                                            setData({ ...data, factory_address: e.target.value })
                                         }
                                         className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                     />
@@ -177,7 +196,7 @@ export default function Create() {
                                         id="company_mobile"
                                         value={data.company_mobile}
                                         onChange={(e) =>
-                                            setData({...data, company_mobile: e.target.value})
+                                            setData({ ...data, company_mobile: e.target.value })
                                         }
                                         className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                     />
@@ -193,7 +212,7 @@ export default function Create() {
                                         id="company_phone"
                                         value={data.company_phone}
                                         onChange={(e) =>
-                                            setData({...data, company_phone: e.target.value})
+                                            setData({ ...data, company_phone: e.target.value })
                                         }
                                         className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                     />
@@ -210,7 +229,7 @@ export default function Create() {
                                         type="email"
                                         value={data.company_email}
                                         onChange={(e) =>
-                                            setData({...data, company_email: e.target.value})
+                                            setData({ ...data, company_email: e.target.value })
                                         }
                                         className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                     />
@@ -226,7 +245,7 @@ export default function Create() {
                                         id="trade_license"
                                         value={data.trade_license}
                                         onChange={(e) =>
-                                            setData({...data, trade_license: e.target.value})
+                                            setData({ ...data, trade_license: e.target.value })
                                         }
                                         className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                     />
@@ -242,7 +261,7 @@ export default function Create() {
                                         id="tin_no"
                                         value={data.tin_no}
                                         onChange={(e) =>
-                                            setData({...data, tin_no: e.target.value})
+                                            setData({ ...data, tin_no: e.target.value })
                                         }
                                         className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                     />
@@ -258,7 +277,7 @@ export default function Create() {
                                         id="bin_no"
                                         value={data.bin_no}
                                         onChange={(e) =>
-                                            setData({...data, bin_no: e.target.value})
+                                            setData({ ...data, bin_no: e.target.value })
                                         }
                                         className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                     />
@@ -274,7 +293,7 @@ export default function Create() {
                                         id="vat_no"
                                         value={data.vat_no}
                                         onChange={(e) =>
-                                            setData({...data, vat_no: e.target.value})
+                                            setData({ ...data, vat_no: e.target.value })
                                         }
                                         className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                     />
@@ -292,7 +311,7 @@ export default function Create() {
                                         step="0.01"
                                         value={data.vat_rate}
                                         onChange={(e) =>
-                                            setData({...data, vat_rate: e.target.value})
+                                            setData({ ...data, vat_rate: e.target.value })
                                         }
                                         className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                     />
@@ -308,10 +327,29 @@ export default function Create() {
                                         id="currency"
                                         value={data.currency}
                                         onChange={(e) =>
-                                            setData({...data, currency: e.target.value})
+                                            setData({ ...data, currency: e.target.value })
                                         }
                                         className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                     />
+                                </div>
+                                <div>
+                                    <Label
+                                        htmlFor="is_registration"
+                                        className="dark:text-gray-200"
+                                    >
+                                        User Registration
+                                    </Label>
+                                    <select
+                                        id="is_registration"
+                                        value={data.is_registration ? 1 : 0}
+                                        onChange={(e) =>
+                                            setData({ ...data, is_registration: e.target.value === '1' })
+                                        }
+                                        className="w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                    >
+                                        <option value={1}>Enable</option>
+                                        <option value={0}>Disable</option>
+                                    </select>
                                 </div>
                                 <div>
                                     <Label
@@ -324,7 +362,7 @@ export default function Create() {
                                         id="status"
                                         value={data.status}
                                         onChange={(e) =>
-                                            setData({...data, status: parseInt(e.target.value)})
+                                            setData({ ...data, status: parseInt(e.target.value) })
                                         }
                                         className="w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                     >
@@ -344,7 +382,7 @@ export default function Create() {
                                         type="file"
                                         accept="image/*"
                                         onChange={(e) =>
-                                            setData({...data, company_logo: e.target.files?.[0]})
+                                            setData({ ...data, company_logo: e.target.files?.[0] || null })
                                         }
                                         className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                     />
