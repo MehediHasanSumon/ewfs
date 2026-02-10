@@ -37,7 +37,7 @@ class HandleInertiaRequests extends Middleware
             ],
             'company' => [
                 'name' => $companySetting?->company_name ?? null,
-                'logo' => $companySetting?->company_logo ?? null,
+                'logo' => $companySetting?->company_logo ? asset('storage' . $companySetting->company_logo) : null,
                 'is_registration' => $companySetting?->is_registration ?? false,
             ],
         ];
