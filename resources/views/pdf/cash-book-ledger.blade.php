@@ -175,68 +175,50 @@
     </div>
 
     <div class="title-section">
-        <div class="title-box">Cash Book Ledger ({{ $startDate }} to {{ $endDate }})</div>
-    </div>
-
-    @forelse($ledgers as $index => $ledger)
-    @if($index > 0)
-    <div class="page-break"></div>
-    @endif
-
-    <div class="account-info">
-        <p><strong>Account Name:</strong> {{ $ledger['account']->name }}</p>
-        <p><strong>Account Number:</strong> {{ $ledger['account']->ac_number }}</p>
-        @if($ledger['account']->group)
-        <p><strong>Group:</strong> {{ $ledger['account']->group->name }}</p>
-        @endif
-        <p><strong>Closing Balance:</strong> {{ number_format(abs($ledger['closing_balance']), 2) }}</p>
+        <div class="title-box">Cash Book Ledger</div>
     </div>
 
     <table>
         <thead>
             <tr>
-                <th>SL</th>
                 <th>Date</th>
-                <th>Transaction ID</th>
-                <th>Description</th>
-                <th>Payment Type</th>
-                <th class="text-right">Debit</th>
-                <th class="text-right">Credit</th>
-                <th class="text-right">Balance</th>
+                <th>Shift</th>
+                <th class="text-right">Cash Payment</th>
+                <th class="text-right">Cash Received</th>
             </tr>
         </thead>
         <tbody>
-            @foreach($ledger['transactions'] as $txIndex => $transaction)
+            @php
+                $totalPayment = 0;
+                $totalReceived = 0;
+            @endphp
+            @forelse($closedShifts as $shift)
+            @php
+                $totalPayment += $shift->cash_payment;
+                $totalReceived += $shift->cash_receive;
+            @endphp
             <tr>
-                <td>{{ $txIndex + 1 }}</td>
-                <td>{{ $transaction->transaction_date }}</td>
-                <td>{{ $transaction->transaction_id }}</td>
-                <td>{{ $transaction->description }}</td>
-                <td style="text-transform: capitalize;">{{ $transaction->payment_type }}</td>
-                <td class="text-right">
-                    {{ $transaction->transaction_type === 'Dr' ? number_format($transaction->amount, 2) : '-' }}
-                </td>
-                <td class="text-right">
-                    {{ $transaction->transaction_type === 'Cr' ? number_format($transaction->amount, 2) : '-' }}
-                </td>
-                <td class="text-right">
-                    {{ number_format(abs($transaction->balance), 2) }}
-                </td>
+                <td>{{ date('d/m/Y', strtotime($shift->close_date)) }}</td>
+                <td>{{ $shift->shift->name }}</td>
+                <td class="text-right">{{ number_format($shift->cash_payment, 2) }}</td>
+                <td class="text-right">{{ number_format($shift->cash_receive, 2) }}</td>
             </tr>
-            @endforeach
+            @empty
+            <tr>
+                <td colspan="4" style="text-align: center; padding: 20px; color: #999;">No cash transactions found</td>
+            </tr>
+            @endforelse
+            @if(count($closedShifts) > 0)
             <tr style="font-weight: bold; background-color: #e0e0e0;">
-                <td colspan="5">Total:</td>
-                <td class="text-right">{{ number_format($ledger['total_debit'], 2) }}</td>
-                <td class="text-right">{{ number_format($ledger['total_credit'], 2) }}</td>
-                <td class="text-right">-</td>
+                <td colspan="2" class="text-right">Total:</td>
+                <td class="text-right">{{ number_format($totalPayment, 2) }}</td>
+                <td class="text-right">{{ number_format($totalReceived, 2) }}</td>
             </tr>
+            @endif
         </tbody>
     </table>
-    @empty
-    <p style="text-align: center; padding: 20px; color: #999;">No cash transactions found for the selected period</p>
-    @endforelse
 
-    @if(count($ledgers) > 0)
+    @if(count($closedShifts) > 0)
     <div class="signature-section">
         <table>
             <tr>

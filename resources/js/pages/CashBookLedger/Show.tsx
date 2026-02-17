@@ -10,13 +10,16 @@ import { usePermission } from '@/hooks/usePermission';
 interface Transaction {
     id: number;
     transaction_id: string;
-    transaction_date: string;
+    voucher_no: string;
+    date: string;
     transaction_time: string;
     transaction_type: 'Dr' | 'Cr';
     amount: number;
     description: string;
     payment_type: string;
-    account_name: string;
+    category_name: string;
+    from_account_name: string;
+    to_account_name: string;
 }
 
 interface ShiftClosed {
@@ -41,6 +44,13 @@ const breadcrumbs: BreadcrumbItem[] = [
 export default function Show({ shiftClosed, cashTransactions }: Props) {
     const { can } = usePermission();
     const canDownload = can('can-account-download');
+
+    const totalDebit = cashTransactions.reduce((sum, t) => 
+        t.from_account_name.toLowerCase().includes('cash') ? sum + Number(t.amount) : sum, 0
+    );
+    const totalCredit = cashTransactions.reduce((sum, t) => 
+        t.to_account_name.toLowerCase().includes('cash') ? sum + Number(t.amount) : sum, 0
+    );
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -88,19 +98,25 @@ export default function Show({ shiftClosed, cashTransactions }: Props) {
                                 <thead>
                                     <tr className="border-b dark:border-gray-700">
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
-                                            Time
+                                            Date
+                                        </th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
+                                            Shift
+                                        </th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
+                                            From Account
+                                        </th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
+                                            To Account
+                                        </th>
+                                        <th className="p-4 text-right text-[13px] font-medium dark:text-gray-300">
+                                            Amount
+                                        </th>
+                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
+                                            Category
                                         </th>
                                         <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
                                             Transaction ID
-                                        </th>
-                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
-                                            Account
-                                        </th>
-                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
-                                            Description
-                                        </th>
-                                        <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
-                                            Payment Type
                                         </th>
                                         <th className="p-4 text-right text-[13px] font-medium dark:text-gray-300">
                                             Debit
@@ -112,42 +128,63 @@ export default function Show({ shiftClosed, cashTransactions }: Props) {
                                 </thead>
                                 <tbody>
                                     {cashTransactions.length > 0 ? (
-                                        cashTransactions.map((transaction) => (
-                                            <tr
-                                                key={transaction.id}
-                                                className="border-b hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700"
-                                            >
-                                                <td className="p-4 text-[13px] dark:text-white">
-                                                    {transaction.transaction_time}
-                                                </td>
-                                                <td className="p-4 text-[13px] dark:text-gray-300">
-                                                    {transaction.transaction_id}
-                                                </td>
-                                                <td className="p-4 text-[13px] dark:text-gray-300">
-                                                    {transaction.account_name}
-                                                </td>
-                                                <td className="p-4 text-[13px] dark:text-gray-300">
-                                                    {transaction.description}
-                                                </td>
-                                                <td className="p-4 text-[13px] capitalize dark:text-gray-300">
-                                                    {transaction.payment_type}
+                                        <>
+                                            {cashTransactions.map((transaction) => (
+                                                <tr
+                                                    key={transaction.id}
+                                                    className="border-b hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700"
+                                                >
+                                                    <td className="p-4 text-[13px] dark:text-white">
+                                                        {new Date(transaction.date).toLocaleDateString()}
+                                                    </td>
+                                                    <td className="p-4 text-[13px] dark:text-gray-300">
+                                                        {shiftClosed.shift.name}
+                                                    </td>
+                                                    <td className="p-4 text-[13px] dark:text-gray-300">
+                                                        {transaction.from_account_name}
+                                                    </td>
+                                                    <td className="p-4 text-[13px] dark:text-gray-300">
+                                                        {transaction.to_account_name}
+                                                    </td>
+                                                    <td className="p-4 text-right text-[13px] dark:text-white">
+                                                        {Number(transaction.amount).toFixed(2)}
+                                                    </td>
+                                                    <td className="p-4 text-[13px] dark:text-gray-300">
+                                                        {transaction.category_name}
+                                                    </td>
+                                                    <td className="p-4 text-[13px] dark:text-gray-300">
+                                                        {transaction.transaction_id}
+                                                    </td>
+                                                    <td className="p-4 text-right text-[13px] dark:text-white">
+                                                        {transaction.from_account_name.toLowerCase().includes('cash')
+                                                            ? Number(transaction.amount).toFixed(2)
+                                                            : '-'}
+                                                    </td>
+                                                    <td className="p-4 text-right text-[13px] dark:text-white">
+                                                        {transaction.to_account_name.toLowerCase().includes('cash')
+                                                            ? Number(transaction.amount).toFixed(2)
+                                                            : '-'}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                            <tr className="border-t-2 bg-gray-100 font-semibold dark:border-gray-600 dark:bg-gray-700">
+                                                <td colSpan={7} className="p-4 text-right text-[13px] dark:text-white">
+                                                    Total:
                                                 </td>
                                                 <td className="p-4 text-right text-[13px] dark:text-white">
-                                                    {transaction.transaction_type === 'Dr'
-                                                        ? Number(transaction.amount).toFixed(2)
-                                                        : '-'}
+                                                    {totalDebit.toFixed(2)}
+                                                    <div className="text-[11px] text-gray-500 dark:text-gray-400">Cash Payment</div>
                                                 </td>
                                                 <td className="p-4 text-right text-[13px] dark:text-white">
-                                                    {transaction.transaction_type === 'Cr'
-                                                        ? Number(transaction.amount).toFixed(2)
-                                                        : '-'}
+                                                    {totalCredit.toFixed(2)}
+                                                    <div className="text-[11px] text-gray-500 dark:text-gray-400">Cash Received</div>
                                                 </td>
                                             </tr>
-                                        ))
+                                        </>
                                     ) : (
                                         <tr>
                                             <td
-                                                colSpan={7}
+                                                colSpan={9}
                                                 className="p-8 text-center text-gray-500 dark:text-gray-400"
                                             >
                                                 No cash transactions found

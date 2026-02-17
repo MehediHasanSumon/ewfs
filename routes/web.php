@@ -365,9 +365,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     
     // Cash Book Ledger routes
     Route::get('cash-book-ledger', [CashBookLedgerController::class, 'index'])->name('cash-book-ledger.index');
+    Route::get('cash-book-ledger/download-pdf', [CashBookLedgerController::class, 'downloadPdf'])->name('cash-book-ledger.download.pdf');
     Route::get('cash-book-ledger/{id}', [CashBookLedgerController::class, 'show'])->name('cash-book-ledger.show');
     Route::get('cash-book-ledger/{id}/download-pdf', [CashBookLedgerController::class, 'downloadShiftPdf'])->name('cash-book-ledger.shift.download.pdf');
-    Route::get('cash-book-ledger/download-pdf', [CashBookLedgerController::class, 'downloadPdf'])->name('cash-book-ledger.download.pdf');
     
     // General Ledger routes
     Route::get('general-ledger', [GeneralLedgerController::class, 'index'])->name('general-ledger.index');

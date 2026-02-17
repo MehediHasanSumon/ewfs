@@ -19,10 +19,8 @@ interface ClosedShift {
         id: number;
         name: string;
     };
-    daily_reading?: {
-        cash_payment: number;
-        cash_receive: number;
-    };
+    cash_payment: number;
+    cash_receive: number;
 }
 
 interface Shift {
@@ -209,10 +207,10 @@ export default function CashBookLedger({ closedShifts, shifts, filters }: Props)
                                                     {shift.shift?.name}
                                                 </td>
                                                 <td className="p-4 text-right text-[13px] dark:text-white">
-                                                    {Number(shift.daily_reading?.cash_payment || 0).toFixed(2)}
+                                                    {Number(shift.cash_payment || 0).toFixed(2)}
                                                 </td>
                                                 <td className="p-4 text-right text-[13px] dark:text-white">
-                                                    {Number(shift.daily_reading?.cash_receive || 0).toFixed(2)}
+                                                    {Number(shift.cash_receive || 0).toFixed(2)}
                                                 </td>
                                                 <td className="p-4 text-[13px] dark:text-white">
                                                     <Button
@@ -225,6 +223,18 @@ export default function CashBookLedger({ closedShifts, shifts, filters }: Props)
                                                 </td>
                                             </tr>
                                         ))}
+                                        <tr className="border-t-2 bg-gray-100 font-semibold dark:border-gray-600 dark:bg-gray-700">
+                                            <td colSpan={2} className="p-4 text-right text-[13px] dark:text-white">
+                                                Total:
+                                            </td>
+                                            <td className="p-4 text-right text-[13px] dark:text-white">
+                                                {closedShifts.reduce((sum, shift) => sum + Number(shift.cash_payment || 0), 0).toFixed(2)}
+                                            </td>
+                                            <td className="p-4 text-right text-[13px] dark:text-white">
+                                                {closedShifts.reduce((sum, shift) => sum + Number(shift.cash_receive || 0), 0).toFixed(2)}
+                                            </td>
+                                            <td></td>
+                                        </tr>
                                     </tbody>
                                 </table>
                             </div>

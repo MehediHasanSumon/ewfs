@@ -142,15 +142,15 @@
     <table>
         <thead>
             <tr>
-                <th style="width: 60px;">Time</th>
-                <th style="width: 80px;">Voucher No</th>
-                <th style="width: 70px;">Type</th>
-                <th style="width: 100px;">From Account</th>
-                <th style="width: 100px;">To Account</th>
-                <th style="width: 80px;">Payment Type</th>
-                <th>Description</th>
-                <th class="text-right" style="width: 70px;">Debit</th>
-                <th class="text-right" style="width: 70px;">Credit</th>
+                <th style="width: 50px;">Time</th>
+                <th style="width: 60px;">Voucher No</th>
+                <th style="width: 55px;">Type</th>
+                <th style="width: 80px;">From Account</th>
+                <th style="width: 80px;">To Account</th>
+                <th style="width: 60px;">Category</th>
+                <th class="text-right" style="width: 70px;">Transaction ID</th>
+                <th class="text-right" style="width: 60px;">Debit</th>
+                <th class="text-right" style="width: 60px;">Credit</th>
             </tr>
         </thead>
         <tbody>
@@ -160,9 +160,13 @@
             @endphp
             @forelse($cashTransactions as $transaction)
             @php
-                if($transaction->transaction_type === 'Dr') {
+                $isCashFrom = stripos($transaction->from_account_name, 'cash') !== false;
+                $isCashTo = stripos($transaction->to_account_name, 'cash') !== false;
+                
+                if($isCashFrom) {
                     $totalDebit += $transaction->amount;
-                } else {
+                }
+                if($isCashTo) {
                     $totalCredit += $transaction->amount;
                 }
             @endphp
@@ -172,10 +176,10 @@
                 <td>{{ $transaction->voucher_type }}</td>
                 <td>{{ $transaction->from_account_name }}</td>
                 <td>{{ $transaction->to_account_name }}</td>
-                <td>{{ $transaction->payment_type }}</td>
-                <td>{{ $transaction->description ?? '-' }}</td>
-                <td class="text-right">{{ $transaction->transaction_type === 'Dr' ? number_format($transaction->amount, 2) : '-' }}</td>
-                <td class="text-right">{{ $transaction->transaction_type === 'Cr' ? number_format($transaction->amount, 2) : '-' }}</td>
+                <td>{{ $transaction->category_name }}</td>
+                <td class="text-right">{{ $transaction->transaction_id }}</td>
+                <td class="text-right">{{ stripos($transaction->from_account_name, 'cash') !== false ? number_format($transaction->amount, 2) : '-' }}</td>
+                <td class="text-right">{{ stripos($transaction->to_account_name, 'cash') !== false ? number_format($transaction->amount, 2) : '-' }}</td>
             </tr>
             @empty
             <tr>
@@ -185,8 +189,8 @@
             @if(count($cashTransactions) > 0)
             <tr class="total-row">
                 <td colspan="7" class="text-right">Total:</td>
-                <td class="text-right">{{ number_format($totalDebit, 2) }}</td>
-                <td class="text-right">{{ number_format($totalCredit, 2) }}</td>
+                <td class="text-right">{{ number_format($totalDebit, 2) }}<br><small>Cash Payment</small></td>
+                <td class="text-right">{{ number_format($totalCredit, 2) }}<br><small>Cash Received</small></td>
             </tr>
             <tr class="total-row">
                 <td colspan="7" class="text-right">Balance:</td>
