@@ -2,52 +2,41 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
-import { FileText, Filter, X } from 'lucide-react';
+import { FileText, Filter, X, Eye } from 'lucide-react';
 import { useState } from 'react';
 import { usePermission } from '@/hooks/usePermission';
 
-interface Account {
+interface ClosedShift {
     id: number;
-    name: string;
-    ac_number: string;
-    group: {
+    close_date: string;
+    shift_id: number;
+    shift: {
+        id: number;
         name: string;
+    };
+    daily_reading?: {
+        cash_payment: number;
+        cash_receive: number;
     };
 }
 
-interface Transaction {
+interface Shift {
     id: number;
-    transaction_id: string;
-    transaction_date: string;
-    transaction_type: 'Dr' | 'Cr';
-    amount: number;
-    description: string;
-    payment_type: string;
-    balance: number;
-}
-
-interface Ledger {
-    account: Account;
-    transactions: Transaction[];
-    total_debit: number;
-    total_credit: number;
-    closing_balance: number;
+    name: string;
 }
 
 interface Props {
-    ledgers: Ledger[];
+    closedShifts: ClosedShift[];
+    shifts: Shift[];
     filters: {
+        shift_id?: string;
         start_date?: string;
         end_date?: string;
-    };
-    summary: {
-        total_debit: number;
-        total_credit: number;
-        net_balance: number;
     };
 }
 
@@ -56,20 +45,18 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Cash Book Ledger', href: '/cash-book-ledger' },
 ];
 
-export default function CashBookLedger({ ledgers, filters, summary }: Props) {
+export default function CashBookLedger({ closedShifts, shifts, filters }: Props) {
     const { can } = usePermission();
     const canFilter = can('can-account-filter');
     const canDownload = can('can-account-download');
 
-    const [startDate, setStartDate] = useState(
-        filters?.start_date || new Date().toISOString().split('T')[0],
-    );
-    const [endDate, setEndDate] = useState(
-        filters?.end_date || new Date().toISOString().split('T')[0],
-    );
+    const [shiftId, setShiftId] = useState(filters?.shift_id || 'all');
+    const [startDate, setStartDate] = useState(filters?.start_date || '');
+    const [endDate, setEndDate] = useState(filters?.end_date || '');
 
     const applyFilters = () => {
         const params = new URLSearchParams();
+        if (shiftId && shiftId !== 'all') params.append('shift_id', shiftId);
         if (startDate) params.append('start_date', startDate);
         if (endDate) params.append('end_date', endDate);
 
@@ -77,9 +64,9 @@ export default function CashBookLedger({ ledgers, filters, summary }: Props) {
     };
 
     const clearFilters = () => {
-        const today = new Date().toISOString().split('T')[0];
-        setStartDate(today);
-        setEndDate(today);
+        setShiftId('all');
+        setStartDate('');
+        setEndDate('');
         router.get('/cash-book-ledger');
     };
 
@@ -97,7 +84,7 @@ export default function CashBookLedger({ ledgers, filters, summary }: Props) {
                             View cash account transactions and balances
                         </p>
                     </div>
-                    {ledgers.length > 0 && canDownload && (
+                    {closedShifts.length > 0 && canDownload && (
                         <Button
                             variant="success"
                             onClick={() => {
@@ -114,73 +101,6 @@ export default function CashBookLedger({ ledgers, filters, summary }: Props) {
                     )}
                 </div>
 
-                {/* Summary Cards */}
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                    <Card className="dark:border-gray-700 dark:bg-gray-800">
-                        <CardContent className="p-4">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                                        Total Debit
-                                    </p>
-                                    <p className="text-2xl font-bold text-red-600">
-                                        {summary.total_debit.toLocaleString()}
-                                    </p>
-                                </div>
-                                <div className="rounded-full bg-red-100 p-3 dark:bg-red-900">
-                                    <svg className="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                                    </svg>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="dark:border-gray-700 dark:bg-gray-800">
-                        <CardContent className="p-4">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                                        Total Credit
-                                    </p>
-                                    <p className="text-2xl font-bold text-green-600">
-                                        {summary.total_credit.toLocaleString()}
-                                    </p>
-                                </div>
-                                <div className="rounded-full bg-green-100 p-3 dark:bg-green-900">
-                                    <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
-                                    </svg>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="dark:border-gray-700 dark:bg-gray-800">
-                        <CardContent className="p-4">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                                        Net Balance
-                                    </p>
-                                    <p className={`text-2xl font-bold ${
-                                        summary.net_balance >= 0 
-                                            ? 'text-green-600' 
-                                            : 'text-red-600'
-                                    }`}>
-                                        {Math.abs(summary.net_balance).toLocaleString()}
-                                    </p>
-                                </div>
-                                <div className="rounded-full bg-blue-100 p-3 dark:bg-blue-900">
-                                    <svg className="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                                    </svg>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
-
                 {/* Filter Card */}
                 {canFilter && (
                     <Card className="dark:border-gray-700 dark:bg-gray-800">
@@ -192,6 +112,24 @@ export default function CashBookLedger({ ledgers, filters, summary }: Props) {
                         </CardHeader>
                         <CardContent>
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+                                <div>
+                                    <Label className="dark:text-gray-200">
+                                        Shift
+                                    </Label>
+                                    <Select value={shiftId} onValueChange={setShiftId}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="All Shifts" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All Shifts</SelectItem>
+                                            {shifts.map((shift) => (
+                                                <SelectItem key={shift.id} value={shift.id.toString()}>
+                                                    {shift.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                                 <div>
                                     <Label className="dark:text-gray-200">
                                         Start Date
@@ -216,7 +154,7 @@ export default function CashBookLedger({ ledgers, filters, summary }: Props) {
                                         className="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                     />
                                 </div>
-                                <div className="flex items-end gap-2 md:col-span-2">
+                                <div className="flex items-end gap-2">
                                     <Button onClick={applyFilters} className="px-4">
                                         Apply Filters
                                     </Button>
@@ -234,168 +172,69 @@ export default function CashBookLedger({ ledgers, filters, summary }: Props) {
                     </Card>
                 )}
 
-                {ledgers.length > 0 ? (
-                    <div className="space-y-6">
-                        {ledgers.map((ledger, index) => (
-                            <Card
-                                key={index}
-                                className="dark:border-gray-700 dark:bg-gray-800"
-                            >
-                                <CardHeader>
-                                    <CardTitle className="mb-2 text-[16px] font-bold dark:text-white">
-                                        Account Information
-                                    </CardTitle>
-                                    <div className="space-y-1 text-[13px]">
-                                        <div>
-                                            <span className="font-semibold dark:text-gray-300">
-                                                Account Name:
-                                            </span>{' '}
-                                            <span className="dark:text-white">
-                                                {ledger.account.name}
-                                            </span>
-                                        </div>
-                                        <div>
-                                            <span className="font-semibold dark:text-gray-300">
-                                                Account Number:
-                                            </span>{' '}
-                                            <span className="dark:text-white">
-                                                {ledger.account.ac_number}
-                                            </span>
-                                        </div>
-                                        <div>
-                                            <span className="font-semibold dark:text-gray-300">
-                                                Group:
-                                            </span>{' '}
-                                            <span className="dark:text-white">
-                                                {ledger.account.group?.name ||
-                                                    'N/A'}
-                                            </span>
-                                        </div>
-                                        <div>
-                                            <span className="font-semibold dark:text-gray-300">
-                                                Closing Balance:
-                                            </span>
-                                            <span
-                                                className={`font-bold ${ledger.closing_balance >= 0 ? 'text-green-600' : 'text-red-600'}`}
+                {closedShifts.length > 0 ? (
+                    <Card className="dark:border-gray-700 dark:bg-gray-800">
+                        <CardContent>
+                            <div className="overflow-x-auto">
+                                <table className="w-full">
+                                    <thead>
+                                        <tr className="border-b dark:border-gray-700">
+                                            <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
+                                                Date
+                                            </th>
+                                            <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
+                                                Shift
+                                            </th>
+                                            <th className="p-4 text-right text-[13px] font-medium dark:text-gray-300">
+                                                Cash Payment
+                                            </th>
+                                            <th className="p-4 text-right text-[13px] font-medium dark:text-gray-300">
+                                                Cash Received
+                                            </th>
+                                            <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
+                                                Actions
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {closedShifts.map((shift) => (
+                                            <tr
+                                                key={shift.id}
+                                                className="border-b hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700"
                                             >
-                                                {Math.abs(
-                                                    ledger.closing_balance,
-                                                ).toLocaleString()}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </CardHeader>
-                                <CardContent className="p-0">
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full">
-                                            <thead>
-                                                <tr className="border-b dark:border-gray-700">
-                                                    <th className="p-2 text-left text-[13px] font-medium dark:text-gray-300">
-                                                        Date
-                                                    </th>
-                                                    <th className="p-2 text-left text-[13px] font-medium dark:text-gray-300">
-                                                        Transaction ID
-                                                    </th>
-                                                    <th className="p-2 text-left text-[13px] font-medium dark:text-gray-300">
-                                                        Description
-                                                    </th>
-                                                    <th className="p-2 text-left text-[13px] font-medium dark:text-gray-300">
-                                                        Payment Type
-                                                    </th>
-                                                    <th className="p-2 text-right text-[13px] font-medium dark:text-gray-300">
-                                                        Debit
-                                                    </th>
-                                                    <th className="p-2 text-right text-[13px] font-medium dark:text-gray-300">
-                                                        Credit
-                                                    </th>
-                                                    <th className="p-2 text-right text-[13px] font-medium dark:text-gray-300">
-                                                        Balance
-                                                    </th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {ledger.transactions.map(
-                                                    (transaction) => (
-                                                        <tr
-                                                            key={transaction.id}
-                                                            className="border-b hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700"
-                                                        >
-                                                            <td className="p-2 text-[13px] dark:text-white">
-                                                                {
-                                                                    transaction.transaction_date
-                                                                }
-                                                            </td>
-                                                            <td className="p-2 text-[13px] dark:text-gray-300">
-                                                                {
-                                                                    transaction.transaction_id
-                                                                }
-                                                            </td>
-                                                            <td className="p-2 text-[13px] dark:text-gray-300">
-                                                                {
-                                                                    transaction.description
-                                                                }
-                                                            </td>
-                                                            <td className="p-2 text-[13px] capitalize dark:text-gray-300">
-                                                                {
-                                                                    transaction.payment_type
-                                                                }
-                                                            </td>
-                                                            <td className="p-2 text-right text-[13px] dark:text-gray-300">
-                                                                {transaction.transaction_type ===
-                                                                'Dr'
-                                                                    ? transaction.amount.toLocaleString()
-                                                                    : '-'}
-                                                            </td>
-                                                            <td className="p-2 text-right text-[13px] dark:text-gray-300">
-                                                                {transaction.transaction_type ===
-                                                                'Cr'
-                                                                    ? transaction.amount.toLocaleString()
-                                                                    : '-'}
-                                                            </td>
-                                                            <td
-                                                                className={`p-2 text-right text-[13px] font-medium ${transaction.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}
-                                                            >
-                                                                {Math.abs(
-                                                                    transaction.balance,
-                                                                ).toLocaleString()}
-                                                            </td>
-                                                        </tr>
-                                                    ),
-                                                )}
-                                                <tr className="border-b bg-gray-50 font-bold dark:border-gray-700 dark:bg-gray-700">
-                                                    <td
-                                                        colSpan={4}
-                                                        className="p-2 text-[13px] dark:text-white"
+                                                <td className="p-4 text-[13px] dark:text-white">
+                                                    {new Date(shift.close_date).toLocaleDateString()}
+                                                </td>
+                                                <td className="p-4 text-[13px] dark:text-gray-300">
+                                                    {shift.shift?.name}
+                                                </td>
+                                                <td className="p-4 text-right text-[13px] dark:text-white">
+                                                    {Number(shift.daily_reading?.cash_payment || 0).toFixed(2)}
+                                                </td>
+                                                <td className="p-4 text-right text-[13px] dark:text-white">
+                                                    {Number(shift.daily_reading?.cash_receive || 0).toFixed(2)}
+                                                </td>
+                                                <td className="p-4 text-[13px] dark:text-white">
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => router.get(`/cash-book-ledger/${shift.id}`)}
                                                     >
-                                                        Total:
-                                                    </td>
-                                                    <td className="p-2 text-right text-[13px] dark:text-white">
-                                                        {ledger.total_debit.toFixed(
-                                                            2,
-                                                        )}
-                                                    </td>
-                                                    <td className="p-2 text-right text-[13px] dark:text-white">
-                                                        {ledger.total_credit.toFixed(
-                                                            2,
-                                                        )}
-                                                    </td>
-                                                    <td className="p-2 text-right text-[13px] dark:text-white">
-                                                        -
-                                                    </td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </div>
+                                                        <Eye className="h-4 w-4" />
+                                                    </Button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </CardContent>
+                    </Card>
                 ) : (
                     <Card className="dark:border-gray-700 dark:bg-gray-800">
                         <CardContent>
-                            <p className="p-4 text-center text-[13px] text-gray-500 dark:text-gray-400">
-                                No cash transactions found for the selected
-                                period
+                            <p className="p-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                                No closed shifts found for the selected period
                             </p>
                         </CardContent>
                     </Card>
