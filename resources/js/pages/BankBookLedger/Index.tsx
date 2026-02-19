@@ -6,7 +6,7 @@ import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
-import { FileText, Filter, X, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
+import { FileText, Filter, X, Eye } from 'lucide-react';
 import { useState } from 'react';
 import { usePermission } from '@/hooks/usePermission';
 
@@ -56,7 +56,7 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Bank Book Ledger', href: '/bank-book-ledger' },
 ];
 
-export default function BankBookLedger({ ledgers, filters, summary }: Props) {
+export default function BankBookLedger({ ledgers, filters }: Props) {
     const { can } = usePermission();
     const canFilter = can('can-account-filter');
     const canDownload = can('can-account-download');
@@ -115,69 +115,6 @@ export default function BankBookLedger({ ledgers, filters, summary }: Props) {
                     )}
                 </div>
 
-                {/* Summary Cards */}
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                    <Card className="dark:border-gray-700 dark:bg-gray-800">
-                        <CardContent className="flex items-center p-6">
-                            <div className="flex items-center space-x-4">
-                                <div className="rounded-full bg-red-100 p-3 dark:bg-red-900">
-                                    <TrendingDown className="h-6 w-6 text-red-600 dark:text-red-400" />
-                                </div>
-                                <div>
-                                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Debit</p>
-                                    <p className="text-2xl font-bold text-red-600 dark:text-red-400">
-                                        {summary?.total_debit?.toLocaleString() || '0'}
-                                    </p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="dark:border-gray-700 dark:bg-gray-800">
-                        <CardContent className="flex items-center p-6">
-                            <div className="flex items-center space-x-4">
-                                <div className="rounded-full bg-green-100 p-3 dark:bg-green-900">
-                                    <TrendingUp className="h-6 w-6 text-green-600 dark:text-green-400" />
-                                </div>
-                                <div>
-                                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Credit</p>
-                                    <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                                        {summary?.total_credit?.toLocaleString() || '0'}
-                                    </p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="dark:border-gray-700 dark:bg-gray-800">
-                        <CardContent className="flex items-center p-6">
-                            <div className="flex items-center space-x-4">
-                                <div className={`rounded-full p-3 ${
-                                    (summary?.net_balance || 0) >= 0 
-                                        ? 'bg-blue-100 dark:bg-blue-900' 
-                                        : 'bg-orange-100 dark:bg-orange-900'
-                                }`}>
-                                    <DollarSign className={`h-6 w-6 ${
-                                        (summary?.net_balance || 0) >= 0 
-                                            ? 'text-blue-600 dark:text-blue-400' 
-                                            : 'text-orange-600 dark:text-orange-400'
-                                    }`} />
-                                </div>
-                                <div>
-                                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Net Balance</p>
-                                    <p className={`text-2xl font-bold ${
-                                        (summary?.net_balance || 0) >= 0 
-                                            ? 'text-blue-600 dark:text-blue-400' 
-                                            : 'text-orange-600 dark:text-orange-400'
-                                    }`}>
-                                        {summary?.net_balance?.toLocaleString() || '0'}
-                                    </p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
-
                 {/* Filter Card */}
                 {canFilter && (
                     <Card className="dark:border-gray-700 dark:bg-gray-800">
@@ -232,161 +169,64 @@ export default function BankBookLedger({ ledgers, filters, summary }: Props) {
                 )}
 
                 {ledgers.length > 0 ? (
-                    <div className="space-y-6">
-                        {ledgers.map((ledger, index) => (
-                            <Card
-                                key={index}
-                                className="dark:border-gray-700 dark:bg-gray-800"
-                            >
-                                <CardHeader>
-                                    <CardTitle className="mb-2 text-[16px] font-bold dark:text-white">
-                                        Account Information
-                                    </CardTitle>
-                                    <div className="space-y-1 text-[13px]">
-                                        <div>
-                                            <span className="font-semibold dark:text-gray-300">
-                                                Account Name:
-                                            </span>{' '}
-                                            <span className="dark:text-white">
-                                                {ledger.account.name}
-                                            </span>
-                                        </div>
-                                        <div>
-                                            <span className="font-semibold dark:text-gray-300">
-                                                Account Number:
-                                            </span>{' '}
-                                            <span className="dark:text-white">
-                                                {ledger.account.ac_number}
-                                            </span>
-                                        </div>
-                                        <div>
-                                            <span className="font-semibold dark:text-gray-300">
-                                                Group:
-                                            </span>{' '}
-                                            <span className="dark:text-white">
-                                                {ledger.account.group?.name ||
-                                                    'N/A'}
-                                            </span>
-                                        </div>
-                                        <div>
-                                            <span className="font-semibold dark:text-gray-300">
-                                                Closing Balance:
-                                            </span>
-                                            <span
-                                                className={`font-bold ${ledger.closing_balance >= 0 ? 'text-green-600' : 'text-red-600'}`}
+                    <Card className="dark:border-gray-700 dark:bg-gray-800">
+                        <CardContent>
+                            <div className="overflow-x-auto">
+                                <table className="w-full">
+                                    <thead>
+                                        <tr className="border-b dark:border-gray-700">
+                                            <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
+                                                SL.
+                                            </th>
+                                            <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
+                                                Account Name
+                                            </th>
+                                            <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
+                                                Account Number
+                                            </th>
+                                            <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
+                                                Group
+                                            </th>
+                                            <th className="p-4 text-left text-[13px] font-medium dark:text-gray-300">
+                                                Actions
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {ledgers.map((ledger, index) => (
+                                            <tr
+                                                key={index}
+                                                className="border-b hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700"
                                             >
-                                                {Math.abs(
-                                                    ledger.closing_balance,
-                                                ).toLocaleString()}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </CardHeader>
-                                <CardContent className="p-0">
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full">
-                                            <thead>
-                                                <tr className="border-b dark:border-gray-700">
-                                                    <th className="p-2 text-left text-[13px] font-medium dark:text-gray-300">
-                                                        Date
-                                                    </th>
-                                                    <th className="p-2 text-left text-[13px] font-medium dark:text-gray-300">
-                                                        Transaction ID
-                                                    </th>
-                                                    <th className="p-2 text-left text-[13px] font-medium dark:text-gray-300">
-                                                        Description
-                                                    </th>
-                                                    <th className="p-2 text-left text-[13px] font-medium dark:text-gray-300">
-                                                        Payment Type
-                                                    </th>
-                                                    <th className="p-2 text-right text-[13px] font-medium dark:text-gray-300">
-                                                        Debit
-                                                    </th>
-                                                    <th className="p-2 text-right text-[13px] font-medium dark:text-gray-300">
-                                                        Credit
-                                                    </th>
-                                                    <th className="p-2 text-right text-[13px] font-medium dark:text-gray-300">
-                                                        Balance
-                                                    </th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {ledger.transactions.map(
-                                                    (transaction) => (
-                                                        <tr
-                                                            key={transaction.id}
-                                                            className="border-b hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700"
-                                                        >
-                                                            <td className="p-2 text-[13px] dark:text-white">
-                                                                {
-                                                                    transaction.transaction_date
-                                                                }
-                                                            </td>
-                                                            <td className="p-2 text-[13px] dark:text-gray-300">
-                                                                {
-                                                                    transaction.transaction_id
-                                                                }
-                                                            </td>
-                                                            <td className="p-2 text-[13px] dark:text-gray-300">
-                                                                {
-                                                                    transaction.description
-                                                                }
-                                                            </td>
-                                                            <td className="p-2 text-[13px] capitalize dark:text-gray-300">
-                                                                {
-                                                                    transaction.payment_type
-                                                                }
-                                                            </td>
-                                                            <td className="p-2 text-right text-[13px] dark:text-gray-300">
-                                                                {transaction.transaction_type ===
-                                                                'Dr'
-                                                                    ? transaction.amount.toLocaleString()
-                                                                    : '-'}
-                                                            </td>
-                                                            <td className="p-2 text-right text-[13px] dark:text-gray-300">
-                                                                {transaction.transaction_type ===
-                                                                'Cr'
-                                                                    ? transaction.amount.toLocaleString()
-                                                                    : '-'}
-                                                            </td>
-                                                            <td
-                                                                className={`p-2 text-right text-[13px] font-medium ${transaction.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}
-                                                            >
-                                                                {Math.abs(
-                                                                    transaction.balance,
-                                                                ).toLocaleString()}
-                                                            </td>
-                                                        </tr>
-                                                    ),
-                                                )}
-                                                <tr className="border-b bg-gray-50 font-bold dark:border-gray-700 dark:bg-gray-700">
-                                                    <td
-                                                        colSpan={4}
-                                                        className="p-2 text-[13px] dark:text-white"
+                                                <td className="p-4 text-[13px] dark:text-white">
+                                                    {index + 1}
+                                                </td>
+                                                <td className="p-4 text-[13px] dark:text-white">
+                                                    {ledger.account.name}
+                                                </td>
+                                                <td className="p-4 text-[13px] dark:text-gray-300">
+                                                    {ledger.account.ac_number}
+                                                </td>
+                                                <td className="p-4 text-[13px] dark:text-gray-300">
+                                                    {ledger.account.group?.name || 'N/A'}
+                                                </td>
+                                                <td className="p-4">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="text-indigo-600 hover:text-indigo-800"
+                                                        onClick={() => router.get(`/bank-book-ledger/${ledger.account.ac_number}`)}
                                                     >
-                                                        Total:
-                                                    </td>
-                                                    <td className="p-2 text-right text-[13px] dark:text-white">
-                                                        {ledger.total_debit.toFixed(
-                                                            2,
-                                                        )}
-                                                    </td>
-                                                    <td className="p-2 text-right text-[13px] dark:text-white">
-                                                        {ledger.total_credit.toFixed(
-                                                            2,
-                                                        )}
-                                                    </td>
-                                                    <td className="p-2 text-right text-[13px] dark:text-white">
-                                                        -
-                                                    </td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </div>
+                                                        <Eye className="h-4 w-4" />
+                                                    </Button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </CardContent>
+                    </Card>
                 ) : (
                     <Card className="dark:border-gray-700 dark:bg-gray-800">
                         <CardContent>

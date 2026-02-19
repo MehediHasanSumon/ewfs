@@ -86,6 +86,42 @@ export default function Show({ shiftClosed, cashTransactions }: Props) {
                     </div>
                 </div>
 
+                {/* Summary Cards */}
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                    <Card className="dark:border-gray-700 dark:bg-gray-800">
+                        <CardContent className="flex items-center p-6">
+                            <div>
+                                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Debit</p>
+                                <p className="text-2xl font-bold text-red-600 dark:text-red-400">
+                                    {totalDebit.toLocaleString()}
+                                </p>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="dark:border-gray-700 dark:bg-gray-800">
+                        <CardContent className="flex items-center p-6">
+                            <div>
+                                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Credit</p>
+                                <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                                    {totalCredit.toLocaleString()}
+                                </p>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="dark:border-gray-700 dark:bg-gray-800">
+                        <CardContent className="flex items-center p-6">
+                            <div>
+                                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Closing Balance</p>
+                                <p className={`text-2xl font-bold ${(totalCredit - totalDebit) >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                                    {Math.abs(totalCredit - totalDebit).toLocaleString()}
+                                </p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+
                 <Card className="dark:border-gray-700 dark:bg-gray-800">
                     <CardHeader>
                         <CardTitle className="dark:text-white">
